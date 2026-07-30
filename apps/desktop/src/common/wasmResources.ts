@@ -99,13 +99,7 @@ export function validateWasmBinaryResources(
           if (referenceType !== 0x70 && referenceType !== 0x6f) {
             errors.push('WASM table reference type is unsupported.');
           }
-          const error = validateLimits(
-            bytes,
-            cursor,
-            sectionEnd,
-            'table',
-            maxTableElements,
-          );
+          const error = validateLimits(bytes, cursor, sectionEnd, 'table', maxTableElements);
           if (error) errors.push(error);
         }
         if (cursor.offset !== sectionEnd) errors.push('WASM table section shape is unsupported.');
@@ -115,13 +109,7 @@ export function validateWasmBinaryResources(
         const count = readU32(bytes, cursor, sectionEnd);
         if (count > 1) errors.push('WASM declares more than one memory.');
         for (let index = 0; index < count; index++) {
-          const error = validateLimits(
-            bytes,
-            cursor,
-            sectionEnd,
-            'memory',
-            maxMemoryPages,
-          );
+          const error = validateLimits(bytes, cursor, sectionEnd, 'memory', maxMemoryPages);
           if (error) errors.push(error);
         }
         if (cursor.offset !== sectionEnd) errors.push('WASM memory section shape is unsupported.');

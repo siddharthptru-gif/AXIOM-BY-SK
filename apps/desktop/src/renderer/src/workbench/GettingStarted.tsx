@@ -112,9 +112,12 @@ export function GettingStarted() {
     set('ai.provider', 'ollama', 'user');
     set('ai.baseUrl', probe.baseUrl, 'user');
     set('ai.model', first, 'user');
-    notifyInfo(`Local AI connected: ${first}. No API key, no account, nothing leaves this machine.`, {
-      source: 'Axiom AI',
-    });
+    notifyInfo(
+      `Local AI connected: ${first}. No API key, no account, nothing leaves this machine.`,
+      {
+        source: 'Axiom AI',
+      },
+    );
     layout.showAiPanel();
   }, [localProbe, set, layout]);
 

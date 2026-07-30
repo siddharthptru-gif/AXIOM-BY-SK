@@ -79,7 +79,9 @@ export interface HierarchyTree {
 
 /** The directions a hierarchy of this kind can be explored in, in the order the panel offers them. */
 export function hierarchyDirections(kind: HierarchyKind): readonly HierarchyDirection[] {
-  return kind === 'call' ? (['incoming', 'outgoing'] as const) : (['supertypes', 'subtypes'] as const);
+  return kind === 'call'
+    ? (['incoming', 'outgoing'] as const)
+    : (['supertypes', 'subtypes'] as const);
 }
 
 /** The language feature that answers this kind. */

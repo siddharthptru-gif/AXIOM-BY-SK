@@ -1,4 +1,8 @@
-import type { CapabilityDescriptor, GodModeCapabilityId, GodModeSnapshot } from '../../common/godMode';
+import type {
+  CapabilityDescriptor,
+  GodModeCapabilityId,
+  GodModeSnapshot,
+} from '../../common/godMode';
 import { GOD_MODE_SCHEMA_VERSION } from '../../common/godMode';
 import { getGithubState } from './githubScm';
 import { listGodModeJobs } from './godModeJobs';
@@ -16,32 +20,45 @@ const DEFINITIONS: ReadonlyArray<
   {
     id: 'context-intelligence',
     title: 'Context intelligence',
-    readySummary: 'Semantic retrieval, project graph, citations, budgets, and measurable eval suites are available.',
+    readySummary:
+      'Semantic retrieval, project graph, citations, budgets, and measurable eval suites are available.',
     safeguards: ['Bounded context budgets', 'Source citations', 'Prompt-injection envelopes'],
   },
   {
     id: 'predictive-editing',
     title: 'Predictive editing',
-    readySummary: 'Cancellable, cached, stale-safe inline completion and next-edit controls are available; configured provider health determines whether suggestions are returned.',
+    readySummary:
+      'Cancellable, cached, stale-safe inline completion and next-edit controls are available; configured provider health determines whether suggestions are returned.',
     safeguards: ['Document-version binding', 'Main cancellation', 'No automatic writes'],
   },
   {
     id: 'autonomous-verification',
     title: 'Autonomous verification',
-    readySummary: 'Durable bounded plan/edit/run/observe/fix/verify jobs can be resumed and audited.',
+    readySummary:
+      'Durable bounded plan/edit/run/observe/fix/verify jobs can be resumed and audited.',
     safeguards: ['Approval policy', 'Iteration cap', 'Checkpoints and evidence'],
   },
   {
     id: 'secure-preview',
     title: 'Secure application preview',
-    readySummary: 'Loopback application previews provide console, runtime, screenshot, and element evidence.',
-    safeguards: ['Sandboxed renderer', 'Loopback-only navigation', 'Downloads and permissions denied'],
+    readySummary:
+      'Loopback application previews provide console, runtime, screenshot, and element evidence.',
+    safeguards: [
+      'Sandboxed renderer',
+      'Loopback-only navigation',
+      'Downloads and permissions denied',
+    ],
   },
   {
     id: 'test-debug-ai',
     title: 'Test and debugger AI',
-    readySummary: 'Affected checks, bounded execution, flaky signals, DAP stack/scopes, and repair handoff are available.',
-    safeguards: ['Generated command allowlist', 'Explicit execution approval', 'Timeout and process-tree cleanup'],
+    readySummary:
+      'Affected checks, bounded execution, flaky signals, DAP stack/scopes, and repair handoff are available.',
+    safeguards: [
+      'Generated command allowlist',
+      'Explicit execution approval',
+      'Timeout and process-tree cleanup',
+    ],
   },
   {
     id: 'issue-to-pr',
@@ -53,25 +70,41 @@ const DEFINITIONS: ReadonlyArray<
   {
     id: 'isolated-workspaces',
     title: 'Isolated workspaces',
-    readySummary: 'Managed local clones and capability-gated WSL, SSH, and container execution profiles are available.',
-    safeguards: ['Explicit creation and execution approval', 'Managed deletion boundary', 'Bounded process output'],
+    readySummary:
+      'Managed local clones and capability-gated WSL, SSH, and container execution profiles are available.',
+    safeguards: [
+      'Explicit creation and execution approval',
+      'Managed deletion boundary',
+      'Bounded process output',
+    ],
   },
   {
     id: 'sandboxed-extensions',
     title: 'Sandboxed extensions',
-    readySummary: 'Declarative extensions and integrity-checked, import-free WASM workers are supported.',
-    safeguards: ['Legacy JavaScript fail-closed', 'Memory/time quotas', 'Signature and integrity review'],
+    readySummary:
+      'Declarative extensions and integrity-checked, import-free WASM workers are supported.',
+    safeguards: [
+      'Legacy JavaScript fail-closed',
+      'Memory/time quotas',
+      'Signature and integrity review',
+    ],
   },
   {
     id: 'collaboration-background',
     title: 'Collaboration and background agents',
-    readySummary: 'Durable jobs, evidence handoffs, and local sessions are available. Optional team sync requires authenticated, migrated Supabase infrastructure and is not assumed live.',
-    safeguards: ['Cloud paths and secrets redacted', 'RLS policies required for sharing', 'Owner leases and resumability'],
+    readySummary:
+      'Durable jobs, evidence handoffs, and local sessions are available. Optional team sync requires authenticated, migrated Supabase infrastructure and is not assumed live.',
+    safeguards: [
+      'Cloud paths and secrets redacted',
+      'RLS policies required for sharing',
+      'Owner leases and resumability',
+    ],
   },
   {
     id: 'preview-deployment',
     title: 'Preview deployment',
-    readySummary: 'Commit-pinned local static preview is available. GitHub Actions and encrypted hooks remain optional provider-dependent triggers whose external completion Axiom does not assume.',
+    readySummary:
+      'Commit-pinned local static preview is available. GitHub Actions and encrypted hooks remain optional provider-dependent triggers whose external completion Axiom does not assume.',
     safeguards: ['Current verification required', 'Commit pinning', 'No direct source upload'],
   },
 ];
@@ -103,9 +136,10 @@ function setupRequired(
 }
 
 function githubSlug(value: string): string | null {
-  const match = /^(?:https:\/\/github\.com\/|ssh:\/\/git@github\.com\/|git@github\.com:)([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/i.exec(
-    value.trim(),
-  );
+  const match =
+    /^(?:https:\/\/github\.com\/|ssh:\/\/git@github\.com\/|git@github\.com:)([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/i.exec(
+      value.trim(),
+    );
   return match ? `${match[1]}/${match[2]}`.toLowerCase() : null;
 }
 
@@ -136,9 +170,7 @@ export async function getGodModeSnapshot(
     ]);
   const jobs = jobsResult.status === 'fulfilled' ? jobsResult.value : [];
   const settings =
-    settingsResult.status === 'fulfilled'
-      ? (settingsResult.value as Record<string, unknown>)
-      : {};
+    settingsResult.status === 'fulfilled' ? (settingsResult.value as Record<string, unknown>) : {};
   const provider =
     typeof settings['ai.provider'] === 'string' ? settings['ai.provider'] : 'anthropic';
   const configuredBaseUrl =

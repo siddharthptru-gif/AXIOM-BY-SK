@@ -50,14 +50,18 @@ function parseOllamaTags(payload: unknown): string[] {
   for (const entry of models) {
     if (names.length >= MAX_MODELS) break;
     if (!entry || typeof entry !== 'object') continue;
-    const name = safeModelName((entry as { name?: unknown; model?: unknown }).name)
-      ?? safeModelName((entry as { model?: unknown }).model);
+    const name =
+      safeModelName((entry as { name?: unknown; model?: unknown }).name) ??
+      safeModelName((entry as { model?: unknown }).model);
     if (name && !names.includes(name)) names.push(name);
   }
   return names.sort((a, b) => a.localeCompare(b));
 }
 
-async function probeEndpoint(origin: string, signal?: AbortSignal): Promise<LocalModelProbe | null> {
+async function probeEndpoint(
+  origin: string,
+  signal?: AbortSignal,
+): Promise<LocalModelProbe | null> {
   const controller = new AbortController();
   const onAbort = (): void => controller.abort();
   if (signal) {

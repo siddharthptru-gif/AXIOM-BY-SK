@@ -5,10 +5,7 @@ import { dirname, join, sep } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { fromBufferPromise, validateFileName, type Entry, type ZipFile } from 'yauzl';
 import { rootLogger } from '@axiom/shared';
-import {
-  parseVsCodeManifest,
-  type VsCodeManifest,
-} from '../../common/vscodeManifest';
+import { parseVsCodeManifest, type VsCodeManifest } from '../../common/vscodeManifest';
 
 /**
  * VSIX package reading.
@@ -130,7 +127,9 @@ function isDirectoryEntry(entry: Entry): boolean {
  */
 async function collectEntries(zip: ZipFile): Promise<VsixEntry[]> {
   if (zip.entryCount > MAX_ENTRIES) {
-    throw new VsixError(`The package declares ${zip.entryCount} entries, above the supported limit.`);
+    throw new VsixError(
+      `The package declares ${zip.entryCount} entries, above the supported limit.`,
+    );
   }
   return new Promise<VsixEntry[]>((resolve, reject) => {
     const entries: VsixEntry[] = [];

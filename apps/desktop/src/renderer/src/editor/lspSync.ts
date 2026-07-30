@@ -151,7 +151,10 @@ export class LspSync {
       state.pending.push({
         text: change.text,
         range: {
-          start: { line: change.range.startLineNumber - 1, character: change.range.startColumn - 1 },
+          start: {
+            line: change.range.startLineNumber - 1,
+            character: change.range.startColumn - 1,
+          },
           end: { line: change.range.endLineNumber - 1, character: change.range.endColumn - 1 },
         },
         rangeLength: change.rangeLength,

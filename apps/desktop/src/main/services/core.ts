@@ -185,7 +185,10 @@ async function authorizeCoreResultPath(
   return canonical;
 }
 
-async function validateCoreEnvelopeRoot(root: string, record: Record<string, unknown>): Promise<void> {
+async function validateCoreEnvelopeRoot(
+  root: string,
+  record: Record<string, unknown>,
+): Promise<void> {
   const returnedRoot = await authorizeCoreResultPath(root, record.root);
   if (canonicalPathIdentity(returnedRoot) !== canonicalPathIdentity(root)) {
     throw new Error('Core returned a mismatched workspace root.');
@@ -215,7 +218,10 @@ async function rereadCoreLines(
   }
   return {
     path,
-    text: lines.slice(startLine - 1, Math.min(endLine, lines.length)).join('\n').slice(0, maxChars),
+    text: lines
+      .slice(startLine - 1, Math.min(endLine, lines.length))
+      .join('\n')
+      .slice(0, maxChars),
   };
 }
 
@@ -282,7 +288,6 @@ export async function coreSearch(
   await validateCoreEnvelopeRoot(root, record);
   if (!Array.isArray(record.matches) || record.matches.length > 5_000) {
     throw new Error('Core returned an invalid or oversized search result.');
-
   }
   const matches = [];
   for (const value of record.matches) {

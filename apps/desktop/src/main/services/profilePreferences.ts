@@ -177,7 +177,10 @@ export async function recoverProfilePreferenceTransaction(): Promise<void> {
   await removeDurably(journalPath);
 }
 
-function serializeObject(value: SettingsData, label: string): {
+function serializeObject(
+  value: SettingsData,
+  label: string,
+): {
   text: string;
   value: SettingsData;
 } {

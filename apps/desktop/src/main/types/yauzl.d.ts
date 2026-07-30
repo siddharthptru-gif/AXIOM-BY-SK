@@ -1,3 +1,6 @@
+import { EventEmitter } from 'node:events';
+import { Readable } from 'node:stream';
+
 /**
  * Local type declarations for `yauzl` 3.4.0.
  *
@@ -32,14 +35,14 @@ declare module 'yauzl' {
     getLastModDate(): Date;
   }
 
-  export interface ZipFile extends import('node:events').EventEmitter {
+  export interface ZipFile extends EventEmitter {
     readonly entryCount: number;
     readonly entriesRead: number;
     readonly fileSize: number;
     readonly isOpen: boolean;
     /** With `lazyEntries`, advances to the next `entry` (or `end`) event. */
     readEntry(): void;
-    openReadStreamPromise(entry: Entry): Promise<import('node:stream').Readable>;
+    openReadStreamPromise(entry: Entry): Promise<Readable>;
     close(): void;
     on(event: 'entry', listener: (entry: Entry) => void): this;
     on(event: 'end', listener: () => void): this;

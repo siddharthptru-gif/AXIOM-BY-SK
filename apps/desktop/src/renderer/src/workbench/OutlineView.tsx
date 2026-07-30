@@ -133,8 +133,7 @@ export function OutlineView() {
   if (!activePath) return null;
   const name = baseName(activePath);
 
-  const jump = (line: number, column: number): void =>
-    openFileAt(activePath, name, line, column);
+  const jump = (line: number, column: number): void => openFileAt(activePath, name, line, column);
 
   return (
     <div className="outline">

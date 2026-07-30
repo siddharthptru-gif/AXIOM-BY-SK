@@ -48,13 +48,7 @@ const PROVIDER_LABELS: Record<AiProvider, string> = {
   custom: 'Custom (OpenAI-Compatible)',
 };
 
-const PROVIDERS: readonly AiProvider[] = [
-  'anthropic',
-  'openai',
-  'gemini',
-  'ollama',
-  'custom',
-];
+const PROVIDERS: readonly AiProvider[] = ['anthropic', 'openai', 'gemini', 'ollama', 'custom'];
 
 const AI_MODES = ['chat', 'agent', 'composer'] as const;
 type AiMode = (typeof AI_MODES)[number];

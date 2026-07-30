@@ -47,7 +47,9 @@ export function DownloadCard() {
 
   return (
     <div className="glass w-full max-w-[34rem] rounded-2xl p-7 sm:p-9">
-      <h2 className="font-display text-2xl font-semibold text-fg-max sm:text-3xl">Download AXIOM</h2>
+      <h2 className="font-display text-2xl font-semibold text-fg-max sm:text-3xl">
+        Download AXIOM
+      </h2>
       <p className="mt-2 text-sm leading-relaxed text-fg-muted">
         One installer. No account, no licence key, no trial timer.
       </p>
@@ -104,8 +106,8 @@ export function DownloadCard() {
             {VERIFY_COMMAND}
           </pre>
           <p className="mt-3 text-xs leading-relaxed text-fg-faint">
-            The hash it prints must match the SHA-256 above, ignoring case. If it does not,
-            delete the file and download it again.
+            The hash it prints must match the SHA-256 above, ignoring case. If it does not, delete
+            the file and download it again.
           </p>
         </div>
       ) : null}
@@ -116,15 +118,15 @@ export function DownloadCard() {
           <li>Windows 10 or 11, 64-bit</li>
           <li>About 400 MB of free disk space</li>
           <li>
-            An API key from any supported provider — or{' '}
-            <span className="text-ice">Ollama</span> for fully local, keyless use
+            An API key from any supported provider — or <span className="text-ice">Ollama</span> for
+            fully local, keyless use
           </li>
         </ul>
         <p className="mt-4 text-xs leading-relaxed text-fg-faint">
           This build is unsigned, so Windows SmartScreen will warn you the first time you run it.
           Choose <span className="text-fg">More info</span> then{' '}
-          <span className="text-fg">Run anyway</span> — and verify the checksum above first if
-          you would rather not take that on trust.
+          <span className="text-fg">Run anyway</span> — and verify the checksum above first if you
+          would rather not take that on trust.
         </p>
       </div>
     </div>

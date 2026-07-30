@@ -410,7 +410,10 @@ interface ContributedMonacoTheme {
 
 /** Monaco stores themes by name; keep the id to characters a name can safely hold. */
 function monacoThemeId(key: string): string {
-  const slug = key.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const slug = key
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
   return `axiom-ext-${slug.slice(0, 80) || 'theme'}`;
 }
 
@@ -442,7 +445,11 @@ export function setMonacoContributedTheme(key: string, theme: ContributedMonacoT
     foreground,
   );
   const fn = scopeColor(rules, ['entity.name.function', 'support.function'], foreground);
-  const comment = scopeColor(rules, ['comment.line', 'comment'], tokenForeground(t['--fg-faint'], '777286'));
+  const comment = scopeColor(
+    rules,
+    ['comment.line', 'comment'],
+    tokenForeground(t['--fg-faint'], '777286'),
+  );
   const subtle = scopeColor(
     rules,
     ['punctuation', 'keyword.operator'],
@@ -454,7 +461,11 @@ export function setMonacoContributedTheme(key: string, theme: ContributedMonacoT
     ['variable.parameter', 'variable'],
     tokenForeground(t['--fg-subtle'], '918BA2'),
   );
-  const decorator = scopeColor(rules, ['entity.name.decorator', 'meta.decorator', 'storage.type.annotation'], keyword);
+  const decorator = scopeColor(
+    rules,
+    ['entity.name.decorator', 'meta.decorator', 'storage.type.annotation'],
+    keyword,
+  );
 
   defineAndActivate(id, {
     base: theme.base,

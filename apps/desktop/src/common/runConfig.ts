@@ -117,8 +117,18 @@ export function runCandidates(context: RunContext): RunCandidate[] {
       out.push({ id: 'bun', label: 'Run with Bun', command: 'bun run ${file}', requires: 'bun' });
     } else {
       // TypeScript needs a runtime that can execute it directly.
-      out.push({ id: 'tsx', label: 'Run TypeScript (node)', command: 'node ${file}', requires: 'node' });
-      out.push({ id: 'deno', label: 'Run with Deno', command: 'deno run -A ${file}', requires: 'deno' });
+      out.push({
+        id: 'tsx',
+        label: 'Run TypeScript (node)',
+        command: 'node ${file}',
+        requires: 'node',
+      });
+      out.push({
+        id: 'deno',
+        label: 'Run with Deno',
+        command: 'deno run -A ${file}',
+        requires: 'deno',
+      });
       out.push({ id: 'bun', label: 'Run with Bun', command: 'bun run ${file}', requires: 'bun' });
     }
   }
@@ -138,14 +148,26 @@ export function runCandidates(context: RunContext): RunCandidate[] {
   if (language === 'go') {
     out.push({ id: 'go', label: 'Run Go', command: 'go run ${file}', requires: 'go' });
     if (has(context, 'go.mod')) {
-      out.push({ id: 'go-project', label: 'Run Go module', command: 'go run .', requires: 'go', project: true });
+      out.push({
+        id: 'go-project',
+        label: 'Run Go module',
+        command: 'go run .',
+        requires: 'go',
+        project: true,
+      });
     }
   }
 
   if (language === 'rust') {
     // Inside a Cargo project, rustc is almost never the right call.
     if (has(context, 'Cargo.toml')) {
-      out.push({ id: 'cargo', label: 'Cargo run', command: 'cargo run', requires: 'cargo', project: true });
+      out.push({
+        id: 'cargo',
+        label: 'Cargo run',
+        command: 'cargo run',
+        requires: 'cargo',
+        project: true,
+      });
     }
     out.push({
       id: 'rustc',
@@ -163,10 +185,22 @@ export function runCandidates(context: RunContext): RunCandidate[] {
       requires: 'jdk',
     });
     if (has(context, 'pom.xml')) {
-      out.push({ id: 'maven', label: 'Maven exec', command: 'mvn -q exec:java', requires: 'maven', project: true });
+      out.push({
+        id: 'maven',
+        label: 'Maven exec',
+        command: 'mvn -q exec:java',
+        requires: 'maven',
+        project: true,
+      });
     }
     if (has(context, 'build.gradle') || has(context, 'build.gradle.kts')) {
-      out.push({ id: 'gradle', label: 'Gradle run', command: 'gradle run', requires: 'gradle', project: true });
+      out.push({
+        id: 'gradle',
+        label: 'Gradle run',
+        command: 'gradle run',
+        requires: 'gradle',
+        project: true,
+      });
     }
   }
 
@@ -201,21 +235,38 @@ export function runCandidates(context: RunContext): RunCandidate[] {
   }
 
   if (language === 'csharp') {
-    out.push({ id: 'dotnet', label: 'Run .NET', command: 'dotnet run', requires: 'dotnet', project: true });
+    out.push({
+      id: 'dotnet',
+      label: 'Run .NET',
+      command: 'dotnet run',
+      requires: 'dotnet',
+      project: true,
+    });
   }
 
   if (language === 'dart') {
     if (has(context, 'pubspec.yaml') && context.available.has('flutter')) {
-      out.push({ id: 'flutter', label: 'Run Flutter', command: 'flutter run', requires: 'flutter', project: true });
+      out.push({
+        id: 'flutter',
+        label: 'Run Flutter',
+        command: 'flutter run',
+        requires: 'flutter',
+        project: true,
+      });
     }
     out.push({ id: 'dart', label: 'Run Dart', command: 'dart run ${file}', requires: 'dart' });
   }
 
-  if (language === 'php') out.push({ id: 'php', label: 'Run PHP', command: 'php ${file}', requires: 'php' });
-  if (language === 'ruby') out.push({ id: 'ruby', label: 'Run Ruby', command: 'ruby ${file}', requires: 'ruby' });
-  if (language === 'perl') out.push({ id: 'perl', label: 'Run Perl', command: 'perl ${file}', requires: 'perl' });
-  if (language === 'lua') out.push({ id: 'lua', label: 'Run Lua', command: 'lua ${file}', requires: 'lua' });
-  if (language === 'r') out.push({ id: 'r', label: 'Run R', command: 'Rscript ${file}', requires: 'r' });
+  if (language === 'php')
+    out.push({ id: 'php', label: 'Run PHP', command: 'php ${file}', requires: 'php' });
+  if (language === 'ruby')
+    out.push({ id: 'ruby', label: 'Run Ruby', command: 'ruby ${file}', requires: 'ruby' });
+  if (language === 'perl')
+    out.push({ id: 'perl', label: 'Run Perl', command: 'perl ${file}', requires: 'perl' });
+  if (language === 'lua')
+    out.push({ id: 'lua', label: 'Run Lua', command: 'lua ${file}', requires: 'lua' });
+  if (language === 'r')
+    out.push({ id: 'r', label: 'Run R', command: 'Rscript ${file}', requires: 'r' });
   if (language === 'julia') {
     out.push({ id: 'julia', label: 'Run Julia', command: 'julia ${file}', requires: 'julia' });
   }
@@ -235,7 +286,8 @@ export function runCandidates(context: RunContext): RunCandidate[] {
     out.push({
       id: 'kotlin',
       label: 'Compile & run Kotlin',
-      command: 'kotlinc ${file} -include-runtime -d ${fileNameBase}.jar && java -jar ${fileNameBase}.jar',
+      command:
+        'kotlinc ${file} -include-runtime -d ${fileNameBase}.jar && java -jar ${fileNameBase}.jar',
       requires: 'kotlin',
     });
   }
@@ -261,21 +313,56 @@ export function runCandidates(context: RunContext): RunCandidate[] {
   if (out.length === 0) {
     const ext = context.relPath.split('.').pop()?.toLowerCase() ?? '';
     if (['cjs', 'mjs', 'js', 'jsx'].includes(ext)) {
-      out.push({ id: 'node', label: 'Run JavaScript (node)', command: 'node ${file}', requires: 'node' });
+      out.push({
+        id: 'node',
+        label: 'Run JavaScript (node)',
+        command: 'node ${file}',
+        requires: 'node',
+      });
       out.push({ id: 'bun', label: 'Run with Bun', command: 'bun run ${file}', requires: 'bun' });
     } else if (['ts', 'tsx', 'cts', 'mts'].includes(ext)) {
-      out.push({ id: 'tsx', label: 'Run TypeScript (node)', command: 'node ${file}', requires: 'node' });
+      out.push({
+        id: 'tsx',
+        label: 'Run TypeScript (node)',
+        command: 'node ${file}',
+        requires: 'node',
+      });
       out.push({ id: 'bun', label: 'Run with Bun', command: 'bun run ${file}', requires: 'bun' });
     } else if (['sh', 'bash', 'zsh'].includes(ext)) {
-      out.push({ id: 'bash', label: 'Run shell script', command: 'bash ${file}', requires: 'bash' });
+      out.push({
+        id: 'bash',
+        label: 'Run shell script',
+        command: 'bash ${file}',
+        requires: 'bash',
+      });
     } else if (['ps1', 'psm1', 'psd1'].includes(ext)) {
-      out.push({ id: 'pwsh', label: 'Run PowerShell', command: 'powershell -ExecutionPolicy Bypass -File ${file}', requires: 'powershell' });
+      out.push({
+        id: 'pwsh',
+        label: 'Run PowerShell',
+        command: 'powershell -ExecutionPolicy Bypass -File ${file}',
+        requires: 'powershell',
+      });
     } else if (['bat', 'cmd'].includes(ext)) {
-      out.push({ id: 'cmd', label: 'Run command script', command: '${file}', requires: 'powershell' });
+      out.push({
+        id: 'cmd',
+        label: 'Run command script',
+        command: '${file}',
+        requires: 'powershell',
+      });
     } else {
       // General universal fallback: node or python or powershell
-      out.push({ id: 'node-universal', label: 'Run script (node)', command: 'node ${file}', requires: 'node' });
-      out.push({ id: 'pwsh-universal', label: 'Run script (powershell)', command: 'powershell -ExecutionPolicy Bypass -File ${file}', requires: 'powershell' });
+      out.push({
+        id: 'node-universal',
+        label: 'Run script (node)',
+        command: 'node ${file}',
+        requires: 'node',
+      });
+      out.push({
+        id: 'pwsh-universal',
+        label: 'Run script (powershell)',
+        command: 'powershell -ExecutionPolicy Bypass -File ${file}',
+        requires: 'powershell',
+      });
     }
   }
 

@@ -107,9 +107,10 @@ function asStringArray(value: unknown, max: number): string[] {
 
 function sanitizeIntegrity(value: unknown): InstallIntegrity {
   const record = asRecord(value);
-  const sha256 = typeof record?.sha256 === 'string' && /^[0-9a-f]{64}$/.test(record.sha256)
-    ? record.sha256
-    : null;
+  const sha256 =
+    typeof record?.sha256 === 'string' && /^[0-9a-f]{64}$/.test(record.sha256)
+      ? record.sha256
+      : null;
   const signature = record?.signature === 'present-unverified' ? 'present-unverified' : 'absent';
   return {
     sha256,
@@ -278,8 +279,7 @@ export interface DependencyGraph {
 }
 
 export type ResolutionResult =
-  | { ok: true; order: string[] }
-  | { ok: false; reason: string; cycle?: string[] };
+  { ok: true; order: string[] } | { ok: false; reason: string; cycle?: string[] };
 
 /** Installing more than this in one action is a runaway, not a user intent. */
 const MAX_INSTALL_SET = 100;
@@ -308,7 +308,10 @@ export function resolveInstallOrder(target: string, graph: DependencyGraph): Res
       };
     }
     if (order.length >= MAX_INSTALL_SET) {
-      return { ok: false, reason: `Installing ${id} would pull in more extensions than AXIOM allows at once.` };
+      return {
+        ok: false,
+        reason: `Installing ${id} would pull in more extensions than AXIOM allows at once.`,
+      };
     }
     state.set(id, 'visiting');
     stack.push(id);

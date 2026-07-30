@@ -111,9 +111,7 @@ export function initDebugConsole(): void {
 }
 
 /** Subscribe to the console. The current snapshot is delivered immediately. */
-export function subscribeDebugConsole(
-  listener: (snapshot: ConsoleSnapshot) => void,
-): () => void {
+export function subscribeDebugConsole(listener: (snapshot: ConsoleSnapshot) => void): () => void {
   listeners.add(listener);
   listener(snapshot());
   return () => {

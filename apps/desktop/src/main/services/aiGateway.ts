@@ -226,13 +226,7 @@ function normalizeBaseForKey(baseUrl: string): string {
 export function cacheKey(
   params: Pick<
     ChatParams,
-    | 'provider'
-    | 'model'
-    | 'baseUrl'
-    | 'messages'
-    | 'images'
-    | 'headers'
-    | 'credentialRevision'
+    'provider' | 'model' | 'baseUrl' | 'messages' | 'images' | 'headers' | 'credentialRevision'
   >,
 ): string {
   const headers = Object.entries(params.headers)
@@ -331,13 +325,13 @@ export function selectPinnedAiAddress(
   const approved: PinnedAiAddress[] = [];
   for (const entry of addresses) {
     if (entry.family !== 4 && entry.family !== 6) continue;
-    const allowed = localMode
-      ? isLoopbackAddress(entry.address)
-      : isPublicAiAddress(entry.address);
+    const allowed = localMode ? isLoopbackAddress(entry.address) : isPublicAiAddress(entry.address);
     if (allowed) approved.push({ address: entry.address, family: entry.family });
   }
   if (approved.length === 0) {
-    throw new EgressBlockedError('AI endpoint DNS resolved only to private or special-use addresses.');
+    throw new EgressBlockedError(
+      'AI endpoint DNS resolved only to private or special-use addresses.',
+    );
   }
   return approved[0]!;
 }
@@ -353,29 +347,28 @@ async function resolvePinnedAiAddress(url: URL, signal?: AbortSignal): Promise<P
     return { address: hostname, family: literalFamily };
   }
 
-  const addresses = await new Promise<Array<{ address: string; family: number }>>((resolveLookup, rejectLookup) => {
-    let settled = false;
-    const finish = (
-      error: unknown,
-      value?: Array<{ address: string; family: number }>,
-    ): void => {
-      if (settled) return;
-      settled = true;
-      signal?.removeEventListener('abort', onAbort);
-      if (error) rejectLookup(error);
-      else resolveLookup(value!);
-    };
-    const onAbort = (): void => finish(abortError());
-    signal?.addEventListener('abort', onAbort, { once: true });
-    if (signal?.aborted) {
-      onAbort();
-      return;
-    }
-    void lookup(hostname, { all: true, verbatim: true }).then(
-      (value) => finish(null, value),
-      () => finish(new EgressBlockedError('AI endpoint host resolution failed.')),
-    );
-  });
+  const addresses = await new Promise<Array<{ address: string; family: number }>>(
+    (resolveLookup, rejectLookup) => {
+      let settled = false;
+      const finish = (error: unknown, value?: Array<{ address: string; family: number }>): void => {
+        if (settled) return;
+        settled = true;
+        signal?.removeEventListener('abort', onAbort);
+        if (error) rejectLookup(error);
+        else resolveLookup(value!);
+      };
+      const onAbort = (): void => finish(abortError());
+      signal?.addEventListener('abort', onAbort, { once: true });
+      if (signal?.aborted) {
+        onAbort();
+        return;
+      }
+      void lookup(hostname, { all: true, verbatim: true }).then(
+        (value) => finish(null, value),
+        () => finish(new EgressBlockedError('AI endpoint host resolution failed.')),
+      );
+    },
+  );
   return selectPinnedAiAddress(addresses, localMode);
 }
 
@@ -454,7 +447,8 @@ async function pinnedAiRequest(url: URL, init: RequestInit): Promise<Response> {
           rejectResponse(new EgressBlockedError('AI response exceeds the transport size limit.'));
           return;
         }
-        const noBody = (init.method ?? 'GET').toUpperCase() === 'HEAD' || status === 204 || status === 304;
+        const noBody =
+          (init.method ?? 'GET').toUpperCase() === 'HEAD' || status === 204 || status === 304;
         if (noBody) {
           delivered = true;
           incoming.resume();
@@ -474,7 +468,9 @@ async function pinnedAiRequest(url: URL, init: RequestInit): Promise<Response> {
             incoming.on('data', (chunk: Buffer) => {
               length += chunk.byteLength;
               if (length > MAX_AI_RESPONSE_BYTES) {
-                const error = new EgressBlockedError('AI response exceeds the transport size limit.');
+                const error = new EgressBlockedError(
+                  'AI response exceeds the transport size limit.',
+                );
                 incoming.destroy(error);
                 controller.error(error);
                 cleanup();

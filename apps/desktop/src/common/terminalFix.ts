@@ -45,9 +45,7 @@ export interface TerminalFixInput {
   cwdLabel?: string | null;
 }
 
-export type TerminalFixReadiness =
-  | { ready: true }
-  | { ready: false; reason: string };
+export type TerminalFixReadiness = { ready: true } | { ready: false; reason: string };
 
 /**
  * Whether there is enough captured evidence to ask for a fix. Refuses honestly

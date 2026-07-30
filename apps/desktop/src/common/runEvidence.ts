@@ -113,7 +113,9 @@ export function buildRunEvidence(steps: readonly AgentStepEvent[]): RunEvidence 
 /** One-line summary of a run's evidence, or '' when the run did nothing yet. */
 export function summarizeRunEvidence(evidence: RunEvidence): string {
   if (evidence.toolCallCount === 0) return '';
-  const parts: string[] = [`${evidence.toolCallCount} action${evidence.toolCallCount === 1 ? '' : 's'}`];
+  const parts: string[] = [
+    `${evidence.toolCallCount} action${evidence.toolCallCount === 1 ? '' : 's'}`,
+  ];
   if (evidence.read.length > 0) parts.push(`${evidence.read.length} file(s) read`);
   parts.push(`${evidence.changed.length} change(s) applied`);
   if (evidence.approvals > 0) parts.push(`${evidence.approvals} approved`);

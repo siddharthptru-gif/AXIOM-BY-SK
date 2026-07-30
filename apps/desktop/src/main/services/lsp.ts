@@ -322,9 +322,8 @@ class LspServer {
   private diagnosticsHandler: ((evt: LspDiagnosticsEvent) => void) | null = null;
   private statusHandler: ((status: LspServerStatus) => void) | null = null;
   private logHandler: ((evt: LspLogEvent) => void) | null = null;
-  private applyEditHandler:
-    | ((root: string, edit: LspWorkspaceEdit) => Promise<boolean>)
-    | null = null;
+  private applyEditHandler: ((root: string, edit: LspWorkspaceEdit) => Promise<boolean>) | null =
+    null;
   private state: LspServerStatus['state'] = 'stopped';
   private restarts = 0;
   private failureDetail: string | undefined;
@@ -544,7 +543,10 @@ class LspServer {
    * backoff and reopen every document that was synced, so the user's next
    * keystroke finds a working server instead of silence.
    */
-  private async restartAfterFailure(reason: string, source: ChildProcessWithoutNullStreams): Promise<void> {
+  private async restartAfterFailure(
+    reason: string,
+    source: ChildProcessWithoutNullStreams,
+  ): Promise<void> {
     if (this.disposed || this.proc !== source) return;
     const reopen = [...this.docs.entries()].map(([uri, doc]) => ({ uri, doc }));
     // A server that ran healthily for a while has "earned back" its restarts.
@@ -685,7 +687,11 @@ class LspServer {
     if (!p || typeof p.uri !== 'string' || !Array.isArray(p.diagnostics)) return;
     this.diagnosticsHandler?.({
       uri: p.uri,
-      diagnostics: mapDiagnostics(p.diagnostics, this.negotiated.positionEncoding, this.docs.get(p.uri)?.text),
+      diagnostics: mapDiagnostics(
+        p.diagnostics,
+        this.negotiated.positionEncoding,
+        this.docs.get(p.uri)?.text,
+      ),
       serverId: this.config.id,
     });
   }
@@ -802,7 +808,11 @@ class LspServer {
    * conversion exists so a utf-8 server (clangd, rust-analyzer) is correct on
    * lines containing non-ASCII text instead of subtly off by a few columns.
    */
-  private encodePosition(uri: string, line: number, character: number): { line: number; character: number } {
+  private encodePosition(
+    uri: string,
+    line: number,
+    character: number,
+  ): { line: number; character: number } {
     const encoding = this.negotiated.positionEncoding;
     if (encoding === 'utf-16') return { line, character };
     const text = this.docs.get(uri)?.text;
@@ -810,8 +820,7 @@ class LspServer {
     const lineText = lineAt(text, line);
     if (lineText === null) return { line, character };
     const slice = lineText.slice(0, character);
-    const converted =
-      encoding === 'utf-8' ? Buffer.byteLength(slice, 'utf8') : [...slice].length;
+    const converted = encoding === 'utf-8' ? Buffer.byteLength(slice, 'utf8') : [...slice].length;
     return { line, character: converted };
   }
 
@@ -823,7 +832,11 @@ class LspServer {
     };
   }
 
-  private position(uri: string, line: number, character: number): { line: number; character: number } {
+  private position(
+    uri: string,
+    line: number,
+    character: number,
+  ): { line: number; character: number } {
     return this.encodePosition(uri, line, character);
   }
 
@@ -940,7 +953,12 @@ class LspServer {
 
   // ---- Language features --------------------------------------------------
 
-  async hover(uri: string, line: number, character: number, cancelKey?: string): Promise<LspHoverResult> {
+  async hover(
+    uri: string,
+    line: number,
+    character: number,
+    cancelKey?: string,
+  ): Promise<LspHoverResult> {
     const res = await this.ask(
       this.negotiated.hover,
       'textDocument/hover',
@@ -1063,23 +1081,80 @@ class LspServer {
     return { locations: mapLocations(res) };
   }
 
-  definition(uri: string, line: number, character: number, cancelKey?: string): Promise<LspLocationResult> {
-    return this.locations(this.negotiated.definition, 'textDocument/definition', uri, line, character, {}, cancelKey);
+  definition(
+    uri: string,
+    line: number,
+    character: number,
+    cancelKey?: string,
+  ): Promise<LspLocationResult> {
+    return this.locations(
+      this.negotiated.definition,
+      'textDocument/definition',
+      uri,
+      line,
+      character,
+      {},
+      cancelKey,
+    );
   }
 
-  declaration(uri: string, line: number, character: number, cancelKey?: string): Promise<LspLocationResult> {
-    return this.locations(this.negotiated.declaration, 'textDocument/declaration', uri, line, character, {}, cancelKey);
+  declaration(
+    uri: string,
+    line: number,
+    character: number,
+    cancelKey?: string,
+  ): Promise<LspLocationResult> {
+    return this.locations(
+      this.negotiated.declaration,
+      'textDocument/declaration',
+      uri,
+      line,
+      character,
+      {},
+      cancelKey,
+    );
   }
 
-  typeDefinition(uri: string, line: number, character: number, cancelKey?: string): Promise<LspLocationResult> {
-    return this.locations(this.negotiated.typeDefinition, 'textDocument/typeDefinition', uri, line, character, {}, cancelKey);
+  typeDefinition(
+    uri: string,
+    line: number,
+    character: number,
+    cancelKey?: string,
+  ): Promise<LspLocationResult> {
+    return this.locations(
+      this.negotiated.typeDefinition,
+      'textDocument/typeDefinition',
+      uri,
+      line,
+      character,
+      {},
+      cancelKey,
+    );
   }
 
-  implementation(uri: string, line: number, character: number, cancelKey?: string): Promise<LspLocationResult> {
-    return this.locations(this.negotiated.implementation, 'textDocument/implementation', uri, line, character, {}, cancelKey);
+  implementation(
+    uri: string,
+    line: number,
+    character: number,
+    cancelKey?: string,
+  ): Promise<LspLocationResult> {
+    return this.locations(
+      this.negotiated.implementation,
+      'textDocument/implementation',
+      uri,
+      line,
+      character,
+      {},
+      cancelKey,
+    );
   }
 
-  references(uri: string, line: number, character: number, cancelKey?: string): Promise<LspLocationResult> {
+  references(
+    uri: string,
+    line: number,
+    character: number,
+    cancelKey?: string,
+  ): Promise<LspLocationResult> {
     return this.locations(
       this.negotiated.references,
       'textDocument/references',
@@ -1106,7 +1181,11 @@ class LspServer {
     return { highlights: mapHighlights(res) };
   }
 
-  async prepareRename(uri: string, line: number, character: number): Promise<LspPrepareRenameResult> {
+  async prepareRename(
+    uri: string,
+    line: number,
+    character: number,
+  ): Promise<LspPrepareRenameResult> {
     if (!this.negotiated.rename) return { range: null };
     if (!this.negotiated.prepareRename) {
       // The server renames but cannot pre-validate; let Monaco use its own word range.
@@ -1127,7 +1206,12 @@ class LspServer {
     return out;
   }
 
-  async rename(uri: string, line: number, character: number, newName: string): Promise<LspWorkspaceEdit> {
+  async rename(
+    uri: string,
+    line: number,
+    character: number,
+    newName: string,
+  ): Promise<LspWorkspaceEdit> {
     const res = await this.ask(this.negotiated.rename, 'textDocument/rename', {
       textDocument: { uri },
       position: this.position(uri, line, character),
@@ -1267,7 +1351,10 @@ class LspServer {
     return mapFoldingRanges(res);
   }
 
-  async selectionRange(uri: string, positions: Array<{ line: number; character: number }>): Promise<LspRange[]> {
+  async selectionRange(
+    uri: string,
+    positions: Array<{ line: number; character: number }>,
+  ): Promise<LspRange[]> {
     const res = await this.ask(this.negotiated.selectionRange, 'textDocument/selectionRange', {
       textDocument: { uri },
       positions: positions.map((p) => this.position(uri, p.line, p.character)),
@@ -1296,7 +1383,9 @@ class LspServer {
       true,
       'textDocument/semanticTokens/full',
       { textDocument: { uri } },
-      cancelKey === undefined ? { timeoutMs: SLOW_REQUEST_TIMEOUT_MS } : { timeoutMs: SLOW_REQUEST_TIMEOUT_MS, cancelKey },
+      cancelKey === undefined
+        ? { timeoutMs: SLOW_REQUEST_TIMEOUT_MS }
+        : { timeoutMs: SLOW_REQUEST_TIMEOUT_MS, cancelKey },
     );
     const tokens = mapSemanticTokens(res);
     if (tokens?.resultId) {
@@ -1637,7 +1726,8 @@ function readServerCapabilities(result: unknown): Negotiated {
   }
 
   const enabled = (value: unknown): boolean =>
-    value === true || (value !== undefined && value !== null && value !== false && typeof value === 'object');
+    value === true ||
+    (value !== undefined && value !== null && value !== false && typeof value === 'object');
 
   out.hover = enabled(c.hoverProvider);
   out.definition = enabled(c.definitionProvider);
@@ -1715,7 +1805,9 @@ function readServerCapabilities(result: unknown): Negotiated {
       out.semanticTokens = {
         legend: { tokenTypes, tokenModifiers: stringArray(legend?.tokenModifiers) },
         full: full === true || (full !== undefined && typeof full === 'object'),
-        delta: Boolean(full && typeof full === 'object' && (full as Record<string, unknown>).delta === true),
+        delta: Boolean(
+          full && typeof full === 'object' && (full as Record<string, unknown>).delta === true,
+        ),
         range: enabled(sp.range),
       };
     }
@@ -1730,7 +1822,9 @@ function readServerCapabilities(result: unknown): Negotiated {
 }
 
 function stringArray(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : [];
+  return Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === 'string')
+    : [];
 }
 
 function formattingOptions(tabSize: number, insertSpaces: boolean): Record<string, unknown> {
@@ -1818,7 +1912,7 @@ function decodeCharacter(
   if (lineText === null) return character;
   if (encoding === 'utf-8') {
     let bytes = 0;
-    for (let i = 0; i < lineText.length; ) {
+    for (let i = 0; i < lineText.length;) {
       if (bytes >= character) return i;
       const codePoint = lineText.codePointAt(i);
       if (codePoint === undefined) break;
@@ -1830,7 +1924,7 @@ function decodeCharacter(
   }
   // utf-32: one unit per code point.
   let units = 0;
-  for (let i = 0; i < lineText.length; ) {
+  for (let i = 0; i < lineText.length;) {
     if (units >= character) return i;
     const codePoint = lineText.codePointAt(i);
     if (codePoint === undefined) break;
@@ -1965,7 +2059,11 @@ function mapTextEdit(
 ): LspTextEdit | null {
   const o = value as Record<string, unknown> | undefined;
   if (!o || typeof o.newText !== 'string') return null;
-  const range = decodeRange(mapRange(o.range) ?? mapRange(o.replace) ?? mapRange(o.insert), encoding, text);
+  const range = decodeRange(
+    mapRange(o.range) ?? mapRange(o.replace) ?? mapRange(o.insert),
+    encoding,
+    text,
+  );
   if (!range) return null;
   return { range, newText: o.newText };
 }
@@ -2102,8 +2200,7 @@ function mapTextEdits(
 
 function mapSignatureHelp(res: unknown): LspSignatureHelp {
   const r = res as
-    | { signatures?: unknown; activeSignature?: unknown; activeParameter?: unknown }
-    | undefined;
+    { signatures?: unknown; activeSignature?: unknown; activeParameter?: unknown } | undefined;
   if (!r || !Array.isArray(r.signatures)) return { signatures: [] };
   const signatures: LspSignature[] = [];
   for (const s of r.signatures) {
@@ -2696,10 +2793,7 @@ export async function lspExecuteCodeAction(uri: string, handle: number): Promise
 }
 
 /** Same contract for the command a completion item carries (auto-import fixers). */
-export async function lspExecuteCompletionCommand(
-  uri: string,
-  handle: number,
-): Promise<boolean> {
+export async function lspExecuteCompletionCommand(uri: string, handle: number): Promise<boolean> {
   const decoded = decodeHandle(handle);
   if (!decoded) return false;
   const server = bound(uri).find((entry) => entry.id === decoded.serverId);

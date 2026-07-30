@@ -384,7 +384,6 @@ export async function hasAiCredential(key: string, binding: AiCredentialBinding)
   }
 }
 
-
 const OPAQUE_SECRET_KEY = /^deployment\.hook\.[A-Za-z0-9_.-]{1,220}$/;
 
 function normalizedHttpsOrigin(value: string): string {
@@ -418,7 +417,8 @@ export function setDeploymentHookSecret(
   key: string,
   hookUrl: string,
 ): Promise<DeploymentHookSecretMetadata> {
-  if (!OPAQUE_SECRET_KEY.test(key)) return Promise.reject(new SecretStoreError('Deployment secret key is invalid.'));
+  if (!OPAQUE_SECRET_KEY.test(key))
+    return Promise.reject(new SecretStoreError('Deployment secret key is invalid.'));
   if (typeof hookUrl !== 'string' || hookUrl.trim().length === 0 || hookUrl.length > 4_000) {
     return Promise.reject(new SecretStoreError('Deployment hook URL is invalid.'));
   }
@@ -457,7 +457,8 @@ export function resolveDeploymentHookSecret(
   expectedRevision?: string,
   expectedUrlSha256?: string,
 ): Promise<string> {
-  if (!OPAQUE_SECRET_KEY.test(key)) return Promise.reject(new SecretStoreError('Deployment secret key is invalid.'));
+  if (!OPAQUE_SECRET_KEY.test(key))
+    return Promise.reject(new SecretStoreError('Deployment secret key is invalid.'));
   const origin = normalizedHttpsOrigin(expectedOrigin);
   return withStoreLock(async () => {
     const entry = (await readStore())[key];
@@ -486,7 +487,9 @@ export function resolveDeploymentHookSecret(
       expectedUrlSha256 &&
       createHash('sha256').update(normalizedUrl, 'utf-8').digest('hex') !== expectedUrlSha256
     ) {
-      throw new SecretStoreError('The stored deployment hook URL changed after this plan was created.');
+      throw new SecretStoreError(
+        'The stored deployment hook URL changed after this plan was created.',
+      );
     }
     return normalizedUrl;
   });

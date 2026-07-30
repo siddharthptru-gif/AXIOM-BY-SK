@@ -7,11 +7,7 @@ import type {
 import type { InstalledExtensionSummary } from '../../../common/marketplace';
 import { DialogFrame } from './Modal';
 import { friendlyPoint } from './ExtensionsView';
-import {
-  VerifiedBadge,
-  ExtensionIconImage,
-  ExtensionAuthModal,
-} from './ExtensionComponents';
+import { VerifiedBadge, ExtensionIconImage, ExtensionAuthModal } from './ExtensionComponents';
 
 /**
  * The extension details panel.
@@ -115,14 +111,21 @@ export function ExtensionDetailPanel({
             <VerifiedBadge publisher={publisherName} isVerified={detail?.verified ?? false} />
             {detail !== null ? <span className="ext-version">{detail.version}</span> : null}
             {installed !== null ? (
-              <span className={`ext-status-pill ${installed.enabled ? 'is-enabled' : 'is-disabled'}`}>
+              <span
+                className={`ext-status-pill ${installed.enabled ? 'is-enabled' : 'is-disabled'}`}
+              >
                 {installed.enabled ? '✓ Enabled' : '○ Disabled'}
               </span>
             ) : null}
           </span>
           {detail?.description ? <p className="ext-detail-desc">{detail.description}</p> : null}
         </div>
-        <button type="button" className="icon-btn ext-detail-close" aria-label="Close" onClick={onClose}>
+        <button
+          type="button"
+          className="icon-btn ext-detail-close"
+          aria-label="Close"
+          onClick={onClose}
+        >
           ×
         </button>
       </header>
@@ -144,12 +147,22 @@ export function ExtensionDetailPanel({
               type="button"
               className="btn btn-ghost"
               onClick={() => {
-                void window.axiom.market.setEnabled(installed.id, !installed.enabled, 'global', null);
+                void window.axiom.market.setEnabled(
+                  installed.id,
+                  !installed.enabled,
+                  'global',
+                  null,
+                );
               }}
             >
               {installed.enabled ? 'Disable' : 'Enable'}
             </button>
-            <button type="button" className="btn btn-ghost" disabled={busy !== null} onClick={onUninstall}>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              disabled={busy !== null}
+              onClick={onUninstall}
+            >
               {busy === 'removing' ? 'Removing…' : 'Uninstall'}
             </button>
           </>
@@ -163,12 +176,22 @@ export function ExtensionDetailPanel({
           🔐 Extension Sign In / Auth
         </button>
         {detail?.homepage ? (
-          <a className="ext-detail-link" href={detail.homepage} target="_blank" rel="noreferrer noopener">
+          <a
+            className="ext-detail-link"
+            href={detail.homepage}
+            target="_blank"
+            rel="noreferrer noopener"
+          >
             Homepage
           </a>
         ) : null}
         {detail?.repository ? (
-          <a className="ext-detail-link" href={detail.repository} target="_blank" rel="noreferrer noopener">
+          <a
+            className="ext-detail-link"
+            href={detail.repository}
+            target="_blank"
+            rel="noreferrer noopener"
+          >
             Repository
           </a>
         ) : null}

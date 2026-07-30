@@ -4,7 +4,7 @@ The public site for AXIOM: a 3D scroll landing page, real documentation, and leg
 pages. Static output, no backend, no database, no accounts.
 
 Built from [`PROMPT.md`](./PROMPT.md), which is the full specification — read that if
-you want to know *why* something is the way it is.
+you want to know _why_ something is the way it is.
 
 ---
 
@@ -49,11 +49,11 @@ and the human-readable size is computed from the byte count so the two cannot dr
 
 Currently published:
 
-| | |
-|---|---|
-| File | `AXIOM-Setup-1.0.10-x64.exe` |
-| Version | 1.0.10 |
-| Size | 111,413,051 bytes (106.3 MB) |
+|         |                                                                    |
+| ------- | ------------------------------------------------------------------ |
+| File    | `AXIOM-Setup-1.0.10-x64.exe`                                       |
+| Version | 1.0.10                                                             |
+| Size    | 111,413,051 bytes (106.3 MB)                                       |
 | SHA-256 | `3808838ce7f5ce0446a6b4a7f5014038178336f159e44137327e3fc1b36a6d4c` |
 
 ### A note on hosting a 106 MB file
@@ -124,18 +124,18 @@ throughout — it is decoration, and the page makes complete sense without it.
 
 ## Editing content
 
-| What | Where |
-|---|---|
-| Version, size, checksum, download URL | `src/lib/release.ts` |
-| Headlines and section copy | `src/sections/Sections.tsx` |
-| Download card, requirements, verify block | `src/components/DownloadCard.tsx` |
-| Documentation | `src/pages/Docs.tsx` |
-| Terms and Privacy | `src/pages/Legal.tsx` |
-| Colours, gradient, type scale | `src/index.css` and `tailwind.config.js` |
-| 3D behaviour and scroll windows | `src/three/` |
-| Background video URLs and crossfade | `src/components/VideoBackdrop.tsx` |
-| Mood labels and crossfade timing | `src/lib/backdrop.ts` |
-| Per-letter hover glow and lift | `.split-char` rules in `src/index.css` |
+| What                                      | Where                                    |
+| ----------------------------------------- | ---------------------------------------- |
+| Version, size, checksum, download URL     | `src/lib/release.ts`                     |
+| Headlines and section copy                | `src/sections/Sections.tsx`              |
+| Download card, requirements, verify block | `src/components/DownloadCard.tsx`        |
+| Documentation                             | `src/pages/Docs.tsx`                     |
+| Terms and Privacy                         | `src/pages/Legal.tsx`                    |
+| Colours, gradient, type scale             | `src/index.css` and `tailwind.config.js` |
+| 3D behaviour and scroll windows           | `src/three/`                             |
+| Background video URLs and crossfade       | `src/components/VideoBackdrop.tsx`       |
+| Mood labels and crossfade timing          | `src/lib/backdrop.ts`                    |
+| Per-letter hover glow and lift            | `.split-char` rules in `src/index.css`   |
 
 ---
 
@@ -143,11 +143,11 @@ throughout — it is decoration, and the page makes complete sense without it.
 
 Three layers, bottom to top:
 
-| z | layer | file |
-|---|---|---|
-| 0 | crossfading video background | `components/VideoBackdrop.tsx` |
-| 1 | tint + vertical scrim, so type holds contrast | `pages/Landing.tsx` |
-| 10 | the HTML content | `sections/Sections.tsx` |
+| z   | layer                                         | file                           |
+| --- | --------------------------------------------- | ------------------------------ |
+| 0   | crossfading video background                  | `components/VideoBackdrop.tsx` |
+| 1   | tint + vertical scrim, so type holds contrast | `pages/Landing.tsx`            |
+| 10  | the HTML content                              | `sections/Sections.tsx`        |
 
 Three switchable moods — **Water Wave**, **Gridwave**, **Light Tunnel** — crossfading
 over 1200 ms, selected from the control under the hero. They are video files served from

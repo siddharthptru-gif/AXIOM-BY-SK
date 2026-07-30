@@ -1,5 +1,9 @@
 import { monaco } from './monacoEnv';
-import { planRevealForBlock, type RevealBlock, type RevealFrontier } from '../../../common/agentTyping';
+import {
+  planRevealForBlock,
+  type RevealBlock,
+  type RevealFrontier,
+} from '../../../common/agentTyping';
 import { isDeletionOnly, type AiFileReview } from '../../../common/aiEditReview';
 
 /**

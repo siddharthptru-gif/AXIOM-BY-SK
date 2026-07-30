@@ -32,7 +32,8 @@ export interface ParsedRange {
   wildcard: boolean;
 }
 
-const COMPARATOR_RE = /^(\^|~|>=|<=|>|<|=)?\s*v?(\d+|[xX*])(?:\.(\d+|[xX*]))?(?:\.(\d+|[xX*]))?(?:[-+]([0-9A-Za-z.-]+))?$/;
+const COMPARATOR_RE =
+  /^(\^|~|>=|<=|>|<|=)?\s*v?(\d+|[xX*])(?:\.(\d+|[xX*]))?(?:\.(\d+|[xX*]))?(?:[-+]([0-9A-Za-z.-]+))?$/;
 /** Ranges longer than this are pathological rather than real manifests. */
 const MAX_RANGE_LENGTH = 256;
 

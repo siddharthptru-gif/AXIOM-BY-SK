@@ -38,9 +38,15 @@ function sanitizeText(value: unknown, max = MAX_MESSAGE_CHARS): string {
     .replace(/[\u0000-\u001f\u007f]+/g, ' ')
     .replace(/(?:https?:\/\/)?[^\s/@]+:[^\s/@]+@/gi, '')
     .replace(/\bBearer\s+[^\s,;]+/gi, 'Bearer [REDACTED]')
-    .replace(/\b(?:gh[opsu]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16})\b/g, '[REDACTED]')
+    .replace(
+      /\b(?:gh[opsu]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16})\b/g,
+      '[REDACTED]',
+    )
     .replace(/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/g, '[REDACTED]')
-    .replace(/([?&](?:access[_-]?token|token|secret|password|passwd|api[_-]?key|authorization|signature)=)[^&#\s]*/gi, '$1[REDACTED]')
+    .replace(
+      /([?&](?:access[_-]?token|token|secret|password|passwd|api[_-]?key|authorization|signature)=)[^&#\s]*/gi,
+      '$1[REDACTED]',
+    )
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, max);
@@ -121,7 +127,9 @@ function bindPreviewWindow(record: PreviewRecord): void {
       });
     }
   });
-  contents.on('page-title-updated', (_event, title) => update(record, { title: sanitizeText(title, 200) }));
+  contents.on('page-title-updated', (_event, title) =>
+    update(record, { title: sanitizeText(title, 200) }),
+  );
   contents.on('did-start-loading', () => update(record, { phase: 'loading', error: null }));
   contents.on('did-finish-load', () => {
     if (!contents.isDestroyed()) update(record, { phase: 'ready', url: contents.getURL() });
@@ -251,28 +259,28 @@ export async function openPreview(
   let window: BrowserWindow;
   try {
     window = new BrowserWindow({
-    ...(parent && !parent.isDestroyed() ? { parent } : {}),
-    title: 'Axiom Application Preview',
-    width: 1180,
-    height: 820,
-    minWidth: 640,
-    minHeight: 480,
-    show: false,
-    backgroundColor: '#0b1020',
-    autoHideMenuBar: true,
-    webPreferences: {
-      session: previewSession,
-      sandbox: true,
-      contextIsolation: true,
-      nodeIntegration: false,
-      nodeIntegrationInWorker: false,
-      nodeIntegrationInSubFrames: false,
-      webSecurity: true,
-      allowRunningInsecureContent: false,
-      spellcheck: false,
-      devTools: false,
-      navigateOnDragDrop: false,
-    },
+      ...(parent && !parent.isDestroyed() ? { parent } : {}),
+      title: 'Axiom Application Preview',
+      width: 1180,
+      height: 820,
+      minWidth: 640,
+      minHeight: 480,
+      show: false,
+      backgroundColor: '#0b1020',
+      autoHideMenuBar: true,
+      webPreferences: {
+        session: previewSession,
+        sandbox: true,
+        contextIsolation: true,
+        nodeIntegration: false,
+        nodeIntegrationInWorker: false,
+        nodeIntegrationInSubFrames: false,
+        webSecurity: true,
+        allowRunningInsecureContent: false,
+        spellcheck: false,
+        devTools: false,
+        navigateOnDragDrop: false,
+      },
     });
   } catch (error) {
     previewSessions.delete(previewSession);
@@ -361,10 +369,7 @@ function previewForRoot(ownerId: number, root: string): PreviewRecord {
   return record;
 }
 
-export async function getPreview(
-  ownerId: number,
-  root: string,
-): Promise<PreviewSnapshot | null> {
+export async function getPreview(ownerId: number, root: string): Promise<PreviewSnapshot | null> {
   const record = previews.get(ownerId);
   if (!record) return null;
   if (previewRootKey(record.snapshot.root) !== previewRootKey(root)) {
@@ -462,11 +467,13 @@ function selectionOf(value: unknown): PreviewElementSelection | null {
     tag: sanitizeText(record.tag, 80),
     id: typeof record.id === 'string' ? sanitizeText(record.id, 200) : null,
     classes: Array.isArray(record.classes)
-      ? record.classes.map((item) => sanitizeText(item, 100)).filter(Boolean).slice(0, 20)
+      ? record.classes
+          .map((item) => sanitizeText(item, 100))
+          .filter(Boolean)
+          .slice(0, 20)
       : [],
     text: sanitizeText(record.text, 500),
-    ariaLabel:
-      typeof record.ariaLabel === 'string' ? sanitizeText(record.ariaLabel, 300) : null,
+    ariaLabel: typeof record.ariaLabel === 'string' ? sanitizeText(record.ariaLabel, 300) : null,
     role: typeof record.role === 'string' ? sanitizeText(record.role, 100) : null,
     selector: sanitizeText(record.selector, 500),
     rect: {
@@ -485,7 +492,9 @@ export async function selectPreviewElement(
 ): Promise<PreviewSnapshot> {
   const record = previewForRoot(ownerId, root);
   if (record.snapshot.phase !== 'ready') throw new Error('Wait for the preview to finish loading.');
-  const selected = selectionOf(await record.window.webContents.executeJavaScript(SELECTION_SCRIPT, true));
+  const selected = selectionOf(
+    await record.window.webContents.executeJavaScript(SELECTION_SCRIPT, true),
+  );
   if (!selected) throw new Error('Element selection timed out or was cancelled.');
   update(record, { selectedElement: selected });
   return snapshotOf(record);

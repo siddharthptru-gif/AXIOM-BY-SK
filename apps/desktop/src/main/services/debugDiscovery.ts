@@ -327,10 +327,7 @@ function unavailable(
   };
 }
 
-async function discoverPython(
-  root: string,
-  signal?: AbortSignal,
-): Promise<DiscoveredDebugConfig> {
+async function discoverPython(root: string, signal?: AbortSignal): Promise<DiscoveredDebugConfig> {
   const python = await resolvePython(signal);
   if (!python) {
     return unavailable(
@@ -362,7 +359,10 @@ async function discoverPython(
   return {
     id: 'python-debugpy',
     label: entry
-      ? `Python: debug ${entry.slice(root.length).replace(/^[\\/]+/, '').replace(/\\/g, '/')}`
+      ? `Python: debug ${entry
+          .slice(root.length)
+          .replace(/^[\\/]+/, '')
+          .replace(/\\/g, '/')}`
       : 'Python: debug the active file (debugpy)',
     runtime: 'python',
     available: true,
@@ -406,7 +406,10 @@ async function discoverNode(root: string, signal?: AbortSignal): Promise<Discove
   const rel =
     entry === null
       ? ''
-      : entry.slice(root.length).replace(/^[\\/]+/, '').replace(/\\/g, '/') || entry;
+      : entry
+          .slice(root.length)
+          .replace(/^[\\/]+/, '')
+          .replace(/\\/g, '/') || entry;
   if (isTypeScript && !tsRunner) {
     return unavailable(
       'node-js-debug',

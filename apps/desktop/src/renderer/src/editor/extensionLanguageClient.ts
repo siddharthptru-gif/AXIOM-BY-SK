@@ -420,8 +420,7 @@ export async function applyEditorEdits(payload: ExtensionApplyEditPayload): Prom
             edit.range.end.line + 1,
             edit.range.end.character + 1,
           ),
-          text:
-            edit.insertAsSnippet === true ? collapseSnippet(edit.newText).text : edit.newText,
+          text: edit.insertAsSnippet === true ? collapseSnippet(edit.newText).text : edit.newText,
         })),
         () => null,
       );

@@ -81,7 +81,6 @@ export function IntelligenceIcon({ size = 20 }: IconProps) {
   );
 }
 
-
 /** Meaning-based code search: a lens over related nodes, not a plain magnifier. */
 export function SemanticSearchIcon({ size = 20 }: IconProps) {
   return (

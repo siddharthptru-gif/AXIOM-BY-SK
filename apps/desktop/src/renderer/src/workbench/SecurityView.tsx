@@ -221,9 +221,7 @@ export function SecurityView() {
         at: Date.now(),
       });
       notifyInfo(
-        endpoints.length === 0
-          ? 'No outbound URLs were found in this workspace.'
-          : report.summary,
+        endpoints.length === 0 ? 'No outbound URLs were found in this workspace.' : report.summary,
         { source: 'Security' },
       );
     } catch (e) {
@@ -247,9 +245,7 @@ export function SecurityView() {
         'create\\s+policy|row\\s+level\\s+security',
         { caseSensitive: false, wholeWord: false, regex: true },
       );
-      const sqlFiles = result.files
-        .filter((file) => /\.(sql|pgsql)$/i.test(file.rel))
-        .slice(0, 20);
+      const sqlFiles = result.files.filter((file) => /\.(sql|pgsql)$/i.test(file.rel)).slice(0, 20);
       let combined = '';
       for (const file of sqlFiles) {
         if (combined.length >= 400_000) break;

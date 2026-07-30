@@ -254,7 +254,9 @@ async function authorizedEntries(entries: readonly SnapshotEntry[]): Promise<Sna
 }
 
 export function listCheckpoints(): Promise<Checkpoint[]> {
-  return serializeSnapshot(async () => groupCheckpoints(await authorizedEntries(await readIndex())));
+  return serializeSnapshot(async () =>
+    groupCheckpoints(await authorizedEntries(await readIndex())),
+  );
 }
 
 /** The captured content of an authorized snapshot entry, or null when unavailable. */

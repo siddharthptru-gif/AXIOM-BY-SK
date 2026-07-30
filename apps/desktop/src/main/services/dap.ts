@@ -329,11 +329,7 @@ class DapSession {
   }
 
   // ---- events -------------------------------------------------------------
-  private onEvent(
-    connection: DapConnection,
-    event: string,
-    body: Record<string, unknown>,
-  ): void {
+  private onEvent(connection: DapConnection, event: string, body: Record<string, unknown>): void {
     switch (event) {
       case 'initialized':
         void this.configure(connection);
@@ -598,14 +594,15 @@ class DapSession {
     const connection = this.target();
     if (!connection) return;
     if (action === 'continue') this.setState('running');
-    await connection.request(action, { threadId }).catch((e: Error) =>
-      log.debug('control failed', { action, error: e.message }),
-    );
+    await connection
+      .request(action, { threadId })
+      .catch((e: Error) => log.debug('control failed', { action, error: e.message }));
   }
 
-  private async query(command: string, args: Record<string, unknown>): Promise<
-    Record<string, unknown>
-  > {
+  private async query(
+    command: string,
+    args: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
     const connection = this.target();
     if (!connection) return {};
     return asObj(await connection.request(command, args).catch(() => ({})));

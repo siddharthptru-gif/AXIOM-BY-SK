@@ -67,7 +67,12 @@ export function ProfileView({ onClose }: { onClose: () => void }) {
           <strong className="profile-name">{displayName}</strong>
           {user?.email ? <span className="profile-email">{user.email}</span> : null}
         </div>
-        <button type="button" className="icon-btn profile-close" aria-label="Close" onClick={onClose}>
+        <button
+          type="button"
+          className="icon-btn profile-close"
+          aria-label="Close"
+          onClick={onClose}
+        >
           ×
         </button>
       </header>

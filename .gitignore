@@ -48,3 +48,8 @@ supabase/.temp/
 # Rust build artifacts (Cargo.lock IS committed for the workspace/binary)
 target/
 **/target/
+
+# Local AXIOM EXE build backups
+AXIOM EXE/dist-before-build-*/
+AXIOM EXE/dist-old-*/
+

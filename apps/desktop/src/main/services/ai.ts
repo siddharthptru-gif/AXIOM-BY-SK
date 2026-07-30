@@ -180,10 +180,7 @@ function extractModelIds(json: unknown): string[] {
  * can legitimately spend a small token budget on thinking and return no visible
  * text. Only a transport or HTTP failure means the model is unusable.
  */
-async function chatCapabilityProbe(
-  creds: OpenAiCompatCreds,
-  model: string,
-): Promise<AiTestResult> {
+async function chatCapabilityProbe(creds: OpenAiCompatCreds, model: string): Promise<AiTestResult> {
   let url: string;
   try {
     url = endpointUrl(creds.baseUrl, 'chat/completions');
@@ -322,7 +319,8 @@ export async function testConnection(creds: OpenAiCompatCreds): Promise<AiTestRe
       return {
         ok: false,
         message: capability.message,
-        detail: `${capability.detail ?? ''} It is also absent from this endpoint's model list — run Fetch Models and pick one from there.`.trim(),
+        detail:
+          `${capability.detail ?? ''} It is also absent from this endpoint's model list — run Fetch Models and pick one from there.`.trim(),
       };
     }
     const note = unlisted

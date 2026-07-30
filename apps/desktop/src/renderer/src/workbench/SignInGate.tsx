@@ -91,7 +91,9 @@ export function SignInGate() {
         <ul className="signin-facts">
           <li>Switching accounts never mixes one account&apos;s work into another.</li>
           <li>Sign back in with the same account and everything is exactly where you left it.</li>
-          <li>Your code stays on this computer. Sign-in identifies you; it does not upload work.</li>
+          <li>
+            Your code stays on this computer. Sign-in identifies you; it does not upload work.
+          </li>
         </ul>
 
         <p className="signin-legal">Google Sign-In · OAuth PKCE</p>

@@ -15,15 +15,7 @@ export type ThemeId =
   | 'axiom-midnight'
   | 'axiom-high-contrast';
 export type AccentId =
-  | 'gold'
-  | 'sapphire'
-  | 'emerald'
-  | 'mono'
-  | 'violet'
-  | 'blue'
-  | 'green'
-  | 'amber'
-  | 'rose';
+  'gold' | 'sapphire' | 'emerald' | 'mono' | 'violet' | 'blue' | 'green' | 'amber' | 'rose';
 
 /**
  * Corner rounding is the one structural token worth exposing: it changes the whole

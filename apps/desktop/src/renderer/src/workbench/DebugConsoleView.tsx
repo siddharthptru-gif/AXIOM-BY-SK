@@ -139,7 +139,9 @@ export function DebugConsoleView() {
           className="debug-console-input"
           value={draft}
           spellCheck={false}
-          placeholder={canEvaluate ? 'Evaluate an expression…' : 'Start a debug session to evaluate'}
+          placeholder={
+            canEvaluate ? 'Evaluate an expression…' : 'Start a debug session to evaluate'
+          }
           aria-label="Evaluate a debug expression"
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {

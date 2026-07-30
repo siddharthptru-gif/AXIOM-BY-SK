@@ -37,7 +37,13 @@ export interface ConvertedTheme {
   /** AXIOM design tokens: CSS custom property name -> colour value. */
   tokens: Record<string, string>;
   /** Accent trio derived from the theme's own interactive colours. */
-  accent: { accent: string; accentHover: string; accentPress: string; accentSoft: string; onAccent: string };
+  accent: {
+    accent: string;
+    accentHover: string;
+    accentPress: string;
+    accentSoft: string;
+    onAccent: string;
+  };
   /** Monaco editor token rules built from `tokenColors`. */
   rules: MonacoTokenRule[];
   /** Monaco base to layer on, chosen from the resolved kind. */
@@ -57,7 +63,9 @@ const MAX_SCOPES_PER_RULE = 100;
 // ---------------------------------------------------------------------------
 function toHex(rgb: Rgb): string {
   const part = (value: number): string =>
-    Math.max(0, Math.min(255, Math.round(value))).toString(16).padStart(2, '0');
+    Math.max(0, Math.min(255, Math.round(value)))
+      .toString(16)
+      .padStart(2, '0');
   return `#${part(rgb.r)}${part(rgb.g)}${part(rgb.b)}`;
 }
 
@@ -105,9 +113,8 @@ interface ColorLookup {
 }
 
 function readColors(raw: unknown): ColorLookup {
-  const source = raw && typeof raw === 'object' && !Array.isArray(raw)
-    ? (raw as Record<string, unknown>)
-    : {};
+  const source =
+    raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
   const colors = new Map<string, string>();
   for (const [key, value] of Object.entries(source).slice(0, MAX_COLOR_KEYS)) {
     if (typeof value !== 'string') continue;
@@ -163,16 +170,19 @@ export function resolveThemeKind(
   if (uiTheme === 'hc-light') return { kind: 'light', base: 'hc-light' };
   if (uiTheme === 'hc-black') return { kind: 'dark', base: 'hc-black' };
   if (uiTheme === 'vs-dark') return { kind: 'dark', base: 'vs-dark' };
-  const record = themeJson && typeof themeJson === 'object' ? (themeJson as Record<string, unknown>) : {};
+  const record =
+    themeJson && typeof themeJson === 'object' ? (themeJson as Record<string, unknown>) : {};
   if (record.type === 'light') return { kind: 'light', base: 'vs' };
   if (record.type === 'dark') return { kind: 'dark', base: 'vs-dark' };
   if (record.type === 'hc' || record.type === 'hcDark') return { kind: 'dark', base: 'hc-black' };
-  const colors = record.colors && typeof record.colors === 'object'
-    ? (record.colors as Record<string, unknown>)
-    : {};
-  const background = typeof colors['editor.background'] === 'string'
-    ? parseHexColor(colors['editor.background'])
-    : null;
+  const colors =
+    record.colors && typeof record.colors === 'object'
+      ? (record.colors as Record<string, unknown>)
+      : {};
+  const background =
+    typeof colors['editor.background'] === 'string'
+      ? parseHexColor(colors['editor.background'])
+      : null;
   if (background && relativeLuminance(background) > 0.4) return { kind: 'light', base: 'vs' };
   return { kind: 'dark', base: 'vs-dark' };
 }
@@ -193,9 +203,10 @@ function tokenRulesFrom(raw: unknown): MonacoTokenRule[] {
   for (const item of raw.slice(0, MAX_TOKEN_RULES)) {
     if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
     const entry = item as Record<string, unknown>;
-    const settings = entry.settings && typeof entry.settings === 'object'
-      ? (entry.settings as Record<string, unknown>)
-      : null;
+    const settings =
+      entry.settings && typeof entry.settings === 'object'
+        ? (entry.settings as Record<string, unknown>)
+        : null;
     if (!settings) continue;
     const foregroundRaw = typeof settings.foreground === 'string' ? settings.foreground : null;
     const foregroundRgb = foregroundRaw === null ? null : parseHexColor(foregroundRaw);
@@ -249,9 +260,10 @@ export function convertVsCodeTheme(
   themeJson: unknown,
   options: { label: string; uiTheme?: string },
 ): ConvertedTheme | null {
-  const record = themeJson && typeof themeJson === 'object' && !Array.isArray(themeJson)
-    ? (themeJson as Record<string, unknown>)
-    : null;
+  const record =
+    themeJson && typeof themeJson === 'object' && !Array.isArray(themeJson)
+      ? (themeJson as Record<string, unknown>)
+      : null;
   if (!record) return null;
 
   const { kind, base } = resolveThemeKind(record, options.uiTheme);
@@ -282,7 +294,10 @@ export function convertVsCodeTheme(
     '--bg-editor': editorBackgroundHex,
     '--bg-surface': background(['sideBar.background', 'panel.background'], 0.04),
     '--bg-raised': background(['panel.background', 'editorWidget.background'], 0.07),
-    '--bg-overlay': background(['editorWidget.background', 'quickInput.background', 'menu.background'], 0.1),
+    '--bg-overlay': background(
+      ['editorWidget.background', 'quickInput.background', 'menu.background'],
+      0.1,
+    ),
     '--bg-overlay-strong': background(['quickInput.background', 'dropdown.background'], 0.14),
     '--bg-hover':
       colors.rgba(['list.hoverBackground', 'toolbar.hoverBackground']) ??
@@ -302,18 +317,26 @@ export function convertVsCodeTheme(
 
     // Borders.
     '--border-subtle': background(['panel.border', 'editorGroup.border'], 0.12),
-    '--border': colors.hex(['panel.border', 'editorWidget.border', 'contrastBorder']) ??
+    '--border':
+      colors.hex(['panel.border', 'editorWidget.border', 'contrastBorder']) ??
       toHex(lift(bg, kind, 0.18)),
     '--border-strong': colors.hex(['contrastBorder', 'focusBorder']) ?? toHex(lift(bg, kind, 0.3)),
 
     // Status colours.
-    '--info': colors.hex(['editorInfo.foreground', 'notificationsInfoIcon.foreground']) ??
+    '--info':
+      colors.hex(['editorInfo.foreground', 'notificationsInfoIcon.foreground']) ??
       (kind === 'dark' ? '#7FB0FF' : '#1F6FEB'),
-    '--success': colors.hex(['gitDecoration.addedResourceForeground', 'testing.iconPassed', 'charts.green']) ??
+    '--success':
+      colors.hex(['gitDecoration.addedResourceForeground', 'testing.iconPassed', 'charts.green']) ??
       (kind === 'dark' ? '#63CE90' : '#1A7F37'),
-    '--warning': colors.hex(['editorWarning.foreground', 'notificationsWarningIcon.foreground', 'charts.yellow']) ??
-      (kind === 'dark' ? '#E6C36A' : '#9A6700'),
-    '--danger': colors.hex(['editorError.foreground', 'errorForeground', 'charts.red']) ??
+    '--warning':
+      colors.hex([
+        'editorWarning.foreground',
+        'notificationsWarningIcon.foreground',
+        'charts.yellow',
+      ]) ?? (kind === 'dark' ? '#E6C36A' : '#9A6700'),
+    '--danger':
+      colors.hex(['editorError.foreground', 'errorForeground', 'charts.red']) ??
       (kind === 'dark' ? '#F58494' : '#D1242F'),
   };
 
@@ -336,8 +359,12 @@ export function convertVsCodeTheme(
   tokens['--warning-soft'] = translucent(warningToken, 0.16);
 
   const accentBase =
-    colors.hex(['button.background', 'focusBorder', 'textLink.foreground', 'progressBar.background']) ??
-    (kind === 'dark' ? '#7FB0FF' : '#1F6FEB');
+    colors.hex([
+      'button.background',
+      'focusBorder',
+      'textLink.foreground',
+      'progressBar.background',
+    ]) ?? (kind === 'dark' ? '#7FB0FF' : '#1F6FEB');
   const accentRgb = parseHexColor(accentBase) ?? { r: 127, g: 176, b: 255 };
   const accent = {
     accent: accentBase,
@@ -406,14 +433,18 @@ function translucent(hex: string, alpha: number): string {
  * Monaco applies when two rules match the same scope.
  */
 export function mergeIncludedTheme(base: unknown, child: unknown): unknown {
-  const baseRecord = base && typeof base === 'object' && !Array.isArray(base)
-    ? (base as Record<string, unknown>)
-    : {};
-  const childRecord = child && typeof child === 'object' && !Array.isArray(child)
-    ? (child as Record<string, unknown>)
-    : {};
-  const baseColors = baseRecord.colors && typeof baseRecord.colors === 'object' ? baseRecord.colors : {};
-  const childColors = childRecord.colors && typeof childRecord.colors === 'object' ? childRecord.colors : {};
+  const baseRecord =
+    base && typeof base === 'object' && !Array.isArray(base)
+      ? (base as Record<string, unknown>)
+      : {};
+  const childRecord =
+    child && typeof child === 'object' && !Array.isArray(child)
+      ? (child as Record<string, unknown>)
+      : {};
+  const baseColors =
+    baseRecord.colors && typeof baseRecord.colors === 'object' ? baseRecord.colors : {};
+  const childColors =
+    childRecord.colors && typeof childRecord.colors === 'object' ? childRecord.colors : {};
   const baseTokens = Array.isArray(baseRecord.tokenColors) ? baseRecord.tokenColors : [];
   const childTokens = Array.isArray(childRecord.tokenColors) ? childRecord.tokenColors : [];
   return {

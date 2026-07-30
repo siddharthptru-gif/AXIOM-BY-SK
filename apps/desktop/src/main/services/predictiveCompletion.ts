@@ -61,7 +61,8 @@ function pruneIssued(now = Date.now()): void {
 }
 
 function validateInput(input: PredictiveCompletionInput): void {
-  if (!/^[A-Za-z0-9._:-]{8,200}$/.test(input.requestId)) throw new Error('Completion request id is invalid.');
+  if (!/^[A-Za-z0-9._:-]{8,200}$/.test(input.requestId))
+    throw new Error('Completion request id is invalid.');
   if (!Number.isSafeInteger(input.documentVersion) || input.documentVersion < 1) {
     throw new Error('Completion document version is invalid.');
   }
@@ -186,11 +187,11 @@ export function predictionMetrics(): PredictionMetrics {
   return summarizePredictionMetrics(latencies, counters);
 }
 
-
 export function cancelPredictionsForWorkspace(root: string): void {
   const key = process.platform === 'win32' ? root.toLowerCase() : root;
   const matches = (candidate: string | null): boolean =>
-    candidate !== null && (process.platform === 'win32' ? candidate.toLowerCase() : candidate) === key;
+    candidate !== null &&
+    (process.platform === 'win32' ? candidate.toLowerCase() : candidate) === key;
   for (const record of active.values()) {
     if (matches(record.root)) record.controller.abort();
   }

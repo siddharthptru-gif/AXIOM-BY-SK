@@ -68,7 +68,9 @@ function registerLanguage(language: ContributedLanguage): void {
           },
         }
       : {}),
-    ...(brackets.length > 0 ? { brackets: brackets.map((pair) => [pair[0], pair[1]] as [string, string]) } : {}),
+    ...(brackets.length > 0
+      ? { brackets: brackets.map((pair) => [pair[0], pair[1]] as [string, string]) }
+      : {}),
     ...(configuration.autoClosingPairs.length > 0
       ? { autoClosingPairs: configuration.autoClosingPairs.map((pair) => ({ ...pair })) }
       : {}),

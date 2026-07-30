@@ -85,9 +85,7 @@ export function notifyLspSaved(path: string): void {
 }
 
 /** Subscribe to language-server health. Returns an unsubscribe fn. */
-export function subscribeLspServers(
-  listener: (statuses: LspServerStatus[]) => void,
-): () => void {
+export function subscribeLspServers(listener: (statuses: LspServerStatus[]) => void): () => void {
   statusListeners.add(listener);
   listener(currentServerStatuses());
   return () => statusListeners.delete(listener);
@@ -184,7 +182,10 @@ function aiPayloadForMarker(
   const code = model.getValueInRange(
     new monaco.Range(startLine, 1, endLine, model.getLineMaxColumn(endLine)),
   );
-  const label = marker.code === undefined ? '' : ` [${typeof marker.code === 'string' ? marker.code : marker.code.value}]`;
+  const label =
+    marker.code === undefined
+      ? ''
+      : ` [${typeof marker.code === 'string' ? marker.code : marker.code.value}]`;
   return {
     mode,
     message: `${marker.message}${label}${marker.source ? ` (${marker.source})` : ''}`,
@@ -340,7 +341,8 @@ export function initLsp(): void {
    */
   const pullDiagnostics = async (uri: string): Promise<void> => {
     const events = await window.axiom.lsp.pullDiagnostics(uri).catch(() => []);
-    for (const event of events) syncing.applyDiagnostics(event.uri, event.diagnostics, event.serverId);
+    for (const event of events)
+      syncing.applyDiagnostics(event.uri, event.diagnostics, event.serverId);
   };
 
   /**
@@ -380,15 +382,19 @@ export function initLsp(): void {
 
   // Commands Monaco invokes for server-backed actions. Each passes a handle, so
   // the payload that reaches a language server always comes from Main's copy.
-  monaco.editor.registerCommand(RUN_CODE_ACTION_COMMAND, (_accessor, uri: string, handle: number) => {
-    if (typeof uri !== 'string' || typeof handle !== 'number') return;
-    void window.axiom.lsp
-      .executeCodeAction(uri, handle)
-      .then((ok) => {
-        if (!ok) notifyError('That quick fix could not be applied.', { source: 'Language Server' });
-      })
-      .catch(() => undefined);
-  });
+  monaco.editor.registerCommand(
+    RUN_CODE_ACTION_COMMAND,
+    (_accessor, uri: string, handle: number) => {
+      if (typeof uri !== 'string' || typeof handle !== 'number') return;
+      void window.axiom.lsp
+        .executeCodeAction(uri, handle)
+        .then((ok) => {
+          if (!ok)
+            notifyError('That quick fix could not be applied.', { source: 'Language Server' });
+        })
+        .catch(() => undefined);
+    },
+  );
 
   monaco.editor.registerCommand(
     RUN_COMPLETION_COMMAND,
@@ -725,8 +731,18 @@ export function initLsp(): void {
           .catch(() => null);
         const word = model.getWordAtPosition(position);
         const fallbackRange = word
-          ? new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn)
-          : new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column);
+          ? new monaco.Range(
+              position.lineNumber,
+              word.startColumn,
+              position.lineNumber,
+              word.endColumn,
+            )
+          : new monaco.Range(
+              position.lineNumber,
+              position.column,
+              position.lineNumber,
+              position.column,
+            );
         if (!res) {
           return {
             range: fallbackRange,
@@ -799,13 +815,7 @@ export function initLsp(): void {
         const res = await cancellable(
           token,
           (requestId) =>
-            window.axiom.lsp.codeAction(
-              uri,
-              monacoRangeToLsp(range),
-              diagnostics,
-              only,
-              requestId,
-            ),
+            window.axiom.lsp.codeAction(uri, monacoRangeToLsp(range), diagnostics, only, requestId),
           [] as LspCodeAction[],
         );
         const actions: monaco.languages.CodeAction[] = res.map((a) => toMonacoCodeAction(a, uri));
@@ -845,7 +855,10 @@ export function initLsp(): void {
           null,
         );
         if (resolved?.edit) {
-          const merged = toMonacoCodeAction({ ...resolved, id: backed.axiomHandle }, backed.axiomUri);
+          const merged = toMonacoCodeAction(
+            { ...resolved, id: backed.axiomHandle },
+            backed.axiomUri,
+          );
           if (merged.edit) backed.edit = merged.edit;
         }
         return backed;

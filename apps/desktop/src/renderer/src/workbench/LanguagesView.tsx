@@ -6,14 +6,7 @@ import type {
   LanguagesCatalog,
 } from '../../../common/languagePacks';
 import { refreshRuntimes } from '../state/runtimes';
-import {
-  CheckIcon,
-  CopyIcon,
-  DownloadIcon,
-  RefreshIcon,
-  StopIcon,
-  WarningIcon,
-} from './icons';
+import { CheckIcon, CopyIcon, DownloadIcon, RefreshIcon, StopIcon, WarningIcon } from './icons';
 
 /**
  * LANGUAGES view.
@@ -151,26 +144,23 @@ export function LanguagesView() {
     if (node) node.scrollTop = node.scrollHeight;
   }, [output]);
 
-  const install = useCallback(
-    async (languageId: string): Promise<void> => {
-      if (busyIdRef.current) return;
-      setError(null);
-      setFinished(null);
-      setOutput('');
-      setStep(null);
-      busyIdRef.current = languageId;
-      setBusyId(languageId);
-      try {
-        const started = await window.axiom.languages.install(languageId);
-        installIdRef.current = started.installId;
-      } catch (cause) {
-        busyIdRef.current = null;
-        setBusyId(null);
-        setError(cause instanceof Error ? cause.message : 'The install could not be started.');
-      }
-    },
-    [],
-  );
+  const install = useCallback(async (languageId: string): Promise<void> => {
+    if (busyIdRef.current) return;
+    setError(null);
+    setFinished(null);
+    setOutput('');
+    setStep(null);
+    busyIdRef.current = languageId;
+    setBusyId(languageId);
+    try {
+      const started = await window.axiom.languages.install(languageId);
+      installIdRef.current = started.installId;
+    } catch (cause) {
+      busyIdRef.current = null;
+      setBusyId(null);
+      setError(cause instanceof Error ? cause.message : 'The install could not be started.');
+    }
+  }, []);
 
   const cancel = useCallback((): void => {
     const id = installIdRef.current;
@@ -354,17 +344,25 @@ export function LanguagesView() {
         <section className="languages-progress" aria-label="Install progress">
           <div className="languages-progress-head">
             <span>
-              {step
-                ? `Step ${step.index} of ${step.total}`
-                : 'Waiting for the package manager…'}
+              {step ? `Step ${step.index} of ${step.total}` : 'Waiting for the package manager…'}
             </span>
-            <button type="button" className="languages-cancel" onClick={cancel} title="Stop this install">
+            <button
+              type="button"
+              className="languages-cancel"
+              onClick={cancel}
+              title="Stop this install"
+            >
               <StopIcon size={12} />
               <span>Stop</span>
             </button>
           </div>
           {step ? <code className="languages-progress-command">{step.text}</code> : null}
-          <pre className="languages-log" ref={logRef} aria-live="polite" aria-label="Install output">
+          <pre
+            className="languages-log"
+            ref={logRef}
+            aria-live="polite"
+            aria-label="Install output"
+          >
             {output}
           </pre>
         </section>

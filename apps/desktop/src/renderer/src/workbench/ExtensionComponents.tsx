@@ -56,7 +56,13 @@ export function isPublisherVerified(pub: string | null | undefined, flag?: boole
 }
 
 /** Prominent Verified Publisher Blue Checkmark Tick Badge */
-export function VerifiedBadge({ publisher, isVerified }: { publisher?: string; isVerified?: boolean }) {
+export function VerifiedBadge({
+  publisher,
+  isVerified,
+}: {
+  publisher?: string;
+  isVerified?: boolean;
+}) {
   if (!isPublisherVerified(publisher, isVerified)) return null;
   return (
     <span
@@ -64,7 +70,13 @@ export function VerifiedBadge({ publisher, isVerified }: { publisher?: string; i
       title={`Verified Publisher${publisher ? `: ${publisher}` : ''}`}
       aria-label="Verified Publisher"
     >
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 16 16"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
         <circle cx="8" cy="8" r="8" fill="#3794ff" />
         <path
           d="M4.5 8L7 10.5L11.5 5.5"
@@ -215,7 +227,9 @@ export function ExtensionAuthModal({
         <h2 style={{ margin: '0 0 8px 0', fontSize: 18, color: 'var(--fg-strong)' }}>
           Sign In for {extensionName}
         </h2>
-        <p style={{ margin: '0 0 16px 0', fontSize: 13, color: 'var(--fg-muted)', lineHeight: 1.5 }}>
+        <p
+          style={{ margin: '0 0 16px 0', fontSize: 13, color: 'var(--fg-muted)', lineHeight: 1.5 }}
+        >
           Authenticate your account to enable cloud sync, AI completions, and extended features for{' '}
           <strong>{extensionName}</strong> ({extensionId}).
         </p>
@@ -261,7 +275,14 @@ export function ExtensionAuthModal({
               {loading ? 'Connecting…' : 'Sign In with Google / AXIOM Account'}
             </button>
 
-            <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--fg-faint)', margin: '4px 0' }}>
+            <div
+              style={{
+                textAlign: 'center',
+                fontSize: 11,
+                color: 'var(--fg-faint)',
+                margin: '4px 0',
+              }}
+            >
               — OR ENTER EXTENSION TOKEN / API KEY —
             </div>
 

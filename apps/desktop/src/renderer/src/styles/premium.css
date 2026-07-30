@@ -6994,7 +6994,6 @@ body.resizing-col .panel-resizer::after {
   transition: none;
 }
 
-
 /* ---------- God Mode control plane ---------- */
 .sidebar-godmode .sidebar-body {
   min-height: 0;
@@ -7008,9 +7007,7 @@ body.resizing-col .panel-resizer::after {
   height: 100%;
   min-height: 0;
   color: var(--fg-default);
-  background:
-    linear-gradient(180deg, var(--accent-softer), transparent 112px),
-    var(--bg-canvas);
+  background: linear-gradient(180deg, var(--accent-softer), transparent 112px), var(--bg-canvas);
 }
 
 .godmode-tabs {
@@ -7251,7 +7248,9 @@ body.resizing-col .panel-resizer::after {
 }
 
 @keyframes godmode-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .godmode-field {
@@ -7511,8 +7510,12 @@ body.resizing-col .panel-resizer::after {
   gap: var(--space-1);
 }
 
-.godmode-check-result.is-pass > span { color: var(--signal-success); }
-.godmode-check-result.is-fail > span { color: var(--signal-error); }
+.godmode-check-result.is-pass > span {
+  color: var(--signal-success);
+}
+.godmode-check-result.is-fail > span {
+  color: var(--signal-error);
+}
 
 @media (min-width: 420px) {
   .sidebar-godmode .godmode-capability-grid {
@@ -7525,11 +7528,13 @@ body.resizing-col .panel-resizer::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .godmode-spinner { animation: none; }
-  .godmode-capability-card:hover { transform: none; }
+  .godmode-spinner {
+    animation: none;
+  }
+  .godmode-capability-card:hover {
+    transform: none;
+  }
 }
-
-
 
 .godmode-preview-screenshot {
   display: block;
@@ -8647,7 +8652,11 @@ body.resizing-col .panel-resizer::after {
   place-items: center;
   padding: var(--space-4);
   background:
-    radial-gradient(1200px 600px at 50% -10%, color-mix(in srgb, var(--ai) 12%, transparent), transparent),
+    radial-gradient(
+      1200px 600px at 50% -10%,
+      color-mix(in srgb, var(--ai) 12%, transparent),
+      transparent
+    ),
     var(--bg-editor);
   -webkit-app-region: drag;
 }
@@ -9839,4 +9848,3 @@ body.resizing-col .panel-resizer::after {
 .ext-auth-btn:active {
   transform: translateY(0);
 }
-

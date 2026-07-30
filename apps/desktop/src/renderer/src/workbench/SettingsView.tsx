@@ -57,9 +57,7 @@ export function SettingsView() {
     event: KeyboardEvent<HTMLButtonElement>,
     current: SettingsScope,
   ): void => {
-    const available: SettingsScope[] = workspaceAvailable
-      ? ['user', 'workspace']
-      : ['user'];
+    const available: SettingsScope[] = workspaceAvailable ? ['user', 'workspace'] : ['user'];
     const index = Math.max(0, available.indexOf(current));
     let next: SettingsScope | undefined;
     if (event.key === 'ArrowRight') next = available[(index + 1) % available.length];

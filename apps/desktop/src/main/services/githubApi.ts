@@ -5,7 +5,8 @@ const REQUEST_TIMEOUT_MS = 20_000;
 const MAX_RESPONSE_BYTES = 256 * 1024;
 const MAX_REQUEST_BYTES = 128 * 1024;
 const USER_AGENT = 'Axiom-Desktop';
-const API_PATH = /^\/repos\/[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}\/(?:issues\/[1-9]\d{0,9}|pulls|actions\/workflows\/[A-Za-z0-9_.-]{1,200}\/dispatches)$/;
+const API_PATH =
+  /^\/repos\/[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}\/(?:issues\/[1-9]\d{0,9}|pulls|actions\/workflows\/[A-Za-z0-9_.-]{1,200}\/dispatches)$/;
 
 export interface GithubApiResponse {
   status: number;

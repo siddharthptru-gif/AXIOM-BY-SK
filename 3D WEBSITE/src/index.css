@@ -25,13 +25,7 @@
   --fg-muted: #a0a0b8;
   --fg-faint: #6b6b85;
 
-  --accent-gradient: linear-gradient(
-    100deg,
-    #8b5cf6 0%,
-    #6366f1 35%,
-    #3b82f6 65%,
-    #22d3ee 100%
-  );
+  --accent-gradient: linear-gradient(100deg, #8b5cf6 0%, #6366f1 35%, #3b82f6 65%, #22d3ee 100%);
 
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -397,7 +391,9 @@ body {
 
 /* The reference design's hover nudge, reused by the mood switcher. */
 .role-link {
-  transition: transform 300ms var(--ease-spring), opacity 300ms ease;
+  transition:
+    transform 300ms var(--ease-spring),
+    opacity 300ms ease;
 }
 .role-link:hover {
   transform: translateX(4px);
@@ -439,4 +435,3 @@ body {
  *
  * Nothing background-related was touched.
  */
-

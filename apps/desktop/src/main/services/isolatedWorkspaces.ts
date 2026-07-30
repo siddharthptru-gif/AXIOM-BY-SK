@@ -93,7 +93,6 @@ function rootKey(root: string): string {
   return process.platform === 'win32' ? canonical.toLowerCase() : canonical;
 }
 
-
 function storePath(): string {
   return join(app.getPath('userData'), 'god-mode', 'isolated-workspaces.json');
 }
@@ -140,7 +139,8 @@ async function readStore(): Promise<WorkspaceStore> {
     }
     return { version: STORE_VERSION, profiles: value.profiles.filter(isProfile).slice(0, 100) };
   } catch (error) {
-    if (isMissing(error) || error instanceof SyntaxError) return { version: STORE_VERSION, profiles: [] };
+    if (isMissing(error) || error instanceof SyntaxError)
+      return { version: STORE_VERSION, profiles: [] };
     throw error;
   }
 }
@@ -149,7 +149,10 @@ async function writeStore(store: WorkspaceStore): Promise<void> {
   const path = storePath();
   await fs.mkdir(dirname(path), { recursive: true });
   const temp = join(dirname(path), `.isolated-workspaces-${randomBytes(8).toString('hex')}.tmp`);
-  await fs.writeFile(temp, `${JSON.stringify(store, null, 2)}\n`, { encoding: 'utf-8', mode: 0o600 });
+  await fs.writeFile(temp, `${JSON.stringify(store, null, 2)}\n`, {
+    encoding: 'utf-8',
+    mode: 0o600,
+  });
   try {
     await fs.rename(temp, path);
   } catch (error) {
@@ -446,12 +449,15 @@ function validatedInput(root: string, raw: unknown): CreateIsolatedWorkspaceInpu
   };
   const errors = validateWorkspaceBackendInput(value);
   if (errors.length > 0) throw new Error(errors.join(' '));
-  if (!value.confirmation) throw new Error('Creating an isolated workspace requires explicit confirmation.');
+  if (!value.confirmation)
+    throw new Error('Creating an isolated workspace requires explicit confirmation.');
   if (value.distro && !DISTRO.test(value.distro)) throw new Error('WSL distro name is invalid.');
   if (value.host && !HOST.test(value.host)) throw new Error('SSH host is invalid.');
   if (value.user && !USER.test(value.user)) throw new Error('SSH user is invalid.');
-  if (value.container && !CONTAINER.test(value.container)) throw new Error('Container name is invalid.');
-  if (value.workspacePath && !REMOTE_PATH.test(value.workspacePath)) throw new Error('Remote workspace path is invalid.');
+  if (value.container && !CONTAINER.test(value.container))
+    throw new Error('Container name is invalid.');
+  if (value.workspacePath && !REMOTE_PATH.test(value.workspacePath))
+    throw new Error('Remote workspace path is invalid.');
   return value;
 }
 
@@ -465,7 +471,8 @@ function creationApprovalIdentity(input: CreateIsolatedWorkspaceInput): Record<s
     root: input.root,
     name: input.name,
     backend: input.backend,
-    workspacePath: input.backend === 'local-clone' ? '[managed Main-owned path]' : input.workspacePath,
+    workspacePath:
+      input.backend === 'local-clone' ? '[managed Main-owned path]' : input.workspacePath,
     distro: input.distro ?? null,
     host: input.host ?? null,
     user: input.user ?? null,
@@ -485,7 +492,6 @@ export function prepareIsolatedWorkspaceCreationApproval(
   };
 }
 
-
 export async function createIsolatedWorkspace(
   root: string,
   raw: unknown,
@@ -501,7 +507,8 @@ export async function createIsolatedWorkspace(
   return serialize(async () => {
     signal?.throwIfAborted();
     const store = await readStore();
-    if (store.profiles.length >= 100) throw new Error('The isolated workspace limit has been reached.');
+    if (store.profiles.length >= 100)
+      throw new Error('The isolated workspace limit has been reached.');
     const id = randomUUID();
     const now = Date.now();
     const managedPath = join(baseDir(), id, 'repo');
@@ -527,7 +534,9 @@ export async function createIsolatedWorkspace(
       if (input.backend === 'local-clone') {
         const status = await getStatus(root);
         if (status.staged.length > 0 || status.unstaged.length > 0) {
-          throw new Error('Commit or discard workspace changes before creating a reproducible clone.');
+          throw new Error(
+            'Commit or discard workspace changes before creating a reproducible clone.',
+          );
         }
         await fs.mkdir(dirname(managedPath), { recursive: true });
         signal?.throwIfAborted();
@@ -545,7 +554,8 @@ export async function createIsolatedWorkspace(
     } catch (error) {
       profile.status = 'error';
       profile.updatedAt = Date.now();
-      profile.lastError = error instanceof Error ? boundedText(error.message, 1_000) : 'Workspace creation failed.';
+      profile.lastError =
+        error instanceof Error ? boundedText(error.message, 1_000) : 'Workspace creation failed.';
       await writeStore(store);
       if (input.backend === 'local-clone') {
         await fs.rm(join(baseDir(), id), { recursive: true, force: true }).catch(() => undefined);
@@ -567,12 +577,25 @@ function commandForProfile(
   switch (profile.backend) {
     case 'local-clone':
       return process.platform === 'win32'
-        ? { executable: process.env.ComSpec || 'cmd.exe', args: ['/d', '/s', '/c', command], cwd: profile.workspacePath }
+        ? {
+            executable: process.env.ComSpec || 'cmd.exe',
+            args: ['/d', '/s', '/c', command],
+            cwd: profile.workspacePath,
+          }
         : { executable: '/bin/sh', args: ['-lc', command], cwd: profile.workspacePath };
     case 'wsl':
       return {
         executable: system32 ? join(system32, 'wsl.exe') : 'wsl.exe',
-        args: ['-d', profile.distro!, '--cd', profile.workspacePath, '--', '/bin/sh', '-lc', command],
+        args: [
+          '-d',
+          profile.distro!,
+          '--cd',
+          profile.workspacePath,
+          '--',
+          '/bin/sh',
+          '-lc',
+          command,
+        ],
       };
     case 'ssh': {
       const authority = profile.user ? `${profile.user}@${profile.host}` : profile.host!;
@@ -594,7 +617,14 @@ function commandForProfile(
     case 'dev-container':
       return {
         executable: 'docker.exe',
-        args: ['exec', '--', profile.container!, '/bin/sh', '-lc', `cd -- ${quotePosix(profile.workspacePath)} && ${command}`],
+        args: [
+          'exec',
+          '--',
+          profile.container!,
+          '/bin/sh',
+          '-lc',
+          `cd -- ${quotePosix(profile.workspacePath)} && ${command}`,
+        ],
       };
   }
 }
@@ -644,7 +674,6 @@ export async function prepareIsolatedCommandApproval(
   return (await resolveIsolatedCommandApproval(root, profileId, command)).descriptor;
 }
 
-
 export async function runIsolatedWorkspaceCommand(
   owner: WebContents,
   root: string,
@@ -653,12 +682,15 @@ export async function runIsolatedWorkspaceCommand(
   confirmation: unknown,
   approved: IsolatedCommandApprovalDescriptor,
 ): Promise<WorkspaceCommandResult> {
-  if (confirmation !== true) throw new Error('Running an isolated workspace command requires explicit confirmation.');
+  if (confirmation !== true)
+    throw new Error('Running an isolated workspace command requires explicit confirmation.');
   const id = typeof profileId === 'string' ? profileId : '';
   const command = typeof rawCommand === 'string' ? rawCommand.trim() : '';
   if (!id || !command) throw new Error('Workspace profile and command are required.');
   if (command.length > 1_000 || /[\u0000-\u001f\u007f]/.test(command)) {
-    throw new Error('Workspace commands must be a single control-free line of at most 1,000 characters.');
+    throw new Error(
+      'Workspace commands must be a single control-free line of at most 1,000 characters.',
+    );
   }
   const resolved = await resolveIsolatedCommandApproval(root, id, command);
   if (approved.digest !== resolved.descriptor.digest) {
@@ -668,7 +700,8 @@ export async function runIsolatedWorkspaceCommand(
   const spec = resolved.spec;
   const onOwnerDestroyed = (): void => {
     const active = running.get(id);
-    if (active?.ownerId === owner.id) void terminateProcessTree(active.child).catch(() => undefined);
+    if (active?.ownerId === owner.id)
+      void terminateProcessTree(active.child).catch(() => undefined);
   };
   owner.once('destroyed', onOwnerDestroyed);
   try {
@@ -697,7 +730,8 @@ export async function removeIsolatedWorkspace(
   profileId: unknown,
   confirmation: unknown,
 ): Promise<IsolatedWorkspaceProfile[]> {
-  if (confirmation !== true) throw new Error('Removing an isolated workspace requires explicit confirmation.');
+  if (confirmation !== true)
+    throw new Error('Removing an isolated workspace requires explicit confirmation.');
   const id = typeof profileId === 'string' ? profileId : '';
   if (!id || running.has(id)) throw new Error('Workspace is missing or busy.');
   return serialize(async () => {
@@ -710,7 +744,8 @@ export async function removeIsolatedWorkspace(
     if (profile.backend === 'local-clone') {
       const managedRoot = resolve(baseDir(), profile.id);
       const rel = relative(resolve(baseDir()), managedRoot);
-      if (!rel || rel.startsWith('..') || isAbsolute(rel)) throw new Error('Managed workspace path is invalid.');
+      if (!rel || rel.startsWith('..') || isAbsolute(rel))
+        throw new Error('Managed workspace path is invalid.');
       await fs.rm(managedRoot, { recursive: true, force: true });
     }
     store.profiles = store.profiles.filter((item) => item.id !== id);

@@ -11,8 +11,8 @@ export function Footer() {
             Vibe. Build. Anything.
           </p>
           <p className="mt-5 max-w-xs text-sm leading-relaxed text-fg-faint">
-            A desktop AI coding IDE for Windows. Free, no account, bring your own model key.
-            Your files stay on your machine.
+            A desktop AI coding IDE for Windows. Free, no account, bring your own model key. Your
+            files stay on your machine.
           </p>
         </div>
 

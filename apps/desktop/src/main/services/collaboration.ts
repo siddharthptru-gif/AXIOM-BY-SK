@@ -46,7 +46,6 @@ interface CollaborationStore {
 
 class SafeCloudError extends Error {}
 
-
 interface CollaborationCloudOperation {
   ownerId: number;
   root: string;
@@ -154,7 +153,12 @@ function normalizeEvent(value: unknown, sessionId: string): CollaborationEvent |
   const id = boundedText(item.id, 200);
   const actorId = boundedText(item.actorId, 200);
   const text = boundedText(item.text, MAX_EVENT_TEXT);
-  if (!id || !UUID_RE.test(actorId) || !text || !EVENT_KINDS.has(item.kind as CollaborationEvent['kind'])) {
+  if (
+    !id ||
+    !UUID_RE.test(actorId) ||
+    !text ||
+    !EVENT_KINDS.has(item.kind as CollaborationEvent['kind'])
+  ) {
     return null;
   }
   return {
@@ -182,7 +186,10 @@ function normalizeSession(value: unknown): CollaborationSession | null {
   if (!UUID_RE.test(id) || !title || !ROOT_FINGERPRINT_RE.test(fingerprint)) return null;
   const createdAt = safeTimestamp(item.createdAt, 0);
   const members = Array.isArray(item.members)
-    ? item.members.slice(0, MAX_MEMBERS).map(normalizeMember).filter((entry) => entry !== null)
+    ? item.members
+        .slice(0, MAX_MEMBERS)
+        .map(normalizeMember)
+        .filter((entry) => entry !== null)
     : [];
   const events = Array.isArray(item.events)
     ? item.events
@@ -190,9 +197,7 @@ function normalizeSession(value: unknown): CollaborationSession | null {
         .map((entry) => normalizeEvent(entry, id))
         .filter((entry) => entry !== null)
     : [];
-  const cloudState = ['local-only', 'syncing', 'synced', 'error'].includes(
-    String(item.cloudState),
-  )
+  const cloudState = ['local-only', 'syncing', 'synced', 'error'].includes(String(item.cloudState))
     ? (item.cloudState as CollaborationSession['cloudState'])
     : 'local-only';
   return {
@@ -224,7 +229,8 @@ async function readStore(): Promise<CollaborationStore> {
     const parsed: unknown = JSON.parse(text);
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('invalid');
     const value = parsed as { version?: unknown; deviceActorId?: unknown; sessions?: unknown };
-    if (value.version !== STORE_VERSION || !Array.isArray(value.sessions)) throw new Error('invalid');
+    if (value.version !== STORE_VERSION || !Array.isArray(value.sessions))
+      throw new Error('invalid');
     return {
       version: STORE_VERSION,
       deviceActorId:
@@ -338,9 +344,7 @@ async function requireCloudSchemaAttestation(
     throw new SafeCloudError('Collaboration backend attestation is unavailable.');
   }
   const controller = new AbortController();
-  const request = client
-    .rpc('attest_god_mode_collaboration')
-    .abortSignal(controller.signal);
+  const request = client.rpc('attest_god_mode_collaboration').abortSignal(controller.signal);
   const { data, error } = await withTimeout(
     request,
     'Collaboration backend attestation timed out.',
@@ -441,7 +445,10 @@ function replaceRoot(text: string, root: string): string {
   for (const variant of variants) {
     if (!variant) continue;
     const escaped = variant.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    output = output.replace(new RegExp(escaped, process.platform === 'win32' ? 'gi' : 'g'), '<workspace>');
+    output = output.replace(
+      new RegExp(escaped, process.platform === 'win32' ? 'gi' : 'g'),
+      '<workspace>',
+    );
   }
   return output;
 }
@@ -455,7 +462,10 @@ function redactText(value: unknown, root: string, max: number): string {
       '[REDACTED]',
     )
     .replace(/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/g, '[REDACTED]')
-    .replace(/-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(?:-----END [A-Z ]*PRIVATE KEY-----|$)/g, '[REDACTED]')
+    .replace(
+      /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(?:-----END [A-Z ]*PRIVATE KEY-----|$)/g,
+      '[REDACTED]',
+    )
     .replace(
       /([?&](?:access[_-]?token|token|secret|password|passwd|api[_-]?key|authorization|signature)=)[^&#\s]*/gi,
       '$1[REDACTED]',
@@ -492,11 +502,13 @@ function redactEvidence(record: EvidenceRecord, root: string): EvidenceRecord {
   };
 }
 
-function redactedJobs(jobs: GodModeJob[], root: string, linkedIds: ReadonlySet<string>): GodModeJob[] {
+function redactedJobs(
+  jobs: GodModeJob[],
+  root: string,
+  linkedIds: ReadonlySet<string>,
+): GodModeJob[] {
   return jobs
-    .filter(
-      (job) => linkedIds.has(job.id) || job.evidence.some((item) => linkedIds.has(item.id)),
-    )
+    .filter((job) => linkedIds.has(job.id) || job.evidence.some((item) => linkedIds.has(item.id)))
     .slice(-MAX_EXPORT_JOBS)
     .map((job) => ({
       ...job,
@@ -657,10 +669,8 @@ export async function shareCollaborationSession(
       .abortSignal(linked.controller.signal);
     let error: unknown;
     try {
-      ({ error } = await withTimeout(
-        request,
-        'Collaboration sync timed out.',
-        () => linked.controller.abort(),
+      ({ error } = await withTimeout(request, 'Collaboration sync timed out.', () =>
+        linked.controller.abort(),
       ));
     } finally {
       linked.dispose();
@@ -701,7 +711,8 @@ export async function addCloudCollaborationMember(
   signal?: AbortSignal,
 ): Promise<CollaborationSession> {
   signal?.throwIfAborted();
-  if (confirmation !== true) throw new Error('Adding a collaborator requires explicit confirmation.');
+  if (confirmation !== true)
+    throw new Error('Adding a collaborator requires explicit confirmation.');
   const id = typeof sessionId === 'string' ? sessionId : '';
   const memberId = typeof userId === 'string' ? userId.trim().toLowerCase() : '';
   if (!UUID_RE.test(memberId)) throw new Error('Collaborator user id is invalid.');
@@ -711,7 +722,10 @@ export async function addCloudCollaborationMember(
   const role = roleValue as Exclude<CollaborationRole, 'owner'>;
   const session = (await listCollaborationSessions(root)).find((item) => item.id === id);
   if (!session?.shared) throw new Error('Share the collaboration session before adding members.');
-  if (!session.members.some((member) => member.id === memberId) && session.members.length >= MAX_MEMBERS) {
+  if (
+    !session.members.some((member) => member.id === memberId) &&
+    session.members.length >= MAX_MEMBERS
+  ) {
     throw new Error('Collaboration session reached its member limit.');
   }
   try {
@@ -740,10 +754,8 @@ export async function addCloudCollaborationMember(
       .abortSignal(linked.controller.signal);
     let error: unknown;
     try {
-      ({ error } = await withTimeout(
-        request,
-        'Collaborator update timed out.',
-        () => linked.controller.abort(),
+      ({ error } = await withTimeout(request, 'Collaborator update timed out.', () =>
+        linked.controller.abort(),
       ));
     } finally {
       linked.dispose();

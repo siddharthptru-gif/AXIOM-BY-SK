@@ -24,7 +24,11 @@ export type CommandConsentScope =
   /** Any invocation of this program, in this workspace. */
   | 'program';
 
-export const COMMAND_CONSENT_SCOPES: readonly CommandConsentScope[] = ['once', 'command', 'program'];
+export const COMMAND_CONSENT_SCOPES: readonly CommandConsentScope[] = [
+  'once',
+  'command',
+  'program',
+];
 
 export function parseCommandConsentScope(value: unknown): CommandConsentScope {
   return typeof value === 'string' && (COMMAND_CONSENT_SCOPES as readonly string[]).includes(value)

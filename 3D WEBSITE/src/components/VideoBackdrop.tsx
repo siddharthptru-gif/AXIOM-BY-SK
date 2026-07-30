@@ -27,7 +27,7 @@ export function VideoBackdrop({ mode }: { mode: BackdropMode }) {
           } catch {
             return url;
           }
-        })
+        }),
       );
 
       if (!cancelled) {
@@ -64,10 +64,7 @@ export function VideoBackdrop({ mode }: { mode: BackdropMode }) {
       })}
 
       {/* Overlay sitting above videos at z-[1] */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 z-[1] bg-black/10 pointer-events-none"
-      />
+      <div aria-hidden="true" className="absolute inset-0 z-[1] bg-black/10 pointer-events-none" />
     </div>
   );
 }

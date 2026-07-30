@@ -720,8 +720,12 @@ function assertExpectedGithubPush(remoteUrl: string, expectedUrl: string | undef
   let actual: string;
   let expected: string;
   try {
-    actual = validateGithubRemoteUrl(remoteUrl).replace(/\.git$/i, '').toLowerCase();
-    expected = validateGithubRemoteUrl(expectedUrl).replace(/\.git$/i, '').toLowerCase();
+    actual = validateGithubRemoteUrl(remoteUrl)
+      .replace(/\.git$/i, '')
+      .toLowerCase();
+    expected = validateGithubRemoteUrl(expectedUrl)
+      .replace(/\.git$/i, '')
+      .toLowerCase();
   } catch {
     throw new Error('The configured push destination is not an exact credential-free GitHub URL.');
   }
@@ -1054,7 +1058,6 @@ export async function publishCreatedRepository(
   });
   return operationResult(result);
 }
-
 
 /** Create an isolated local clone without touching the source worktree or its index. */
 

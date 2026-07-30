@@ -15,11 +15,7 @@ import { SearchIcon } from './icons';
 import { ExtensionDetailPanel } from './ExtensionDetailPanel';
 import { ContributedAppearance } from './ContributedAppearance';
 import { ExtensionHostPanel } from './ExtensionHostPanel';
-import {
-  VerifiedBadge,
-  ExtensionIconImage,
-  ExtensionAuthModal,
-} from './ExtensionComponents';
+import { VerifiedBadge, ExtensionIconImage, ExtensionAuthModal } from './ExtensionComponents';
 
 /**
  * The Extensions manager.
@@ -110,9 +106,7 @@ export function ExtensionsView() {
     setLoading(true);
     const timer = setTimeout(() => {
       const search =
-        registryView.id === 'recommended'
-          ? recommendationQuery(installed)
-          : query.trim();
+        registryView.id === 'recommended' ? recommendationQuery(installed) : query.trim();
       void window.axiom.market
         .browse({
           ...(search !== '' ? { query: search } : {}),
@@ -181,7 +175,11 @@ export function ExtensionsView() {
   );
 
   const run = useCallback(
-    async (id: string, action: NonNullable<Busy>['action'], operation: () => Promise<string | null>) => {
+    async (
+      id: string,
+      action: NonNullable<Busy>['action'],
+      operation: () => Promise<string | null>,
+    ) => {
       setBusy({ id, action });
       setError(null);
       setMessage(null);
@@ -278,7 +276,9 @@ export function ExtensionsView() {
       const outcome = await window.axiom.market.installFromFile();
       if (outcome === null) return;
       await reloadInstalled();
-      setMessage(`${outcome.displayName} ${outcome.version} installed. ${outcome.integritySummary}`);
+      setMessage(
+        `${outcome.displayName} ${outcome.version} installed. ${outcome.integritySummary}`,
+      );
     } catch (fileError) {
       setError(fileError instanceof Error ? fileError.message : String(fileError));
     }
@@ -298,7 +298,9 @@ export function ExtensionsView() {
           value={query}
           spellCheck={false}
           onChange={(event) => setQuery(event.target.value)}
-          aria-label={showingRegistry ? 'Search the extension registry' : 'Filter installed extensions'}
+          aria-label={
+            showingRegistry ? 'Search the extension registry' : 'Filter installed extensions'
+          }
         />
       </div>
 
@@ -342,7 +344,11 @@ export function ExtensionsView() {
         </div>
       ) : (
         <div className="ext-actions">
-          <button type="button" className="btn btn-ghost ext-action" onClick={() => void checkUpdates()}>
+          <button
+            type="button"
+            className="btn btn-ghost ext-action"
+            onClick={() => void checkUpdates()}
+          >
             Check for Updates
           </button>
           <button
@@ -353,7 +359,11 @@ export function ExtensionsView() {
           >
             Update All
           </button>
-          <button type="button" className="btn btn-ghost ext-action" onClick={() => void installFromFile()}>
+          <button
+            type="button"
+            className="btn btn-ghost ext-action"
+            onClick={() => void installFromFile()}
+          >
             Install from VSIX…
           </button>
           <label className="ext-toggle">
@@ -508,13 +518,17 @@ function RegistryRow({
   onInstall: () => void;
   onUninstall: () => void;
 }) {
-  const outdated =
-    installed !== undefined && compareVersions(entry.version, installed.version) > 0;
+  const outdated = installed !== undefined && compareVersions(entry.version, installed.version) > 0;
   return (
     <div className={`ext-row ${entry.deprecated ? 'is-deprecated' : ''}`}>
       <button type="button" className="ext-row-main" onClick={onOpen}>
         <span className="ext-icon" aria-hidden="true">
-          <ExtensionIconImage src={entry.iconUrl} name={entry.displayName} id={entry.id} size={32} />
+          <ExtensionIconImage
+            src={entry.iconUrl}
+            name={entry.displayName}
+            id={entry.id}
+            size={32}
+          />
         </span>
         <span className="ext-row-text">
           <span className="ext-row-title">
@@ -592,19 +606,28 @@ function InstalledRow({
     <div className={`ext-row ${extension.enabled ? '' : 'is-disabled'}`}>
       <button type="button" className="ext-row-main" onClick={onOpen}>
         <span className="ext-icon" aria-hidden="true">
-          <ExtensionIconImage src={extension.iconDataUrl} name={extension.displayName} id={extension.id} size={32} />
+          <ExtensionIconImage
+            src={extension.iconDataUrl}
+            name={extension.displayName}
+            id={extension.id}
+            size={32}
+          />
         </span>
         <span className="ext-row-text">
           <span className="ext-row-title">
             <strong>{extension.displayName}</strong>
             <VerifiedBadge publisher={extension.publisher} />
             <span className="ext-version">{extension.version}</span>
-            {outdated ? <span className="ext-flag ext-flag-update">→ {extension.latestVersion}</span> : null}
+            {outdated ? (
+              <span className="ext-flag ext-flag-update">→ {extension.latestVersion}</span>
+            ) : null}
             <span className={`ext-status-pill ${extension.enabled ? 'is-enabled' : 'is-disabled'}`}>
               {extension.enabled ? '✓ Enabled' : '○ Disabled'}
             </span>
           </span>
-          <span className="ext-row-desc">{extension.description ?? 'No description provided.'}</span>
+          <span className="ext-row-desc">
+            {extension.description ?? 'No description provided.'}
+          </span>
           <span className="ext-row-meta">
             <span className="ext-publisher">{extension.publisher}</span>
             {working.length > 0 ? (
@@ -622,7 +645,8 @@ function InstalledRow({
           </span>
           {inert.length > 0 ? (
             <span className="ext-row-inert">
-              Needs the extension host: {inert.map((point) => friendlyPoint(point.point)).join(', ')}
+              Needs the extension host:{' '}
+              {inert.map((point) => friendlyPoint(point.point)).join(', ')}
             </span>
           ) : null}
         </span>

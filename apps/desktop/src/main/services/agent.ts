@@ -775,9 +775,7 @@ function preparedFsMutationFor<T extends PreparedFsMutation['tool']>(
   tool: T,
 ): Extract<PreparedFsMutation, { tool: T }> | null {
   const prepared = (args as PreparedFsActionArgs)[PREPARED_FS_MUTATION];
-  return prepared?.tool === tool
-    ? (prepared as Extract<PreparedFsMutation, { tool: T }>)
-    : null;
+  return prepared?.tool === tool ? (prepared as Extract<PreparedFsMutation, { tool: T }>) : null;
 }
 
 function cachePreparedEdit(args: Record<string, unknown>, prepared: PreparedAgentEdit): void {
@@ -935,7 +933,9 @@ async function applyPreparedFsMutation(
       if (signal?.aborted) throw new Error('Cancelled.');
       await assertWorkspaceTrusted(root);
       if (prepared.tool === 'create_directory') {
-        const target = await resolveAgentMutationPath(root, prepared.target, { allowMissing: true });
+        const target = await resolveAgentMutationPath(root, prepared.target, {
+          allowMissing: true,
+        });
         const parent = await resolveAgentPath(root, dirname(target), { directory: true });
         const parentStat = await fs.lstat(parent);
         if (
@@ -1196,7 +1196,10 @@ async function applyPreparedEdit(
     if (signal?.aborted) throw new Error('Cancelled.');
     await assertMutationAllowed?.();
   };
-  const outcome = (observation: string, checkpointId?: string): AgentToolResult & {
+  const outcome = (
+    observation: string,
+    checkpointId?: string,
+  ): AgentToolResult & {
     effectApplied: boolean;
   } => ({
     observation,
@@ -2360,11 +2363,7 @@ export async function runAgent(
     );
     return emit(delivered);
   };
-  const emitProgress = (
-    phase: AgentProgressPhase,
-    completed?: number,
-    total?: number,
-  ): boolean =>
+  const emitProgress = (phase: AgentProgressPhase, completed?: number, total?: number): boolean =>
     wrappedEmit(
       { id: params.id, kind: 'progress', step: runMetrics.toolCalls },
       {
@@ -2488,7 +2487,10 @@ export async function runAgent(
     // verify-iterate cycle and report an honest convergence summary. Fed by the
     // run_command verifications the agent runs during the pass.
     let auto = recordPlan(
-      createAutoLoop(params.task, params.maxIterations ? { maxIterations: params.maxIterations } : {}),
+      createAutoLoop(
+        params.task,
+        params.maxIterations ? { maxIterations: params.maxIterations } : {},
+      ),
     );
     let sawVerification = false;
 
@@ -2527,268 +2529,274 @@ export async function runAgent(
           ? params.task
           : `${params.task}\n\nContinue from the current workspace state. The previous pass did not produce verification for the latest edits or a check failed. Inspect the failure, fix it, and run focused verification before finishing.`;
       finalAnswer = await runAgentLoop({
-      task: loopTask,
-      root,
-      tools: guardAgentTools(
-        [
-          ...tools,
-          ...(scope === 'all' ? getMcpAgentTools(root, params.ownerId, assertMutationAllowed) : []),
-        ],
-        assertRunCapability,
-        assertMutationAllowed,
-      ),
-      maxSteps: MAX_STEPS,
-      plan: preset.plan,
-      persona: preset.persona,
-      ...(params.priorTurnSummary ? { priorTurnSummary: params.priorTurnSummary } : {}),
-      signal: controller.signal,
-      callLlm,
-      ...(params.policy ? { policy: params.policy } : {}),
-      // Re-checked at every action, so expiry or revocation takes effect mid-run.
-      autoApproveWrites: (cls, highRisk) =>
-        isWriteAutoApproved(params.ownerId, root, cls, highRisk),
-      autoApproveCommand: (command) => isCommandAutoApproved(root, command),
-      ...(replayGuard ? { replay: replayGuard } : {}),
-      onStep: (step) => {
-        if (step.kind === 'tool') {
-          runMetrics.toolCalls += 1;
-          if (step.applied === true && step.diff) {
-            runMetrics.filesChanged.add(step.diff.path);
-            runMetrics.checkpointsCreated += 1;
-            runMetrics.mutationGeneration += 1;
-            runMetrics.verification = 'not-run';
-            runMetrics.verificationGeneration = null;
-          } else if (
-            step.effectApplied === true &&
-            (step.tool === 'create_directory' || step.tool === 'move_path')
-          ) {
-            const args = parseArgs(step.args);
-            for (const value of [args.path, args.source, args.destination]) {
-              if (typeof value === 'string' && value.length > 0) {
-                runMetrics.filesChanged.add(value);
-              }
-            }
-            runMetrics.mutationGeneration += 1;
-            runMetrics.verification = 'not-run';
-            runMetrics.verificationGeneration = null;
-          }
-        }
-        if (step.kind === 'tool' && step.tool === 'run_command' && step.observation) {
-          const ok = verificationPassed(step.observation);
-          if (ok !== null) {
-            sawVerification = true;
-            runMetrics.verification = ok ? 'passed' : 'failed';
-            runMetrics.verificationGeneration = runMetrics.mutationGeneration;
-            auto = recordAction(auto);
-            auto = recordVerification(auto, { passed: ok, failureCount: ok ? 0 : 1 });
-            if (auto.phase === 'summarize') auto = recordSummary(auto);
-            // Cost-aware autopilot (Phase 261 depth): on a failed verification,
-            // escalate to the next more-capable model for the subsequent passes.
-            if (!ok && !auto.aborted) {
-              const decision = decideEscalation(escalationPlan, currentModel, {
-                passed: false,
-                failureCount: 1,
-              });
-              if (decision.escalate) {
-                currentModel = decision.toModel;
-                if (runMetrics.modelTrail.at(-1) !== currentModel) {
-                  runMetrics.modelTrail.push(currentModel);
+        task: loopTask,
+        root,
+        tools: guardAgentTools(
+          [
+            ...tools,
+            ...(scope === 'all'
+              ? getMcpAgentTools(root, params.ownerId, assertMutationAllowed)
+              : []),
+          ],
+          assertRunCapability,
+          assertMutationAllowed,
+        ),
+        maxSteps: MAX_STEPS,
+        plan: preset.plan,
+        persona: preset.persona,
+        ...(params.priorTurnSummary ? { priorTurnSummary: params.priorTurnSummary } : {}),
+        signal: controller.signal,
+        callLlm,
+        ...(params.policy ? { policy: params.policy } : {}),
+        // Re-checked at every action, so expiry or revocation takes effect mid-run.
+        autoApproveWrites: (cls, highRisk) =>
+          isWriteAutoApproved(params.ownerId, root, cls, highRisk),
+        autoApproveCommand: (command) => isCommandAutoApproved(root, command),
+        ...(replayGuard ? { replay: replayGuard } : {}),
+        onStep: (step) => {
+          if (step.kind === 'tool') {
+            runMetrics.toolCalls += 1;
+            if (step.applied === true && step.diff) {
+              runMetrics.filesChanged.add(step.diff.path);
+              runMetrics.checkpointsCreated += 1;
+              runMetrics.mutationGeneration += 1;
+              runMetrics.verification = 'not-run';
+              runMetrics.verificationGeneration = null;
+            } else if (
+              step.effectApplied === true &&
+              (step.tool === 'create_directory' || step.tool === 'move_path')
+            ) {
+              const args = parseArgs(step.args);
+              for (const value of [args.path, args.source, args.destination]) {
+                if (typeof value === 'string' && value.length > 0) {
+                  runMetrics.filesChanged.add(value);
                 }
-                queueRunEvent(
-                  { kind: 'plan', text: `Autopilot escalation: ${decision.reason}` },
-                  Date.now(),
-                );
+              }
+              runMetrics.mutationGeneration += 1;
+              runMetrics.verification = 'not-run';
+              runMetrics.verificationGeneration = null;
+            }
+          }
+          if (step.kind === 'tool' && step.tool === 'run_command' && step.observation) {
+            const ok = verificationPassed(step.observation);
+            if (ok !== null) {
+              sawVerification = true;
+              runMetrics.verification = ok ? 'passed' : 'failed';
+              runMetrics.verificationGeneration = runMetrics.mutationGeneration;
+              auto = recordAction(auto);
+              auto = recordVerification(auto, { passed: ok, failureCount: ok ? 0 : 1 });
+              if (auto.phase === 'summarize') auto = recordSummary(auto);
+              // Cost-aware autopilot (Phase 261 depth): on a failed verification,
+              // escalate to the next more-capable model for the subsequent passes.
+              if (!ok && !auto.aborted) {
+                const decision = decideEscalation(escalationPlan, currentModel, {
+                  passed: false,
+                  failureCount: 1,
+                });
+                if (decision.escalate) {
+                  currentModel = decision.toModel;
+                  if (runMetrics.modelTrail.at(-1) !== currentModel) {
+                    runMetrics.modelTrail.push(currentModel);
+                  }
+                  queueRunEvent(
+                    { kind: 'plan', text: `Autopilot escalation: ${decision.reason}` },
+                    Date.now(),
+                  );
+                }
               }
             }
           }
-        }
 
-        if (step.kind === 'final') {
-          const cancelled =
-            controller.signal.aborted || cancellationRequested(params.id, params.ownerId);
-          const latestMutationVerified =
-            runMetrics.mutationGeneration === 0 ||
-            (runMetrics.verification === 'passed' &&
-              runMetrics.verificationGeneration === runMetrics.mutationGeneration);
-          if (
-            shouldContinueAutonomousPass({
-              cancelled,
-              latestMutationVerified,
-              completedPasses: autonomousPass + 1,
-              maxPasses: params.maxIterations ?? 1,
-              convergenceAborted: auto.aborted,
-            })
-          ) {
-            retryAfterPass = true;
-            queueRunEvent(
-              {
-                kind: 'plan',
-                text:
-                  runMetrics.verification === 'failed'
-                    ? 'Verification failed; beginning a bounded repair pass.'
-                    : 'Latest edits were not verified; beginning a bounded verification pass.',
-              },
-              Date.now(),
+          if (step.kind === 'final') {
+            const cancelled =
+              controller.signal.aborted || cancellationRequested(params.id, params.ownerId);
+            const latestMutationVerified =
+              runMetrics.mutationGeneration === 0 ||
+              (runMetrics.verification === 'passed' &&
+                runMetrics.verificationGeneration === runMetrics.mutationGeneration);
+            if (
+              shouldContinueAutonomousPass({
+                cancelled,
+                latestMutationVerified,
+                completedPasses: autonomousPass + 1,
+                maxPasses: params.maxIterations ?? 1,
+                convergenceAborted: auto.aborted,
+              })
+            ) {
+              retryAfterPass = true;
+              queueRunEvent(
+                {
+                  kind: 'plan',
+                  text:
+                    runMetrics.verification === 'failed'
+                      ? 'Verification failed; beginning a bounded repair pass.'
+                      : 'Latest edits were not verified; beginning a bounded verification pass.',
+                },
+                Date.now(),
+              );
+              emitProgress('verifying', autonomousPass + 1, auto.config.maxIterations);
+              return;
+            }
+            emitProgress(
+              cancelled ? 'cancelled' : 'finalizing',
+              autonomousPass + 1,
+              auto.config.maxIterations,
             );
-            emitProgress('verifying', autonomousPass + 1, auto.config.maxIterations);
+            wrappedEmit({ id: params.id, ...step });
             return;
           }
-          emitProgress(
-            cancelled ? 'cancelled' : 'finalizing',
-            autonomousPass + 1,
-            auto.config.maxIterations,
-          );
+          if (step.kind === 'error') {
+            const cancelled =
+              controller.signal.aborted || cancellationRequested(params.id, params.ownerId);
+            emitProgress(cancelled ? 'cancelled' : 'failed');
+            wrappedEmit({ id: params.id, ...step });
+            return;
+          }
+
           wrappedEmit({ id: params.id, ...step });
-          return;
-        }
-        if (step.kind === 'error') {
-          const cancelled =
-            controller.signal.aborted || cancellationRequested(params.id, params.ownerId);
-          emitProgress(cancelled ? 'cancelled' : 'failed');
-          wrappedEmit({ id: params.id, ...step });
-          return;
-        }
-
-        wrappedEmit({ id: params.id, ...step });
-        const phase: AgentProgressPhase =
-          step.kind === 'plan' ? 'grounding' : step.tool === 'run_command' ? 'verifying' : 'acting';
-        emitProgress(phase, autonomousPass, auto.config.maxIterations);
-      },
-      requestApproval: (tool, args) =>
-        new Promise<boolean>((resolve) => {
-          // Defensive replacement also invalidates and unblocks any older request.
-          settlePendingApproval(params.id, false);
-          const token = Symbol(`approval:${params.id}`);
-          const previewCommand =
-            tool.name === 'run_command'
-              ? typeof args.command === 'string'
-                ? args.command
-                : typeof args.cmd === 'string'
-                  ? args.cmd
-                  : null
-              : null;
-          pendingApprovals.set(params.id, {
-            token,
-            approvalToken: null,
-            acknowledged: false,
-            acknowledgementTimer: null,
-            nativeDescriptor: null,
-            command: previewCommand,
-            root,
-            rememberScope: 'once',
-            decisionTimer: null,
-            onDecisionTimeout: null,
-            resolve,
-          });
-          void (async () => {
-            let diff: AgentFileDiff | null = null;
-            let previewError: string | null = null;
-            try {
-              await tool.prepare?.(args);
-              diff = (await tool.diff?.(args)) ?? null;
-            } catch (error) {
-              previewError = error instanceof Error ? error.message : String(error);
-            }
-
-            const pending = pendingApprovals.get(params.id);
-            const task = agentTasks.get(params.id);
-            const current =
-              pending?.token === token &&
-              aborts.get(params.id) === controller &&
-              !controller.signal.aborted &&
-              !cancellationRequested(params.id, params.ownerId) &&
-              Boolean(task && !isTerminal(task.status));
-            if (!current) {
-              settlePendingApproval(params.id, false, token);
-              return;
-            }
-
-            // Every async preparation failure blocks approval; non-text mutations use
-            // prepare() while file edits continue to require an exact diff.
-            if (previewError) {
-              setApprovalFailure(
-                args,
-                `Error: ${tool.name} was not executed because its approval preview could not be prepared: ${previewError}.`,
-              );
-              settlePendingApproval(params.id, false, token);
-              return;
-            }
-            if (tool.diff && !diff) {
-              const detail = 'the current-state diff was unavailable';
-              setApprovalFailure(
-                args,
-                `Error: ${tool.name} was not executed because its approval preview could not be prepared: ${detail}.`,
-              );
-              settlePendingApproval(params.id, false, token);
-              return;
-            }
-
-            let nativeDescriptor: AgentNativeApprovalDescriptor;
-            try {
-              nativeDescriptor = buildNativeApprovalDescriptor(root, tool, args, diff);
-            } catch (error) {
-              const detail = error instanceof Error ? error.message : String(error);
-              setApprovalFailure(
-                args,
-                `Error: ${tool.name} was not executed because native approval could not be prepared: ${detail}`,
-              );
-              settlePendingApproval(params.id, false, token);
-              return;
-            }
-            const approvalToken = randomUUID();
-            emitProgress('awaiting-approval');
-            try {
-              const delivered = wrappedEmit({
-                id: params.id,
-                kind: 'approval',
-                step: 0,
-                tool: tool.name,
-                args: JSON.stringify(args),
-                text: tool.preview ? tool.preview(args) : `${tool.name}(${JSON.stringify(args)})`,
-                approvalToken,
-                ...(diff ? { diff } : {}),
-              });
-              if (!delivered) throw new Error('the renderer is no longer available');
-              // Activation occurs only after wrappedEmit returns successfully. A
-              // run-id-only or superseded decision therefore cannot unblock work.
-              const emitted = pendingApprovals.get(params.id);
-              if (emitted?.token === token) {
-                emitted.nativeDescriptor = nativeDescriptor;
-                emitted.approvalToken = approvalToken;
-                emitted.onDecisionTimeout = () => {
-                  setApprovalFailure(
-                    args,
-                    `Error: ${tool.name} was not executed because the approval went unanswered for 10 minutes. Ask the user whether to continue before retrying it.`,
-                  );
-                };
-                emitted.acknowledgementTimer = setTimeout(() => {
-                  const active = pendingApprovals.get(params.id);
-                  if (
-                    active?.token !== token ||
-                    active.approvalToken !== approvalToken ||
-                    active.acknowledged
-                  ) {
-                    return;
-                  }
-                  setApprovalFailure(
-                    args,
-                    `Error: ${tool.name} was not executed because its approval preview was not displayed.`,
-                  );
-                  settlePendingApproval(params.id, false, token);
-                }, APPROVAL_ACK_TIMEOUT_MS);
+          const phase: AgentProgressPhase =
+            step.kind === 'plan'
+              ? 'grounding'
+              : step.tool === 'run_command'
+                ? 'verifying'
+                : 'acting';
+          emitProgress(phase, autonomousPass, auto.config.maxIterations);
+        },
+        requestApproval: (tool, args) =>
+          new Promise<boolean>((resolve) => {
+            // Defensive replacement also invalidates and unblocks any older request.
+            settlePendingApproval(params.id, false);
+            const token = Symbol(`approval:${params.id}`);
+            const previewCommand =
+              tool.name === 'run_command'
+                ? typeof args.command === 'string'
+                  ? args.command
+                  : typeof args.cmd === 'string'
+                    ? args.cmd
+                    : null
+                : null;
+            pendingApprovals.set(params.id, {
+              token,
+              approvalToken: null,
+              acknowledged: false,
+              acknowledgementTimer: null,
+              nativeDescriptor: null,
+              command: previewCommand,
+              root,
+              rememberScope: 'once',
+              decisionTimer: null,
+              onDecisionTimeout: null,
+              resolve,
+            });
+            void (async () => {
+              let diff: AgentFileDiff | null = null;
+              let previewError: string | null = null;
+              try {
+                await tool.prepare?.(args);
+                diff = (await tool.diff?.(args)) ?? null;
+              } catch (error) {
+                previewError = error instanceof Error ? error.message : String(error);
               }
-            } catch (error) {
-              setApprovalFailure(
-                args,
-                `Error: ${tool.name} approval could not be delivered: ${
-                  error instanceof Error ? error.message : String(error)
-                }`,
-              );
-              settlePendingApproval(params.id, false, token);
-            }
-          })();
-        }),
-    });
+
+              const pending = pendingApprovals.get(params.id);
+              const task = agentTasks.get(params.id);
+              const current =
+                pending?.token === token &&
+                aborts.get(params.id) === controller &&
+                !controller.signal.aborted &&
+                !cancellationRequested(params.id, params.ownerId) &&
+                Boolean(task && !isTerminal(task.status));
+              if (!current) {
+                settlePendingApproval(params.id, false, token);
+                return;
+              }
+
+              // Every async preparation failure blocks approval; non-text mutations use
+              // prepare() while file edits continue to require an exact diff.
+              if (previewError) {
+                setApprovalFailure(
+                  args,
+                  `Error: ${tool.name} was not executed because its approval preview could not be prepared: ${previewError}.`,
+                );
+                settlePendingApproval(params.id, false, token);
+                return;
+              }
+              if (tool.diff && !diff) {
+                const detail = 'the current-state diff was unavailable';
+                setApprovalFailure(
+                  args,
+                  `Error: ${tool.name} was not executed because its approval preview could not be prepared: ${detail}.`,
+                );
+                settlePendingApproval(params.id, false, token);
+                return;
+              }
+
+              let nativeDescriptor: AgentNativeApprovalDescriptor;
+              try {
+                nativeDescriptor = buildNativeApprovalDescriptor(root, tool, args, diff);
+              } catch (error) {
+                const detail = error instanceof Error ? error.message : String(error);
+                setApprovalFailure(
+                  args,
+                  `Error: ${tool.name} was not executed because native approval could not be prepared: ${detail}`,
+                );
+                settlePendingApproval(params.id, false, token);
+                return;
+              }
+              const approvalToken = randomUUID();
+              emitProgress('awaiting-approval');
+              try {
+                const delivered = wrappedEmit({
+                  id: params.id,
+                  kind: 'approval',
+                  step: 0,
+                  tool: tool.name,
+                  args: JSON.stringify(args),
+                  text: tool.preview ? tool.preview(args) : `${tool.name}(${JSON.stringify(args)})`,
+                  approvalToken,
+                  ...(diff ? { diff } : {}),
+                });
+                if (!delivered) throw new Error('the renderer is no longer available');
+                // Activation occurs only after wrappedEmit returns successfully. A
+                // run-id-only or superseded decision therefore cannot unblock work.
+                const emitted = pendingApprovals.get(params.id);
+                if (emitted?.token === token) {
+                  emitted.nativeDescriptor = nativeDescriptor;
+                  emitted.approvalToken = approvalToken;
+                  emitted.onDecisionTimeout = () => {
+                    setApprovalFailure(
+                      args,
+                      `Error: ${tool.name} was not executed because the approval went unanswered for 10 minutes. Ask the user whether to continue before retrying it.`,
+                    );
+                  };
+                  emitted.acknowledgementTimer = setTimeout(() => {
+                    const active = pendingApprovals.get(params.id);
+                    if (
+                      active?.token !== token ||
+                      active.approvalToken !== approvalToken ||
+                      active.acknowledged
+                    ) {
+                      return;
+                    }
+                    setApprovalFailure(
+                      args,
+                      `Error: ${tool.name} was not executed because its approval preview was not displayed.`,
+                    );
+                    settlePendingApproval(params.id, false, token);
+                  }, APPROVAL_ACK_TIMEOUT_MS);
+                }
+              } catch (error) {
+                setApprovalFailure(
+                  args,
+                  `Error: ${tool.name} approval could not be delivered: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`,
+                );
+                settlePendingApproval(params.id, false, token);
+              }
+            })();
+          }),
+      });
       autonomousPass += 1;
     } while (
       retryAfterPass &&

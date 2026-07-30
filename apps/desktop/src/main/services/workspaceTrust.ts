@@ -219,10 +219,7 @@ export async function assertWorkspaceTrusted(root: string): Promise<string> {
   const state = await serialize(async () => {
     if (revokedRoots.has(key)) return false;
     const store = await readStore();
-    return (
-      !revokedRoots.has(key) &&
-      store.trustedRoots.some((entry) => pathKey(entry) === key)
-    );
+    return !revokedRoots.has(key) && store.trustedRoots.some((entry) => pathKey(entry) === key);
   });
   if (!state) throw restrictedModeError(canonicalRoot);
   return canonicalRoot;

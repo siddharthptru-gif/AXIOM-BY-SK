@@ -145,10 +145,7 @@ export interface LanguagesHostBridge {
    */
   notifyProviderChanged(batch: ProviderChangeBatch): void;
   /** Ask the renderer to apply text edits to models it already has open. */
-  applyEditInEditor(payload: {
-    entries: WorkspaceEditPlan['entries'];
-    touched: string[];
-  }): void;
+  applyEditInEditor(payload: { entries: WorkspaceEditPlan['entries']; touched: string[] }): void;
   /** Fire `onLanguage:<id>` for anything waiting on a language. */
   activateForLanguage(languageId: string): Promise<void>;
   /** Absolute workspace folder paths, for the `WorkspaceEdit` boundary check. */
@@ -445,11 +442,7 @@ function registerLanguageFromExtension(extensionId: string, raw: unknown): boole
   return added;
 }
 
-function setLanguageConfiguration(
-  extensionId: string,
-  languageId: string,
-  raw: unknown,
-): boolean {
+function setLanguageConfiguration(extensionId: string, languageId: string, raw: unknown): boolean {
   const configuration = normalizeLanguageConfiguration(raw);
   if (Object.keys(configuration).length === 0) {
     // An empty configuration is how the shim's disposable un-sets one.
@@ -802,7 +795,8 @@ function toProviderDescriptor(
     extensionId: registration.extensionId,
     selector: describeSelector(registration.selector),
   };
-  if (metadata.triggerCharacters?.length) descriptor.triggerCharacters = [...metadata.triggerCharacters];
+  if (metadata.triggerCharacters?.length)
+    descriptor.triggerCharacters = [...metadata.triggerCharacters];
   if (metadata.retriggerCharacters?.length)
     descriptor.retriggerCharacters = [...metadata.retriggerCharacters];
   if (metadata.firstTriggerCharacter !== undefined)
@@ -979,7 +973,12 @@ export async function provideLanguageFeature(
   inFlight.set(requestId, []);
   try {
     if (feature === 'semanticTokens' && op === 'edits') {
-      return await provideSemanticTokensEdits(routed.links[0] as ProviderLink, requestId, uri, input);
+      return await provideSemanticTokensEdits(
+        routed.links[0] as ProviderLink,
+        requestId,
+        uri,
+        input,
+      );
     }
     if (feature === 'semanticTokens' || feature === 'semanticTokensRange') {
       return await provideSemanticTokens(
@@ -1021,7 +1020,8 @@ function routeRequest(
   if (TOKEN_ROUTED_OPS.has(op)) {
     const ref = resolveMintedToken(payload.id);
     if (!ref) return { ok: false, error: 'That result is no longer available.' };
-    if (ref.link.feature !== feature) return { ok: false, error: 'That result is not a ' + feature };
+    if (ref.link.feature !== feature)
+      return { ok: false, error: 'That result is not a ' + feature };
     // The worker knows the object under its own token, never Main's.
     payload.id = ref.workerToken;
     return { ok: true, links: [ref.link] };
@@ -1137,7 +1137,13 @@ async function provideSemanticTokensEdits(
       previousResultId: providerResultId,
     });
     if (!result.ok) return { ok: false, error: result.error, failures: [result.error] };
-    const absorbed = absorbProviderTokenEdits(link, uri, baseline.entry.data, result.value, version);
+    const absorbed = absorbProviderTokenEdits(
+      link,
+      uri,
+      baseline.entry.data,
+      result.value,
+      version,
+    );
     if (absorbed !== null) return { ok: true, value: absorbed };
     log.debug('A semantic-token delta did not fit its baseline; re-requesting in full', {
       extensionId: link.extensionId,

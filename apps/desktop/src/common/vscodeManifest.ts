@@ -484,7 +484,10 @@ function parseCommands(value: unknown): CommandContribution[] {
   return out;
 }
 
-function parseConfigurationBlock(value: unknown, budget: { left: number }): ConfigurationContribution | null {
+function parseConfigurationBlock(
+  value: unknown,
+  budget: { left: number },
+): ConfigurationContribution | null {
   const entry = record(value);
   if (!entry) return null;
   const properties: ConfigurationProperty[] = [];
@@ -516,7 +519,8 @@ function parseConfigurationBlock(value: unknown, budget: { left: number }): Conf
     }
   }
   const title = text(entry.title, MAX_LABEL);
-  const order = typeof entry.order === 'number' && Number.isFinite(entry.order) ? entry.order : null;
+  const order =
+    typeof entry.order === 'number' && Number.isFinite(entry.order) ? entry.order : null;
   if (properties.length === 0 && title === null) return null;
   return {
     ...(title !== null ? { title } : {}),
@@ -775,8 +779,7 @@ function parseBugs(value: unknown): string | null {
 // Entry point
 // ---------------------------------------------------------------------------
 export type ManifestParseResult =
-  | { ok: true; manifest: VsCodeManifest }
-  | { ok: false; errors: string[] };
+  { ok: true; manifest: VsCodeManifest } | { ok: false; errors: string[] };
 
 /**
  * Parse and normalize a VS Code extension manifest.
@@ -860,7 +863,9 @@ export function parseVsCodeManifest(raw: unknown): ManifestParseResult {
       extensionDependencies: stringList(entry.extensionDependencies, MAX_LIST),
       extensionPack: stringList(entry.extensionPack, MAX_LIST),
       extensionKind: stringList(entry.extensionKind, 10, 32),
-      ...(untrustedSupported === true || untrustedSupported === false || untrustedSupported === 'limited'
+      ...(untrustedSupported === true ||
+      untrustedSupported === false ||
+      untrustedSupported === 'limited'
         ? { untrustedWorkspaces: untrustedSupported }
         : {}),
       contributes: parseContributes(entry.contributes),

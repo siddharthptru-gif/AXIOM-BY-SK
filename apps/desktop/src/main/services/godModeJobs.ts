@@ -50,9 +50,15 @@ function isJob(value: unknown): value is GodModeJob {
     item.kind === 'autonomous-run' &&
     typeof item.root === 'string' &&
     typeof item.title === 'string' &&
-    ['queued', 'running', 'paused', 'awaiting-approval', 'completed', 'failed', 'cancelled'].includes(
-      String(item.status),
-    ) &&
+    [
+      'queued',
+      'running',
+      'paused',
+      'awaiting-approval',
+      'completed',
+      'failed',
+      'cancelled',
+    ].includes(String(item.status)) &&
     typeof item.createdAt === 'number' &&
     typeof item.updatedAt === 'number' &&
     Array.isArray(item.evidence)
@@ -80,7 +86,8 @@ async function readStore(): Promise<JobStore> {
         })),
     };
   } catch (error) {
-    if (isMissing(error) || error instanceof SyntaxError) return { version: STORE_VERSION, jobs: [] };
+    if (isMissing(error) || error instanceof SyntaxError)
+      return { version: STORE_VERSION, jobs: [] };
     throw error;
   }
 }
@@ -89,10 +96,14 @@ async function writeStore(store: JobStore): Promise<void> {
   const path = filePath();
   await fs.mkdir(dirname(path), { recursive: true });
   const temp = join(dirname(path), `.jobs-${randomBytes(8).toString('hex')}.tmp`);
-  await fs.writeFile(temp, `${JSON.stringify({ ...store, jobs: store.jobs.slice(-MAX_JOBS) }, null, 2)}\n`, {
-    encoding: 'utf-8',
-    mode: 0o600,
-  });
+  await fs.writeFile(
+    temp,
+    `${JSON.stringify({ ...store, jobs: store.jobs.slice(-MAX_JOBS) }, null, 2)}\n`,
+    {
+      encoding: 'utf-8',
+      mode: 0o600,
+    },
+  );
   try {
     await fs.rename(temp, path);
   } catch (error) {
@@ -219,10 +230,13 @@ export async function claimAndStartJob(
 ): Promise<GodModeJob> {
   return serialize(async () => {
     const store = await readStore();
-    const index = store.jobs.findIndex((job) => job.id === id && rootKey(job.root) === rootKey(root));
+    const index = store.jobs.findIndex(
+      (job) => job.id === id && rootKey(job.root) === rootKey(root),
+    );
     const job = store.jobs[index];
     if (!job) throw new Error('Autonomous job was not found.');
-    if (job.status !== 'queued' && job.status !== 'paused') throw new Error('Autonomous job is not startable.');
+    if (job.status !== 'queued' && job.status !== 'paused')
+      throw new Error('Autonomous job is not startable.');
     if (job.ownerWindowId !== null && job.ownerWindowId !== ownerId) {
       throw new Error('Autonomous job is leased by another window.');
     }
@@ -240,7 +254,9 @@ export async function controlGodModeJob(
 ): Promise<GodModeJob> {
   return serialize(async () => {
     const store = await readStore();
-    const index = store.jobs.findIndex((job) => job.id === input.id && rootKey(job.root) === rootKey(root));
+    const index = store.jobs.findIndex(
+      (job) => job.id === input.id && rootKey(job.root) === rootKey(root),
+    );
     const job = store.jobs[index];
     if (!job) throw new Error('Autonomous job was not found.');
     if (job.ownerWindowId !== null && job.ownerWindowId !== ownerId) {
@@ -291,7 +307,9 @@ export async function recordGodModeAgentEvent(
 ): Promise<void> {
   await serialize(async () => {
     const store = await readStore();
-    const index = store.jobs.findIndex((job) => job.id === event.id && rootKey(job.root) === rootKey(event.root));
+    const index = store.jobs.findIndex(
+      (job) => job.id === event.id && rootKey(job.root) === rootKey(event.root),
+    );
     const job = store.jobs[index];
     if (!job) return;
     if (job.ownerWindowId !== ownerId) {
@@ -318,19 +336,20 @@ export async function recordGodModeAgentEvent(
           : event.progress?.completed !== undefined && event.progress.total
             ? Math.max(
                 0,
-                Math.min(
-                  100,
-                  Math.round((event.progress.completed / event.progress.total) * 100),
-                ),
+                Math.min(100, Math.round((event.progress.completed / event.progress.total) * 100)),
               )
             : job.progress,
       iteration: Math.max(job.iteration, event.progress?.completed ?? job.iteration),
-      summary: event.summary?.outcome ? event.text ?? job.summary : job.summary,
-      error: event.kind === 'error' && event.outcome !== 'cancelled' ? boundedText(event.text, 2_000) : job.error,
+      summary: event.summary?.outcome ? (event.text ?? job.summary) : job.summary,
+      error:
+        event.kind === 'error' && event.outcome !== 'cancelled'
+          ? boundedText(event.text, 2_000)
+          : job.error,
       evidence: evidence ? [...job.evidence, evidence].slice(-MAX_EVIDENCE) : job.evidence,
     };
     if (event.kind === 'approval') next = { ...next, status: 'awaiting-approval' };
-    else if (next.status === 'awaiting-approval' && event.kind === 'tool') next = { ...next, status: 'running' };
+    else if (next.status === 'awaiting-approval' && event.kind === 'tool')
+      next = { ...next, status: 'running' };
     if (terminalStatus && terminalStatus !== next.status) {
       next = transition(next, terminalStatus, event.at);
     }
@@ -342,7 +361,9 @@ export async function recordGodModeAgentEvent(
 export async function reconcileGodModeAgentTask(task: AgentTask, ownerId: number): Promise<void> {
   await serialize(async () => {
     const store = await readStore();
-    const index = store.jobs.findIndex((job) => job.id === task.id && rootKey(job.root) === rootKey(task.root));
+    const index = store.jobs.findIndex(
+      (job) => job.id === task.id && rootKey(job.root) === rootKey(task.root),
+    );
     const job = store.jobs[index];
     if (!job) return;
     if (job.ownerWindowId !== ownerId) {

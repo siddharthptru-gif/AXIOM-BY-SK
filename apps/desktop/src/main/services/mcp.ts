@@ -318,7 +318,6 @@ export async function prepareMcpConnectionApproval(
   return (await buildConnectionApprovalDescriptor(root, serverId)).descriptor;
 }
 
-
 export async function connectServer(
   root: string,
   id: string,

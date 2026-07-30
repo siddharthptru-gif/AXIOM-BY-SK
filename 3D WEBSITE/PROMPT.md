@@ -131,8 +131,8 @@ unavailable.
 
 ```ts
 // useScrollProgress.ts — one rAF loop, lerped, published through a ref.
-const target = scrollTop / (scrollHeight - innerHeight);   // 0 → 1
-current += (target - current) * 0.075;                     // critical damping feel
+const target = scrollTop / (scrollHeight - innerHeight); // 0 → 1
+current += (target - current) * 0.075; // critical damping feel
 ```
 
 Every 3D object reads that progress inside `useFrame` and maps it through its own

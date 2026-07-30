@@ -29,7 +29,8 @@ async function main(): Promise<SandboxWorkerResult> {
   if (!input || typeof input.modulePath !== 'string') fail('Sandbox input is invalid.');
   const stat = await fs.stat(input.modulePath);
   if (!stat.isFile()) fail('WASM entry is not a regular file.');
-  if (stat.size <= 0 || stat.size > input.maxModuleBytes) fail('WASM module size is outside policy.');
+  if (stat.size <= 0 || stat.size > input.maxModuleBytes)
+    fail('WASM module size is outside policy.');
   const bytes = await fs.readFile(input.modulePath);
   const sha256 = createHash('sha256').update(bytes).digest('hex');
   if (sha256 !== input.expectedSha256) fail('WASM integrity verification failed.');
@@ -41,7 +42,9 @@ async function main(): Promise<SandboxWorkerResult> {
   const module = await wasm.compile(bytes);
   const imports = wasm.Module.imports(module).map((item) => `${item.module}.${item.name}`);
   if (imports.length > 0) fail(`WASM imports are denied: ${imports.join(', ')}`);
-  const exportNames = wasm.Module.exports(module).map((item) => item.name).slice(0, 200);
+  const exportNames = wasm.Module.exports(module)
+    .map((item) => item.name)
+    .slice(0, 200);
   const instance = await wasm.instantiate(module, {});
   for (const value of Object.values(instance.exports)) {
     if (value instanceof wasm.Memory) {
@@ -53,7 +56,8 @@ async function main(): Promise<SandboxWorkerResult> {
   let activated = false;
   if (typeof activation === 'function') {
     const result = activation();
-    if (typeof result === 'number' && !Number.isFinite(result)) fail('WASM activation returned an invalid value.');
+    if (typeof result === 'number' && !Number.isFinite(result))
+      fail('WASM activation returned an invalid value.');
     activated = true;
   }
   return { ok: true, sha256, imports, exports: exportNames, activated, error: null };

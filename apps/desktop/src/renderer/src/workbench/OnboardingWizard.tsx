@@ -191,8 +191,8 @@ export function OnboardingWizard() {
               <strong>Free local AI detected</strong>
               <p>
                 {localProbe.label} is running with {localProbe.models.length} model
-                {localProbe.models.length === 1 ? '' : 's'}. Use it and you are done — no API key, no
-                account, and nothing leaves this machine.
+                {localProbe.models.length === 1 ? '' : 's'}. Use it and you are done — no API key,
+                no account, and nothing leaves this machine.
               </p>
               <button
                 type="button"
@@ -240,8 +240,8 @@ export function OnboardingWizard() {
             The God Mode activity unifies context evaluation, durable Build jobs, isolated preview,
             verification, issue-to-PR, workspaces, sandboxed extensions, collaboration, and preview
             deployment. Main retains authority over workspace trust, processes, credentials,
-            approvals, Git, and network access. Provider and cloud features show setup-required until
-            they are actually configured.
+            approvals, Git, and network access. Provider and cloud features show setup-required
+            until they are actually configured.
           </p>
         </div>
       ) : (

@@ -34,16 +34,16 @@ supabase/
 
 ## Schema summary
 
-| Table              | Purpose                            | Key                    |
-| ------------------ | ---------------------------------- | ---------------------- |
-| `profiles`         | one row per auth user (Phase 122)  | `id` → `auth.users`    |
-| `user_settings`    | preferences sync (Phase 121)       | `(user_id, key)`       |
-| `sync_records`     | prompt/rule/agent sync (Phase 125) | `(user_id, kind, id)`  |
-| `telemetry_events` | opt-in analytics (Phase 126/127)   | identity               |
-| `crash_reports`    | opt-in crash pipeline (Phase 128)  | identity               |
-| `feature_flags`    | remote flags + rollout (Phase 129) | `key` (Realtime)       |
-| `devices`               | per-user installs (Phase 123)                 | `(user_id, device_id)`  |
-| `collaboration_sessions` | optional evidence-rich God Mode handoffs      | `id`, owner-controlled |
+| Table                    | Purpose                                        | Key                     |
+| ------------------------ | ---------------------------------------------- | ----------------------- |
+| `profiles`               | one row per auth user (Phase 122)              | `id` → `auth.users`     |
+| `user_settings`          | preferences sync (Phase 121)                   | `(user_id, key)`        |
+| `sync_records`           | prompt/rule/agent sync (Phase 125)             | `(user_id, kind, id)`   |
+| `telemetry_events`       | opt-in analytics (Phase 126/127)               | identity                |
+| `crash_reports`          | opt-in crash pipeline (Phase 128)              | identity                |
+| `feature_flags`          | remote flags + rollout (Phase 129)             | `key` (Realtime)        |
+| `devices`                | per-user installs (Phase 123)                  | `(user_id, device_id)`  |
+| `collaboration_sessions` | optional evidence-rich God Mode handoffs       | `id`, owner-controlled  |
 | `collaboration_members`  | explicit editor/reviewer/viewer session access | `(session_id, user_id)` |
 
 `user_settings` matches `docs/SUPABASE_SYNC_SETUP.md` exactly so the shipped sync

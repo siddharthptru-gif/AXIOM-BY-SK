@@ -25,12 +25,14 @@ export function ContributedAppearance() {
   const [iconThemes, setIconThemes] = useState<ContributedIconTheme[]>([]);
   const [expanded, setExpanded] = useState(false);
 
-  const activeTheme = typeof values['workbench.extensionColorTheme'] === 'string'
-    ? (values['workbench.extensionColorTheme'] as string).trim()
-    : '';
-  const activeIconTheme = typeof values['workbench.extensionIconTheme'] === 'string'
-    ? (values['workbench.extensionIconTheme'] as string).trim()
-    : '';
+  const activeTheme =
+    typeof values['workbench.extensionColorTheme'] === 'string'
+      ? (values['workbench.extensionColorTheme'] as string).trim()
+      : '';
+  const activeIconTheme =
+    typeof values['workbench.extensionIconTheme'] === 'string'
+      ? (values['workbench.extensionIconTheme'] as string).trim()
+      : '';
 
   const reload = useCallback(async () => {
     try {

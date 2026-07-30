@@ -104,9 +104,7 @@ export function ExtensionHostPanel() {
             <div key={host.extensionId} className="ext-host-row">
               <div className="ext-host-main">
                 <span className="ext-host-name">{host.displayName}</span>
-                <span className={`ext-host-state is-${host.state}`}>
-                  {STATE_LABEL[host.state]}
-                </span>
+                <span className={`ext-host-state is-${host.state}`}>{STATE_LABEL[host.state]}</span>
                 {host.activationMs !== null && host.state === 'active' ? (
                   <span className="ext-host-meta">activated in {host.activationMs}ms</span>
                 ) : null}

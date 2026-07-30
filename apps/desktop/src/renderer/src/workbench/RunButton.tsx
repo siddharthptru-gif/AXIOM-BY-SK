@@ -96,7 +96,10 @@ export function RunButton() {
   const relPath = useMemo(() => {
     if (!rootPath || !activePath) return null;
     if (!activePath.toLowerCase().startsWith(rootPath.toLowerCase())) return null;
-    return activePath.slice(rootPath.length).replace(/^[\\/]/, '').replace(/\\/g, '/');
+    return activePath
+      .slice(rootPath.length)
+      .replace(/^[\\/]/, '')
+      .replace(/\\/g, '/');
   }, [rootPath, activePath]);
 
   const context = useMemo<RunContext | null>(() => {
@@ -173,8 +176,7 @@ export function RunButton() {
   const openMenu = (x: number, y: number): void => {
     const entries: MenuEntry[] = all.map((candidate) => {
       const ok = isRuntimeSatisfied(candidate.requires, available);
-      const tool =
-        runtimeDefinition(candidate.requires)?.displayName ?? candidate.requires;
+      const tool = runtimeDefinition(candidate.requires)?.displayName ?? candidate.requires;
       return {
         label: ok ? candidate.label : `${candidate.label} — Install ${tool}`,
         onSelect: () => {

@@ -56,7 +56,11 @@ function computeSegments(activePath: string, rootPath: string | null): Segment[]
 }
 
 /** 1-based line/column is inside a 0-based LSP range. */
-function containsPosition(range: LspDocumentSymbol['range'], line: number, column: number): boolean {
+function containsPosition(
+  range: LspDocumentSymbol['range'],
+  line: number,
+  column: number,
+): boolean {
   const startLine = range.start.line + 1;
   const endLine = range.end.line + 1;
   if (line < startLine || line > endLine) return false;
@@ -69,11 +73,7 @@ function containsPosition(range: LspDocumentSymbol['range'], line: number, colum
  * Walk the symbol tree to the deepest symbol containing the cursor, recording the
  * chain and each level's siblings on the way down.
  */
-function symbolChain(
-  symbols: LspDocumentSymbol[],
-  line: number,
-  column: number,
-): SymbolSegment[] {
+function symbolChain(symbols: LspDocumentSymbol[], line: number, column: number): SymbolSegment[] {
   const chain: SymbolSegment[] = [];
   let level = symbols;
   for (let depth = 0; depth < 32; depth += 1) {

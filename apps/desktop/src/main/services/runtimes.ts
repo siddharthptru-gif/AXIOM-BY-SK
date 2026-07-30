@@ -80,9 +80,9 @@ async function scan(): Promise<DetectedRuntime[]> {
  * switching files does not re-scan the machine; `refresh` forces a new sweep after
  * the user installs something.
  */
-export async function detectRuntimes(options: { refresh?: boolean } = {}): Promise<
-  DetectedRuntime[]
-> {
+export async function detectRuntimes(
+  options: { refresh?: boolean } = {},
+): Promise<DetectedRuntime[]> {
   const now = Date.now();
   if (!options.refresh && cache && now - cache.at < CACHE_TTL_MS) return cache.runtimes;
   if (inFlight) return inFlight;

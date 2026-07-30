@@ -61,7 +61,11 @@ export function parseRlsSchema(sql: string): RlsTable[] {
     .replace(/--[^\n]*/g, ' ');
 
   const stripName = (raw: string): string =>
-    raw.trim().replace(/"/g, '').replace(/^[a-z0-9_]+\./i, '').toLowerCase();
+    raw
+      .trim()
+      .replace(/"/g, '')
+      .replace(/^[a-z0-9_]+\./i, '')
+      .toLowerCase();
 
   const tables = new Map<string, RlsTable>();
   const ensure = (name: string): RlsTable => {
@@ -74,8 +78,7 @@ export function parseRlsSchema(sql: string): RlsTable[] {
     return table;
   };
 
-  const createTable =
-    /create\s+table\s+(?:if\s+not\s+exists\s+)?("?[a-z0-9_.]+"?)/gi;
+  const createTable = /create\s+table\s+(?:if\s+not\s+exists\s+)?("?[a-z0-9_.]+"?)/gi;
   for (let m = createTable.exec(text); m; m = createTable.exec(text)) ensure(m[1]!);
 
   const enableRls =
@@ -98,7 +101,11 @@ export function parseRlsSchema(sql: string): RlsTable[] {
       if (ch === '(') depth += 1;
       else if (ch === ')') {
         depth -= 1;
-        if (depth === 0) return source.slice(open + 1, i).replace(/\s+/g, ' ').trim();
+        if (depth === 0)
+          return source
+            .slice(open + 1, i)
+            .replace(/\s+/g, ' ')
+            .trim();
       }
     }
     return undefined;

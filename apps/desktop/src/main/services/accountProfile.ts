@@ -139,7 +139,10 @@ export function captureRootUserData(): void {
 export function profileKeyForUserId(userId: string | null): string {
   const trimmed = typeof userId === 'string' ? userId.trim() : '';
   if (trimmed.length === 0) return GUEST_KEY;
-  return createHash('sha256').update(`axiom-account-profile:${trimmed}`, 'utf-8').digest('hex').slice(0, 32);
+  return createHash('sha256')
+    .update(`axiom-account-profile:${trimmed}`, 'utf-8')
+    .digest('hex')
+    .slice(0, 32);
 }
 
 /**
@@ -179,7 +182,10 @@ function readPointer(): ActiveProfilePointer | null {
 /** Written atomically: a truncated pointer would strand an account's data. */
 function writePointer(pointer: ActiveProfilePointer): void {
   const target = pointerPath();
-  const temporary = join(rootUserDataPath(), `.${POINTER_FILE}.${randomBytes(6).toString('hex')}.tmp`);
+  const temporary = join(
+    rootUserDataPath(),
+    `.${POINTER_FILE}.${randomBytes(6).toString('hex')}.tmp`,
+  );
   try {
     mkdirSync(rootUserDataPath(), { recursive: true });
     writeFileSync(temporary, `${JSON.stringify(pointer, null, 2)}\n`, 'utf-8');

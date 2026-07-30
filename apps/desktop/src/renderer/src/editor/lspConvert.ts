@@ -318,7 +318,9 @@ export function applyResolvedCompletion(
 }
 
 /** LSP folding-range kind → Monaco's, so imports/comments fold with the right label. */
-export function foldingKind(kind: string | undefined): monaco.languages.FoldingRangeKind | undefined {
+export function foldingKind(
+  kind: string | undefined,
+): monaco.languages.FoldingRangeKind | undefined {
   if (kind === 'comment') return monaco.languages.FoldingRangeKind.Comment;
   if (kind === 'imports') return monaco.languages.FoldingRangeKind.Imports;
   if (kind === 'region') return monaco.languages.FoldingRangeKind.Region;

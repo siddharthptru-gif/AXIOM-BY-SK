@@ -141,7 +141,9 @@ function targetOf(value: unknown): DeploymentTarget {
     ...(typeof raw.workflow === 'string' ? { workflow: boundedText(raw.workflow, 200) } : {}),
     ...(typeof raw.repository === 'string' ? { repository: boundedText(raw.repository, 201) } : {}),
     ...(typeof raw.ref === 'string' ? { ref: boundedText(raw.ref, 200) } : {}),
-    ...(typeof raw.hookOrigin === 'string' ? { hookOrigin: boundedText(raw.hookOrigin, 1_000) } : {}),
+    ...(typeof raw.hookOrigin === 'string'
+      ? { hookOrigin: boundedText(raw.hookOrigin, 1_000) }
+      : {}),
     ...(typeof raw.hookRevision === 'string'
       ? { hookRevision: boundedText(raw.hookRevision, 64) }
       : {}),
@@ -391,7 +393,9 @@ export async function createDeploymentPlan(
           ? ['The provider hook can start billable external infrastructure.']
           : target.provider === 'github-actions'
             ? ['The selected workflow controls its own infrastructure and must honor commit_sha.']
-            : ['The local preview server is reachable only through its exact loopback host and port.'],
+            : [
+                'The local preview server is reachable only through its exact loopback host and port.',
+              ],
       requiresConfirmation: true,
     };
     throwIfAborted(controller.signal);
@@ -423,9 +427,10 @@ function parseRepository(value: string): { owner: string; repo: string } {
 }
 
 function remoteRepository(raw: string): string | null {
-  const match = /^(?:https:\/\/github\.com\/|ssh:\/\/git@github\.com\/|git@github\.com:)([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/.exec(
-    raw.trim(),
-  );
+  const match =
+    /^(?:https:\/\/github\.com\/|ssh:\/\/git@github\.com\/|git@github\.com:)([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/.exec(
+      raw.trim(),
+    );
   return match ? `${match[1]}/${match[2]}`.toLowerCase() : null;
 }
 
@@ -477,7 +482,8 @@ async function staticDirectory(root: string, outputDirectory: string): Promise<s
   if (!realRel || realRel.startsWith('..') || isAbsolute(realRel)) {
     throw new Error('Static output escapes the trusted workspace.');
   }
-  if (!(await fs.stat(real)).isDirectory()) throw new Error('Static output path is not a directory.');
+  if (!(await fs.stat(real)).isDirectory())
+    throw new Error('Static output path is not a directory.');
   return real;
 }
 
@@ -519,11 +525,7 @@ async function captureStaticSnapshot(
       if (sensitiveStaticPath(entryRelative)) continue;
       const candidate = resolve(directory, entryRelative);
       const lexicalRelative = relative(directory, candidate);
-      if (
-        !lexicalRelative ||
-        lexicalRelative.startsWith('..') ||
-        isAbsolute(lexicalRelative)
-      ) {
+      if (!lexicalRelative || lexicalRelative.startsWith('..') || isAbsolute(lexicalRelative)) {
         throw new Error('Static output contains an escaping path.');
       }
       const stat = await fs.lstat(candidate);
@@ -570,7 +572,9 @@ async function captureStaticSnapshot(
 
   if (assets.size === 0) throw new Error('Static output contains no safe regular files.');
   const aggregate = createHash('sha256');
-  for (const [path, asset] of [...assets.entries()].sort(([left], [right]) => left.localeCompare(right))) {
+  for (const [path, asset] of [...assets.entries()].sort(([left], [right]) =>
+    left.localeCompare(right),
+  )) {
     aggregate.update(`${path}\0${asset.bytes.byteLength}\0${asset.sha256}\n`, 'utf-8');
   }
   return {
@@ -703,8 +707,7 @@ function resolvePublicHookAddress(
       if (error) rejectAddress(error);
       else resolveAddress(value!);
     };
-    const onAbort = (): void =>
-      finish(new DeploymentCancelledError('Deployment was cancelled.'));
+    const onAbort = (): void => finish(new DeploymentCancelledError('Deployment was cancelled.'));
     signal.addEventListener('abort', onAbort, { once: true });
     if (signal.aborted) {
       onAbort();
@@ -718,15 +721,15 @@ function resolvePublicHookAddress(
         }
         if (addresses.some((entry) => !isPublicHookAddress(entry.address))) {
           finish(
-            new SafeDeploymentError(
-              'Deployment hook DNS resolved to a private or special-use IP.',
-            ),
+            new SafeDeploymentError('Deployment hook DNS resolved to a private or special-use IP.'),
           );
           return;
         }
         const selected = addresses[0]!;
         if (selected.family !== 4 && selected.family !== 6) {
-          finish(new SafeDeploymentError('Deployment hook resolved with an unsupported address family.'));
+          finish(
+            new SafeDeploymentError('Deployment hook resolved with an unsupported address family.'),
+          );
           return;
         }
         finish(null, { address: selected.address, family: selected.family });
@@ -744,10 +747,7 @@ function postPinnedHook(
 ): Promise<{ status: number; payload: unknown }> {
   return new Promise((resolveResponse, rejectResponse) => {
     let settled = false;
-    const finish = (
-      error: unknown,
-      value?: { status: number; payload: unknown },
-    ): void => {
+    const finish = (error: unknown, value?: { status: number; payload: unknown }): void => {
       if (settled) return;
       settled = true;
       signal.removeEventListener('abort', onAbort);
@@ -762,9 +762,7 @@ function postPinnedHook(
         port: url.port ? Number.parseInt(url.port, 10) : 443,
         path: `${url.pathname}${url.search}`,
         method: 'POST',
-        ...(isIP(url.hostname.replace(/^\[|\]$/g, '')) === 0
-          ? { servername: url.hostname }
-          : {}),
+        ...(isIP(url.hostname.replace(/^\[|\]$/g, '')) === 0 ? { servername: url.hostname } : {}),
         headers: {
           Host: url.host,
           Accept: 'application/json',
@@ -781,9 +779,7 @@ function postPinnedHook(
           return;
         }
         const declaredHeader = response.headers['content-length'];
-        const declared = Number(
-          Array.isArray(declaredHeader) ? declaredHeader[0] : declaredHeader,
-        );
+        const declared = Number(Array.isArray(declaredHeader) ? declaredHeader[0] : declaredHeader);
         if (Number.isFinite(declared) && declared > MAX_HOOK_RESPONSE_BYTES) {
           response.destroy();
           finish(new SafeDeploymentError('Deploy-hook response was too large.'));
@@ -834,11 +830,7 @@ function safeProviderUrl(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   try {
     const url = new URL(value);
-    return url.protocol === 'https:' &&
-      !url.username &&
-      !url.password &&
-      !url.search &&
-      !url.hash
+    return url.protocol === 'https:' && !url.username && !url.password && !url.search && !url.hash
       ? url.toString()
       : null;
   } catch {
@@ -878,9 +870,7 @@ async function triggerHook(
       throw new SafeDeploymentError(`Deployment hook failed with HTTP ${response.status}.`);
     }
     const record =
-      response.payload &&
-      typeof response.payload === 'object' &&
-      !Array.isArray(response.payload)
+      response.payload && typeof response.payload === 'object' && !Array.isArray(response.payload)
         ? (response.payload as Record<string, unknown>)
         : {};
     return {
@@ -898,7 +888,9 @@ async function triggerHook(
       throw new DeploymentCancelledError('Deployment was cancelled.');
     }
     if (error instanceof SafeDeploymentError) throw error;
-    throw new SafeDeploymentError('Deployment hook request failed without exposing its secret URL.');
+    throw new SafeDeploymentError(
+      'Deployment hook request failed without exposing its secret URL.',
+    );
   } finally {
     clearTimeout(timer);
     signal.removeEventListener('abort', onAbort);
@@ -922,7 +914,9 @@ async function pinnedVerification(
   const current = await currentCommit(root);
   throwIfAborted(signal);
   if (current.toLowerCase() !== commitSha.toLowerCase()) {
-    throw new Error('The Git commit changed after this deployment plan was created. Create a new plan.');
+    throw new Error(
+      'The Git commit changed after this deployment plan was created. Create a new plan.',
+    );
   }
   if (
     requireCleanCommit &&
@@ -1067,7 +1061,9 @@ export async function executeDeployment(
     const initialCommit = await currentCommit(root);
     throwIfAborted(controller.signal);
     if (initialCommit.toLowerCase() !== stored.plan.commitSha.toLowerCase()) {
-      throw new Error('The Git commit changed after this deployment plan was created. Create a new plan.');
+      throw new Error(
+        'The Git commit changed after this deployment plan was created. Create a new plan.',
+      );
     }
 
     let staticOutput: string | null = null;
@@ -1137,7 +1133,9 @@ export async function executeDeployment(
       const dispatchCommit = await currentCommit(root);
       throwIfAborted(controller.signal);
       if (dispatchCommit.toLowerCase() !== stored.plan.commitSha.toLowerCase()) {
-        throw new Error('The Git commit changed before provider dispatch. Create a new deployment plan.');
+        throw new Error(
+          'The Git commit changed before provider dispatch. Create a new deployment plan.',
+        );
       }
 
       if (target.provider === 'github-actions') {
@@ -1234,13 +1232,12 @@ export async function cancelDeployment(ownerId: number, runId: unknown): Promise
     return;
   }
   if (record.run.status === 'queued') {
-    throw new Error('The external provider already accepted this deployment; Axiom cannot cancel it.');
+    throw new Error(
+      'The external provider already accepted this deployment; Axiom cannot cancel it.',
+    );
   }
 }
 
 export async function stopAllDeployments(): Promise<void> {
-  await stopMatchingDeployments(
-    () => true,
-    'Deployment stopped during application shutdown.',
-  );
+  await stopMatchingDeployments(() => true, 'Deployment stopped during application shutdown.');
 }

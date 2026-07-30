@@ -60,7 +60,8 @@ const IGNORED_CONTEXT_DIRS = new Set([
 
 // These files may be useful to a user-selected attachment flow, but their values
 // must never be harvested automatically as general workspace grounding.
-const SENSITIVE_CONTEXT_FILE = /^(?:\.env(?:\..*)?|\.npmrc|\.pypirc|\.netrc|credentials(?:\..*)?|secrets?\.json|auth-store\.enc|id_(?:rsa|dsa|ecdsa|ed25519)(?:\.pub)?|.*\.(?:pem|key|p12|pfx))$/i;
+const SENSITIVE_CONTEXT_FILE =
+  /^(?:\.env(?:\..*)?|\.npmrc|\.pypirc|\.netrc|credentials(?:\..*)?|secrets?\.json|auth-store\.enc|id_(?:rsa|dsa|ecdsa|ed25519)(?:\.pub)?|.*\.(?:pem|key|p12|pfx))$/i;
 
 const CONTEXT_HEADER =
   "The following bounded workspace inventory and code were selected from the user's opened " +
@@ -433,7 +434,9 @@ function workspaceManifest(root: string, inventory: WorkspaceInventory): string 
     `Selected workspace: ${basename(root) || 'workspace'}`,
     `Bounded file inventory: ${inventory.files.length}${inventory.truncated ? '+' : ''} non-sensitive files discovered.`,
     ...(lines.length > 0 ? lines : ['- (empty workspace)']),
-    ...(omitted > 0 ? [`- … ${omitted} additional inventoried files omitted from this prompt`] : []),
+    ...(omitted > 0
+      ? [`- … ${omitted} additional inventoried files omitted from this prompt`]
+      : []),
     ...(inventory.sensitiveOmitted > 0
       ? [
           `${inventory.sensitiveOmitted} sensitive credential/environment file(s) were intentionally excluded from automatic context.`,
@@ -465,7 +468,11 @@ function lexicalFileScore(rel: string, query: string): number {
     (token) => !LEXICAL_STOP_WORDS.has(token),
   );
   let score = rel.includes('/') ? 0 : 3;
-  if (/^(?:readme|package\.json|pyproject\.toml|cargo\.toml|go\.mod|pom\.xml|build\.gradle)/i.test(name)) {
+  if (
+    /^(?:readme|package\.json|pyproject\.toml|cargo\.toml|go\.mod|pom\.xml|build\.gradle)/i.test(
+      name,
+    )
+  ) {
     score += 6;
   }
   if (/\.(?:ts|tsx|js|jsx|py|rs|go|java|cs|rb|php|md|json|ya?ml|toml)$/i.test(name)) score += 1;
@@ -610,7 +617,9 @@ export async function buildContext(
           shouldIndexFile({ path: file.path, bytes: file.bytes }).index,
       )
       .map((file) => ({ file, score: lexicalFileScore(file.rel, input.query) }))
-      .sort((left, right) => right.score - left.score || left.file.rel.localeCompare(right.file.rel));
+      .sort(
+        (left, right) => right.score - left.score || left.file.rel.localeCompare(right.file.rel),
+      );
     for (const { file, score } of ranked.slice(0, MAX_LEXICAL_FILES)) {
       const content = await readSafe(file.path, signal);
       if (content === null) continue;

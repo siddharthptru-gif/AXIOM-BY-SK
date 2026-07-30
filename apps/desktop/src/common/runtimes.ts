@@ -15,13 +15,7 @@
 
 /** What a detected tool is for, so the settings UI can group the list. */
 export type RuntimeCategory =
-  | 'language'
-  | 'compiler'
-  | 'packageManager'
-  | 'buildTool'
-  | 'container'
-  | 'vcs'
-  | 'mobile';
+  'language' | 'compiler' | 'packageManager' | 'buildTool' | 'container' | 'vcs' | 'mobile';
 
 export interface RuntimeDefinition {
   id: string;
@@ -263,25 +257,127 @@ export const RUNTIMES: readonly RuntimeDefinition[] = [
   },
 
   // ---- Package managers ------------------------------------------------------
-  { id: 'npm', displayName: 'npm', category: 'packageManager', commands: ['npm'], versionArgs: ['--version'] },
-  { id: 'pnpm', displayName: 'pnpm', category: 'packageManager', commands: ['pnpm'], versionArgs: ['--version'] },
-  { id: 'yarn', displayName: 'Yarn', category: 'packageManager', commands: ['yarn'], versionArgs: ['--version'] },
-  { id: 'pip', displayName: 'pip', category: 'packageManager', commands: ['pip', 'pip3'], versionArgs: ['--version'] },
-  { id: 'poetry', displayName: 'Poetry', category: 'packageManager', commands: ['poetry'], versionArgs: ['--version'] },
-  { id: 'uv', displayName: 'uv', category: 'packageManager', commands: ['uv'], versionArgs: ['--version'] },
-  { id: 'cargo', displayName: 'Cargo', category: 'packageManager', commands: ['cargo'], versionArgs: ['--version'] },
-  { id: 'composer', displayName: 'Composer', category: 'packageManager', commands: ['composer'], versionArgs: ['--version'] },
-  { id: 'bundler', displayName: 'Bundler', category: 'packageManager', commands: ['bundle'], versionArgs: ['--version'] },
-  { id: 'cocoapods', displayName: 'CocoaPods', category: 'packageManager', commands: ['pod'], versionArgs: ['--version'] },
-  { id: 'homebrew', displayName: 'Homebrew', category: 'packageManager', commands: ['brew'], versionArgs: ['--version'] },
-  { id: 'chocolatey', displayName: 'Chocolatey', category: 'packageManager', commands: ['choco'], versionArgs: ['--version'] },
-  { id: 'scoop', displayName: 'Scoop', category: 'packageManager', commands: ['scoop'], versionArgs: ['--version'] },
+  {
+    id: 'npm',
+    displayName: 'npm',
+    category: 'packageManager',
+    commands: ['npm'],
+    versionArgs: ['--version'],
+  },
+  {
+    id: 'pnpm',
+    displayName: 'pnpm',
+    category: 'packageManager',
+    commands: ['pnpm'],
+    versionArgs: ['--version'],
+  },
+  {
+    id: 'yarn',
+    displayName: 'Yarn',
+    category: 'packageManager',
+    commands: ['yarn'],
+    versionArgs: ['--version'],
+  },
+  {
+    id: 'pip',
+    displayName: 'pip',
+    category: 'packageManager',
+    commands: ['pip', 'pip3'],
+    versionArgs: ['--version'],
+  },
+  {
+    id: 'poetry',
+    displayName: 'Poetry',
+    category: 'packageManager',
+    commands: ['poetry'],
+    versionArgs: ['--version'],
+  },
+  {
+    id: 'uv',
+    displayName: 'uv',
+    category: 'packageManager',
+    commands: ['uv'],
+    versionArgs: ['--version'],
+  },
+  {
+    id: 'cargo',
+    displayName: 'Cargo',
+    category: 'packageManager',
+    commands: ['cargo'],
+    versionArgs: ['--version'],
+  },
+  {
+    id: 'composer',
+    displayName: 'Composer',
+    category: 'packageManager',
+    commands: ['composer'],
+    versionArgs: ['--version'],
+  },
+  {
+    id: 'bundler',
+    displayName: 'Bundler',
+    category: 'packageManager',
+    commands: ['bundle'],
+    versionArgs: ['--version'],
+  },
+  {
+    id: 'cocoapods',
+    displayName: 'CocoaPods',
+    category: 'packageManager',
+    commands: ['pod'],
+    versionArgs: ['--version'],
+  },
+  {
+    id: 'homebrew',
+    displayName: 'Homebrew',
+    category: 'packageManager',
+    commands: ['brew'],
+    versionArgs: ['--version'],
+  },
+  {
+    id: 'chocolatey',
+    displayName: 'Chocolatey',
+    category: 'packageManager',
+    commands: ['choco'],
+    versionArgs: ['--version'],
+  },
+  {
+    id: 'scoop',
+    displayName: 'Scoop',
+    category: 'packageManager',
+    commands: ['scoop'],
+    versionArgs: ['--version'],
+  },
 
   // ---- Build tools -----------------------------------------------------------
-  { id: 'cmake', displayName: 'CMake', category: 'buildTool', commands: ['cmake'], versionArgs: ['--version'] },
-  { id: 'make', displayName: 'Make', category: 'buildTool', commands: ['make'], versionArgs: ['--version'] },
-  { id: 'maven', displayName: 'Maven', category: 'buildTool', commands: ['mvn'], versionArgs: ['--version'] },
-  { id: 'gradle', displayName: 'Gradle', category: 'buildTool', commands: ['gradle'], versionArgs: ['--version'] },
+  {
+    id: 'cmake',
+    displayName: 'CMake',
+    category: 'buildTool',
+    commands: ['cmake'],
+    versionArgs: ['--version'],
+  },
+  {
+    id: 'make',
+    displayName: 'Make',
+    category: 'buildTool',
+    commands: ['make'],
+    versionArgs: ['--version'],
+  },
+  {
+    id: 'maven',
+    displayName: 'Maven',
+    category: 'buildTool',
+    commands: ['mvn'],
+    versionArgs: ['--version'],
+  },
+  {
+    id: 'gradle',
+    displayName: 'Gradle',
+    category: 'buildTool',
+    commands: ['gradle'],
+    versionArgs: ['--version'],
+  },
 
   // ---- Platform tools --------------------------------------------------------
   {
@@ -300,10 +396,28 @@ export const RUNTIMES: readonly RuntimeDefinition[] = [
     versionArgs: ['--version'],
     languageIds: ['dart'],
   },
-  { id: 'adb', displayName: 'Android SDK (adb)', category: 'mobile', commands: ['adb'], versionArgs: ['version'] },
+  {
+    id: 'adb',
+    displayName: 'Android SDK (adb)',
+    category: 'mobile',
+    commands: ['adb'],
+    versionArgs: ['version'],
+  },
   { id: 'git', displayName: 'Git', category: 'vcs', commands: ['git'], versionArgs: ['--version'] },
-  { id: 'docker', displayName: 'Docker', category: 'container', commands: ['docker'], versionArgs: ['--version'] },
-  { id: 'wsl', displayName: 'WSL', category: 'container', commands: ['wsl'], versionArgs: ['--status'] },
+  {
+    id: 'docker',
+    displayName: 'Docker',
+    category: 'container',
+    commands: ['docker'],
+    versionArgs: ['--version'],
+  },
+  {
+    id: 'wsl',
+    displayName: 'WSL',
+    category: 'container',
+    commands: ['wsl'],
+    versionArgs: ['--status'],
+  },
 ] as const;
 
 /** One probed toolchain. Absent tools are reported too, so the UI can say so. */

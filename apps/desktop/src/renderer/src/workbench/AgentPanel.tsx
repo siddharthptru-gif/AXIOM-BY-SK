@@ -20,10 +20,7 @@ import {
   agentActivityResult,
   agentToolLabel,
 } from '../../../common/agentActivity';
-import type {
-  AiDockCommandRequest,
-  GodModeAgentLaunch,
-} from '../commands/commandBuses';
+import type { AiDockCommandRequest, GodModeAgentLaunch } from '../commands/commandBuses';
 import { useWorkspace } from '../state/workspace';
 import { useWorkspaceTrust } from '../state/workspaceTrust';
 import { useSettings } from '../settings/store';
@@ -31,10 +28,7 @@ import { notifyError, notifyInfo } from '../notifications/bus';
 import { buildAiFileReview } from '../../../common/aiEditReview';
 import { clearAiReview, clearAllAiReviews, publishAiReview } from '../editor/aiEditReviewBus';
 import { requestAgentTyping } from '../editor/agentTypingBus';
-import {
-  commandFailed,
-  commandStatusLabel,
-} from '../../../common/agentCommand';
+import { commandFailed, commandStatusLabel } from '../../../common/agentCommand';
 import { renderMarkdown } from './ChatMarkdown';
 import { presentAssistantText } from '../../../common/modelText';
 import {
@@ -895,9 +889,7 @@ export function AgentPanel({
         if (!cancelled) setTodayUsd(summary.todayUsd);
       })
       .catch(() => undefined);
-    const unsubscribe = window.axiom.ai.spend.onChanged((summary) =>
-      setTodayUsd(summary.todayUsd),
-    );
+    const unsubscribe = window.axiom.ai.spend.onChanged((summary) => setTodayUsd(summary.todayUsd));
     return () => {
       cancelled = true;
       unsubscribe();
@@ -1197,7 +1189,14 @@ export function AgentPanel({
             const truncated = content.content.length > allowance;
             const text = truncated ? content.content.slice(0, allowance) : content.content;
             budget -= text.length;
-            additions.push({ path: file.path, name: file.name, kind, text, truncated, error: null });
+            additions.push({
+              path: file.path,
+              name: file.name,
+              kind,
+              text,
+              truncated,
+              error: null,
+            });
           } catch (cause) {
             additions.push({
               path: file.path,
@@ -1778,7 +1777,8 @@ export function AgentPanel({
                   }
                   const enabled = approvedDigests[file.agent.id] === file.digest;
                   const stale =
-                    !enabled && Object.prototype.hasOwnProperty.call(approvedDigests, file.agent.id);
+                    !enabled &&
+                    Object.prototype.hasOwnProperty.call(approvedDigests, file.agent.id);
                   const scope =
                     file.agent.toolScope === 'all'
                       ? 'every built-in tool'
@@ -1854,9 +1854,7 @@ export function AgentPanel({
                   key={attachment.path}
                   className={`agent-attachment${attachment.error ? ' is-error' : ''}`}
                   title={
-                    attachment.error
-                      ? `${attachment.path} — ${attachment.error}`
-                      : attachment.path
+                    attachment.error ? `${attachment.path} — ${attachment.error}` : attachment.path
                   }
                 >
                   <span className="agent-attachment-icon" aria-hidden="true">
@@ -1923,9 +1921,7 @@ export function AgentPanel({
                   }
                   if (event.key === 'ArrowUp') {
                     event.preventDefault();
-                    setRefIndex(
-                      (current) => (current - 1 + refMatches.length) % refMatches.length,
-                    );
+                    setRefIndex((current) => (current - 1 + refMatches.length) % refMatches.length);
                     return;
                   }
                   if (event.key === 'Enter' || event.key === 'Tab') {
@@ -2686,7 +2682,10 @@ function CommandCard({ result }: { result: AgentCommandResult }) {
   const outputLabel = failed ? 'Full error output' : 'Output';
   const hasOutput = result.output.length > 0;
   return (
-    <details className={`agent-command-card${failed ? ' is-error' : ''}`} open={failed || undefined}>
+    <details
+      className={`agent-command-card${failed ? ' is-error' : ''}`}
+      open={failed || undefined}
+    >
       <summary>
         <span className="agent-command-title">
           <TerminalIcon size={14} />

@@ -114,9 +114,7 @@ export function SemanticSearchView() {
         .catch((cause: unknown) => {
           if (!live()) return;
           setError(
-            `On-device retrieval failed: ${
-              cause instanceof Error ? cause.message : String(cause)
-            }`,
+            `On-device retrieval failed: ${cause instanceof Error ? cause.message : String(cause)}`,
           );
           setLoading(false);
         });
@@ -224,19 +222,21 @@ export function SemanticSearchView() {
       </p>
 
       <div className="semantic-summary" role="status" aria-live="polite" aria-atomic="true">
-        {visibleLoading
-          ? 'Searching this codebase…'
-          : visibleError
-            ? <span className="semantic-error">{visibleError}</span>
-            : visibleResult === null
-              ? normalized.length === 0
-                ? 'Ask in plain language — for example, “where is workspace trust enforced?”'
-                : null
-              : visibleResult.count === 0
-                ? 'No related passages found. Try describing the behaviour rather than naming a symbol.'
-                : `${visibleResult.count} passage${visibleResult.count === 1 ? '' : 's'} across ${
-                    groups.length
-                  } file${groups.length === 1 ? '' : 's'}`}
+        {visibleLoading ? (
+          'Searching this codebase…'
+        ) : visibleError ? (
+          <span className="semantic-error">{visibleError}</span>
+        ) : visibleResult === null ? (
+          normalized.length === 0 ? (
+            'Ask in plain language — for example, “where is workspace trust enforced?”'
+          ) : null
+        ) : visibleResult.count === 0 ? (
+          'No related passages found. Try describing the behaviour rather than naming a symbol.'
+        ) : (
+          `${visibleResult.count} passage${visibleResult.count === 1 ? '' : 's'} across ${
+            groups.length
+          } file${groups.length === 1 ? '' : 's'}`
+        )}
       </div>
 
       {groups.length > 0 ? (
@@ -256,7 +256,8 @@ export function SemanticSearchView() {
       <div className="semantic-results" aria-busy={visibleLoading}>
         {groups.map((group) => {
           const isCollapsed = collapsed.has(group.path);
-          const relative = topScore > 0 ? Math.max(4, Math.round((group.best / topScore) * 100)) : 0;
+          const relative =
+            topScore > 0 ? Math.max(4, Math.round((group.best / topScore) * 100)) : 0;
           return (
             <div key={group.path} className="semantic-group">
               <button

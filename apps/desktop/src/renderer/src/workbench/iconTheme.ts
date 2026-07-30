@@ -63,10 +63,7 @@ function lookup(theme: IconThemeDefinition, name: string | null): ResolvedIcon |
 }
 
 /** The icon a file should use, or null when the theme has nothing for it. */
-export function resolveFileIcon(
-  fileName: string,
-  languageId?: string | null,
-): ResolvedIcon | null {
+export function resolveFileIcon(fileName: string, languageId?: string | null): ResolvedIcon | null {
   if (active === null) return null;
   const lower = fileName.toLowerCase();
   const byName = lookup(active, active.fileNames[lower] ?? null);

@@ -95,7 +95,9 @@ export function buildRepoReport(input: RepoReportInput): string {
     out.push('| Language | Files |');
     out.push('| --- | --- |');
     for (const language of input.languages.slice(0, MAX_LANGUAGES)) {
-      out.push(`| ${cell(language.name)} | ${language.files}${percent(language.files, languageTotal)} |`);
+      out.push(
+        `| ${cell(language.name)} | ${language.files}${percent(language.files, languageTotal)} |`,
+      );
     }
     if (input.languages.length > MAX_LANGUAGES) {
       out.push(`| … ${input.languages.length - MAX_LANGUAGES} more | |`);

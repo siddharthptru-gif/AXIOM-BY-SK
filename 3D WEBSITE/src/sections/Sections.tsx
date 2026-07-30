@@ -96,8 +96,8 @@ export function Hero({
 
         <Reveal delay={0.16}>
           <p className="mx-auto mt-7 max-w-[46ch] text-base leading-relaxed text-fg-muted">
-            A desktop AI coding IDE that runs on your machine, edits your real files, and bills
-            you nothing. Bring your own model key and keep every byte local.
+            A desktop AI coding IDE that runs on your machine, edits your real files, and bills you
+            nothing. Bring your own model key and keep every byte local.
           </p>
         </Reveal>
       </div>
@@ -157,10 +157,10 @@ export function EditorSection() {
             <SplitText text="Two ways to work." />
           </h2>
           <p className="mt-5 text-sm leading-relaxed text-fg-muted md:text-base">
-            <strong className="text-fg">Ask</strong> answers questions about the workspace you
-            have open, cites the files it used, and changes nothing.{' '}
-            <strong className="text-fg">Build</strong> is an agent: it reads, writes, runs
-            commands, and reports what it actually did.
+            <strong className="text-fg">Ask</strong> answers questions about the workspace you have
+            open, cites the files it used, and changes nothing.{' '}
+            <strong className="text-fg">Build</strong> is an agent: it reads, writes, runs commands,
+            and reports what it actually did.
           </p>
           <ul className="mt-7 flex flex-col gap-3">
             <Bullet>Ask — grounded answers, zero writes</Bullet>
@@ -194,9 +194,9 @@ export function ByokSection() {
           </h2>
           <p className="mt-5 text-sm leading-relaxed text-fg-muted md:text-base">
             AXIOM ships with no subscription and no proxy in the middle. Point it at OpenAI,
-            Anthropic, Gemini, any OpenAI-compatible gateway, or a local Ollama server, and it
-            talks straight to that endpoint. Keys are encrypted with the OS keychain and never
-            leave your machine except to the endpoint you configured.
+            Anthropic, Gemini, any OpenAI-compatible gateway, or a local Ollama server, and it talks
+            straight to that endpoint. Keys are encrypted with the OS keychain and never leave your
+            machine except to the endpoint you configured.
           </p>
         </Reveal>
 
@@ -279,8 +279,8 @@ export function SafetySection() {
 
         <Reveal delay={0.2}>
           <p className="mx-auto mt-9 max-w-[42ch] text-xs leading-relaxed text-fg-faint">
-            The installer is unsigned, so Windows SmartScreen will warn on first run. The
-            SHA-256 on the download card is how you verify it is the file we published.
+            The installer is unsigned, so Windows SmartScreen will warn on first run. The SHA-256 on
+            the download card is how you verify it is the file we published.
           </p>
         </Reveal>
       </div>

@@ -242,7 +242,12 @@ export function extensionMetadataUrl(
   return registryApiUrl(`/api/${namespace}/${name}${target}${tail}`);
 }
 
-export function versionHistoryUrl(namespace: string, name: string, size: number, offset: number): string {
+export function versionHistoryUrl(
+  namespace: string,
+  name: string,
+  size: number,
+  offset: number,
+): string {
   return registryApiUrl(`/api/${namespace}/${name}/version-references`, {
     size: clamp(size, 1, 100),
     offset: clamp(offset, 0, 100_000),

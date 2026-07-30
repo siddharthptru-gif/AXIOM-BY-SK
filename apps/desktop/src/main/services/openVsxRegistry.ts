@@ -186,7 +186,12 @@ async function requestOnce(
       clearTimeout(timer);
     }
 
-    if (response.status === 301 || response.status === 302 || response.status === 307 || response.status === 308) {
+    if (
+      response.status === 301 ||
+      response.status === 302 ||
+      response.status === 307 ||
+      response.status === 308
+    ) {
       const location = response.headers.get('location');
       if (location === null) throw new RegistryError('The registry redirected without a target.');
       let resolved: string;
@@ -210,7 +215,10 @@ async function requestOnce(
       throw new RegistryError(`That extension is not in the registry.`, 404);
     }
     if (!response.ok) {
-      throw new RegistryError(`The registry returned ${response.status} for the ${what}.`, response.status);
+      throw new RegistryError(
+        `The registry returned ${response.status} for the ${what}.`,
+        response.status,
+      );
     }
     return {
       bytes: await readBounded(response, maxBytes, what),
@@ -241,13 +249,17 @@ async function request(
       await sleep(retryAfterMs(null) * (attempt + 1));
     }
   }
-  throw lastError instanceof Error
-    ? lastError
-    : new RegistryError('The registry request failed.');
+  throw lastError instanceof Error ? lastError : new RegistryError('The registry request failed.');
 }
 
 async function requestJson<T>(url: string, what: string, parse: (value: unknown) => T): Promise<T> {
-  const outcome = await request(url, 'application/json', MAX_JSON_BYTES, REGISTRY_REQUEST_TIMEOUT_MS, what);
+  const outcome = await request(
+    url,
+    'application/json',
+    MAX_JSON_BYTES,
+    REGISTRY_REQUEST_TIMEOUT_MS,
+    what,
+  );
   let parsed: unknown;
   try {
     parsed = JSON.parse(outcome.bytes.toString('utf8'));
@@ -317,12 +329,17 @@ export async function extensionDetail(
   const url = extensionMetadataUrl(parts.namespace, parts.name, version, targetPlatform);
   return cached(`detail:${url}`, async () => {
     const detail = await requestJson(url, 'extension details', parseExtensionDetail);
-    if (detail === null) throw new RegistryError('The registry returned incomplete extension details.');
+    if (detail === null)
+      throw new RegistryError('The registry returned incomplete extension details.');
     return detail;
   });
 }
 
-export async function versionHistory(id: string, offset = 0, size = 25): Promise<RegistryVersionPage> {
+export async function versionHistory(
+  id: string,
+  offset = 0,
+  size = 25,
+): Promise<RegistryVersionPage> {
   const parts = splitExtensionId(id);
   if (!parts) throw new RegistryError('That extension identifier is not valid.');
   const url = versionHistoryUrl(parts.namespace, parts.name, size, offset);
@@ -497,7 +514,13 @@ export async function resolveInstallCandidate(
   if (picked !== null) {
     const target = picked.targetPlatform ?? null;
     const detail = await extensionDetail(id, picked.version, target ?? undefined);
-    return { detail, targetPlatform: target, negotiated: true, considered: candidates.length, rejected };
+    return {
+      detail,
+      targetPlatform: target,
+      negotiated: true,
+      considered: candidates.length,
+      rejected,
+    };
   }
 
   if (enumerated && candidates.length > 0) {
@@ -558,31 +581,45 @@ export async function publisherDetail(namespace: string): Promise<RegistryPublis
   const url = publisherUrl(namespace);
   return cached(`publisher:${url}`, async () => {
     const detail = await requestJson(url, 'publisher details', parsePublisherDetail);
-    if (detail === null) throw new RegistryError('The registry returned incomplete publisher details.');
+    if (detail === null)
+      throw new RegistryError('The registry returned incomplete publisher details.');
     return detail;
   });
 }
 
 /** Fetch a readme or changelog for the details pane. Markdown, rendered by the renderer. */
 export async function extensionDocument(url: string): Promise<string> {
-  const outcome = await request(url, 'text/markdown', MAX_DOCUMENT_BYTES, REGISTRY_REQUEST_TIMEOUT_MS, 'document');
+  const outcome = await request(
+    url,
+    'text/markdown',
+    MAX_DOCUMENT_BYTES,
+    REGISTRY_REQUEST_TIMEOUT_MS,
+    'document',
+  );
   return outcome.bytes.toString('utf8');
 }
 
 /** Fetch an extension icon as a data URL, so the renderer never makes its own requests. */
 export async function extensionIcon(url: string): Promise<string | null> {
   try {
-    const outcome = await request(url, 'image/*', MAX_ICON_BYTES, REGISTRY_REQUEST_TIMEOUT_MS, 'icon');
+    const outcome = await request(
+      url,
+      'image/*',
+      MAX_ICON_BYTES,
+      REGISTRY_REQUEST_TIMEOUT_MS,
+      'icon',
+    );
     const type = outcome.contentType ?? 'image/png';
     // Only raster types the renderer can show inline; SVG is excluded because an inline
     // SVG is a script-capable document, not just a picture.
-    if (!/^image\/(png|jpeg|gif|webp|svg\+xml|x-icon|vnd\.microsoft\.icon)\b/i.test(type)) return null;
+    if (!/^image\/(png|jpeg|gif|webp|svg\+xml|x-icon|vnd\.microsoft\.icon)\b/i.test(type))
+      return null;
     const mime = type.split(';')[0]?.trim() ?? 'image/png';
     return `data:${mime};base64,${outcome.bytes.toString('base64')}`;
   } catch {
     // A missing icon is cosmetic; it must never fail a browse.
     return null;
-    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -613,7 +650,8 @@ async function readSignatureManifest(sigzip: Buffer): Promise<SignatureManifest>
   try {
     const bytes = await readZipEntryBytes(sigzip, '.signature.manifest');
     const parsed: unknown = JSON.parse(bytes.toString('utf8'));
-    const record = parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null;
+    const record =
+      parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null;
     const pkg = record?.package;
     const pkgRecord = pkg && typeof pkg === 'object' ? (pkg as Record<string, unknown>) : null;
     const digests = pkgRecord?.digests;

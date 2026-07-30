@@ -93,9 +93,8 @@ function remoteRepository(raw: string): { owner: string; repo: string } | null {
     value,
   );
   if (https) return { owner: https[1]!, repo: https[2]! };
-  const ssh = /^(?:ssh:\/\/git@)?github\.com[:/]([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?$/.exec(
-    value,
-  );
+  const ssh =
+    /^(?:ssh:\/\/git@)?github\.com[:/]([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?$/.exec(value);
   return ssh ? { owner: ssh[1]!, repo: ssh[2]! } : null;
 }
 
@@ -140,8 +139,10 @@ function parseIssue(payload: unknown, expected: GithubIssueRef): GithubIssue {
     throw new Error('GitHub returned a malformed issue.');
   }
   const record = payload as Record<string, unknown>;
-  if ('pull_request' in record) throw new Error('The selected number is a pull request, not an issue.');
-  if (record.number !== expected.number) throw new Error('GitHub returned an unexpected issue number.');
+  if ('pull_request' in record)
+    throw new Error('The selected number is a pull request, not an issue.');
+  if (record.number !== expected.number)
+    throw new Error('GitHub returned an unexpected issue number.');
   const title = str(record, 'title', 500);
   const htmlUrl = str(record, 'html_url', 1_000);
   const expectedUrl = `https://github.com/${expected.owner}/${expected.repo}/issues/${expected.number}`;
@@ -151,7 +152,9 @@ function parseIssue(payload: unknown, expected: GithubIssueRef): GithubIssue {
   const user = record.user as Record<string, unknown> | undefined;
   const labels = Array.isArray(record.labels)
     ? record.labels
-        .map((item) => (item && typeof item === 'object' ? str(item as Record<string, unknown>, 'name', 100) : ''))
+        .map((item) =>
+          item && typeof item === 'object' ? str(item as Record<string, unknown>, 'name', 100) : '',
+        )
         .filter(Boolean)
         .slice(0, 100)
     : [];
@@ -294,7 +297,9 @@ async function preparePullRequest(
   }
   const value = rawInput as Record<string, unknown>;
   if (value.confirmation !== true) {
-    throw new Error('Committing, pushing, and creating a pull request requires explicit confirmation.');
+    throw new Error(
+      'Committing, pushing, and creating a pull request requires explicit confirmation.',
+    );
   }
   const issue = refOf(value.issue);
   await assertRootRepository(root, issue);
@@ -337,7 +342,9 @@ async function preparePullRequest(
   };
   const detail = JSON.stringify(identity, null, 2);
   if (detail.length > 10_000 || /[\u0000\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(detail)) {
-    throw new Error('The exact pull-request effect is too large to display safely. Shorten its text.');
+    throw new Error(
+      'The exact pull-request effect is too large to display safely. Shorten its text.',
+    );
   }
   return {
     descriptor: {
@@ -377,22 +384,16 @@ export async function createVerifiedPullRequest(
   if (approved.digest !== prepared.descriptor.digest) {
     throw new Error('Pull-request input or verification evidence changed after approval.');
   }
-  const {
-    issue,
-    title,
-    summary,
-    head,
-    base,
-    draft,
-    verificationPlanId,
-    commitMessage,
-    body,
-  } = prepared;
+  const { issue, title, summary, head, base, draft, verificationPlanId, commitMessage, body } =
+    prepared;
   const status = await getStatus(root);
   signal?.throwIfAborted();
-  if (status.branch !== head) throw new Error(`Check out the verified head branch "${head}" first.`);
-  if (status.conflicts.length > 0) throw new Error('Resolve Git conflicts before creating a pull request.');
-  if (status.unstaged.length > 0) throw new Error('Stage or discard unstaged changes before creating a pull request.');
+  if (status.branch !== head)
+    throw new Error(`Check out the verified head branch "${head}" first.`);
+  if (status.conflicts.length > 0)
+    throw new Error('Resolve Git conflicts before creating a pull request.');
+  if (status.unstaged.length > 0)
+    throw new Error('Stage or discard unstaged changes before creating a pull request.');
   const expectedGithubRepository = assertIssuePushDestination(status, issue);
 
   if (status.staged.length > 0) {
@@ -437,8 +438,11 @@ export async function createVerifiedPullRequest(
   );
   signal?.throwIfAborted();
   if (response.status === 422) {
-    throw new Error('GitHub rejected the pull request. Confirm the branch differs from the base and no equivalent PR already exists.');
+    throw new Error(
+      'GitHub rejected the pull request. Confirm the branch differs from the base and no equivalent PR already exists.',
+    );
   }
-  if (!response.ok) throw new Error(`GitHub could not create the pull request (HTTP ${response.status}).`);
+  if (!response.ok)
+    throw new Error(`GitHub could not create the pull request (HTTP ${response.status}).`);
   return parsePullResult(response.payload, input);
 }

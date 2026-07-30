@@ -191,10 +191,7 @@ export function summarizeContextEvals(
       cases.reduce((sum, item) => sum + (item.quality.reciprocalRank ?? 0), 0) / denominator,
       4,
     ),
-    groundedRate: round(
-      cases.filter((item) => item.quality.grounded).length / denominator,
-      4,
-    ),
+    groundedRate: round(cases.filter((item) => item.quality.grounded).length / denominator, 4),
   };
 }
 
@@ -247,20 +244,21 @@ export interface PredictionMetrics {
 
 export function summarizePredictionMetrics(
   latencies: readonly number[],
-  counters: Omit<
-    PredictionMetrics,
-    'averageLatencyMs' | 'p95LatencyMs' | 'acceptanceRate'
-  >,
+  counters: Omit<PredictionMetrics, 'averageLatencyMs' | 'p95LatencyMs' | 'acceptanceRate'>,
 ): PredictionMetrics {
-  const clean = latencies.filter((value) => Number.isFinite(value) && value >= 0).sort((a, b) => a - b);
+  const clean = latencies
+    .filter((value) => Number.isFinite(value) && value >= 0)
+    .sort((a, b) => a - b);
   const averageLatencyMs =
-    clean.length === 0 ? 0 : Math.round(clean.reduce((sum, value) => sum + value, 0) / clean.length);
-  const p95Index = clean.length === 0 ? -1 : Math.min(clean.length - 1, Math.ceil(clean.length * 0.95) - 1);
+    clean.length === 0
+      ? 0
+      : Math.round(clean.reduce((sum, value) => sum + value, 0) / clean.length);
+  const p95Index =
+    clean.length === 0 ? -1 : Math.min(clean.length - 1, Math.ceil(clean.length * 0.95) - 1);
   const decided = counters.accepted + counters.partial + counters.dismissed;
   return {
     ...counters,
-    acceptanceRate:
-      decided === 0 ? 0 : round((counters.accepted + counters.partial) / decided, 4),
+    acceptanceRate: decided === 0 ? 0 : round((counters.accepted + counters.partial) / decided, 4),
     averageLatencyMs,
     p95LatencyMs: p95Index < 0 ? 0 : Math.round(clean[p95Index] ?? 0),
   };
@@ -270,28 +268,11 @@ export function summarizePredictionMetrics(
 // 3. Autonomous engineering loop + durable jobs
 // ---------------------------------------------------------------------------
 export type GodModeJobKind =
-  | 'autonomous-run'
-  | 'verification'
-  | 'workspace-create'
-  | 'issue-to-pr'
-  | 'deployment';
+  'autonomous-run' | 'verification' | 'workspace-create' | 'issue-to-pr' | 'deployment';
 export type GodModeJobStatus =
-  | 'queued'
-  | 'running'
-  | 'paused'
-  | 'awaiting-approval'
-  | 'completed'
-  | 'failed'
-  | 'cancelled';
+  'queued' | 'running' | 'paused' | 'awaiting-approval' | 'completed' | 'failed' | 'cancelled';
 export type EngineeringPhase =
-  | 'understand'
-  | 'plan'
-  | 'edit'
-  | 'run'
-  | 'observe'
-  | 'fix'
-  | 'verify'
-  | 'summarize';
+  'understand' | 'plan' | 'edit' | 'run' | 'observe' | 'fix' | 'verify' | 'summarize';
 
 export interface GodModeJob {
   id: string;
@@ -327,10 +308,7 @@ export interface JobControlInput {
   action: 'pause' | 'resume' | 'cancel';
 }
 
-export function canTransitionJob(
-  from: GodModeJobStatus,
-  to: GodModeJobStatus,
-): boolean {
+export function canTransitionJob(from: GodModeJobStatus, to: GodModeJobStatus): boolean {
   const allowed: Record<GodModeJobStatus, readonly GodModeJobStatus[]> = {
     queued: ['running', 'cancelled'],
     running: ['paused', 'awaiting-approval', 'completed', 'failed', 'cancelled'],
@@ -405,9 +383,14 @@ export function isSafePreviewUrl(value: string, allowRemoteHttps = false): boole
   try {
     const url = new URL(value);
     if (url.username || url.password) return false;
-    const secretParameter = /(?:^|[_-])(?:access[_-]?token|token|secret|password|passwd|api[_-]?key|authorization|signature)(?:$|[_-])/i;
+    const secretParameter =
+      /(?:^|[_-])(?:access[_-]?token|token|secret|password|passwd|api[_-]?key|authorization|signature)(?:$|[_-])/i;
     if ([...url.searchParams.keys()].some((key) => secretParameter.test(key))) return false;
-    if (/(?:^|[?&#])(?:access[_-]?token|token|secret|password|passwd|api[_-]?key|authorization|signature)=/i.test(url.hash)) {
+    if (
+      /(?:^|[?&#])(?:access[_-]?token|token|secret|password|passwd|api[_-]?key|authorization|signature)=/i.test(
+        url.hash,
+      )
+    ) {
       return false;
     }
     if (url.protocol === 'http:' || url.protocol === 'https:') {
@@ -474,7 +457,6 @@ export interface VerificationRunResult {
 
 const TEST_FILE = /(?:^|\/)(?:__tests__|tests?|spec)(?:\/|$)|\.(?:test|spec)\.[cm]?[jt]sx?$/i;
 
-
 export interface DebugEvidenceVariable {
   name: string;
   value: string;
@@ -516,15 +498,18 @@ export function planAffectedChecks(
   scripts: Readonly<Record<string, string>>,
   now = Date.now(),
 ): VerificationPlan {
-  const normalized = [...new Set(changedFiles.map((path) => path.replace(/\\/g, '/')).filter(Boolean))].slice(0, 500);
+  const normalized = [
+    ...new Set(changedFiles.map((path) => path.replace(/\\/g, '/')).filter(Boolean)),
+  ].slice(0, 500);
   const hasTests = normalized.some((path) => TEST_FILE.test(path));
   const checks: VerificationCheck[] = [];
-  const candidates: Array<{ names: string[]; kind: CheckKind; label: string; required: boolean }> = [
-    { names: ['test', 'test:unit'], kind: 'test', label: 'Tests', required: hasTests },
-    { names: ['typecheck', 'type-check'], kind: 'typecheck', label: 'Typecheck', required: true },
-    { names: ['lint'], kind: 'lint', label: 'Lint', required: false },
-    { names: ['build'], kind: 'build', label: 'Build', required: true },
-  ];
+  const candidates: Array<{ names: string[]; kind: CheckKind; label: string; required: boolean }> =
+    [
+      { names: ['test', 'test:unit'], kind: 'test', label: 'Tests', required: hasTests },
+      { names: ['typecheck', 'type-check'], kind: 'typecheck', label: 'Typecheck', required: true },
+      { names: ['lint'], kind: 'lint', label: 'Lint', required: false },
+      { names: ['build'], kind: 'build', label: 'Build', required: true },
+    ];
   for (const candidate of candidates) {
     const script = candidate.names.find((name) => typeof scripts[name] === 'string');
     if (!script) continue;
@@ -533,7 +518,8 @@ export function planAffectedChecks(
       label: candidate.label,
       kind: candidate.kind,
       command: `npm run ${script}`,
-      affected: candidate.kind === 'test' ? hasTests || normalized.length > 0 : normalized.length > 0,
+      affected:
+        candidate.kind === 'test' ? hasTests || normalized.length > 0 : normalized.length > 0,
       required: candidate.required,
       reason:
         candidate.kind === 'test' && hasTests
@@ -815,13 +801,7 @@ export interface CollaborationExport {
 // ---------------------------------------------------------------------------
 export type DeploymentProvider = 'local-static' | 'github-actions' | 'deploy-hook';
 export type DeploymentStatus =
-  | 'planned'
-  | 'uploading'
-  | 'queued'
-  | 'deploying'
-  | 'ready'
-  | 'failed'
-  | 'cancelled';
+  'planned' | 'uploading' | 'queued' | 'deploying' | 'ready' | 'failed' | 'cancelled';
 
 export interface DeploymentTarget {
   id: string;
@@ -941,9 +921,9 @@ export function validateDeploymentTarget(target: DeploymentTarget): string[] {
       !output ||
       output.startsWith('/') ||
       /^[A-Za-z]:\//.test(output) ||
-      output.split('/').some(
-        (segment) => segment === '..' || segment === '.' || segment.length === 0,
-      )
+      output
+        .split('/')
+        .some((segment) => segment === '..' || segment === '.' || segment.length === 0)
     ) {
       errors.push('A safe workspace-relative output directory is required for local preview.');
     }
@@ -956,7 +936,10 @@ export function validateDeploymentTarget(target: DeploymentTarget): string[] {
 // ---------------------------------------------------------------------------
 export function boundedText(value: unknown, max: number, fallback = ''): string {
   if (typeof value !== 'string') return fallback;
-  return value.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').trim().slice(0, max);
+  return value
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
+    .trim()
+    .slice(0, max);
 }
 
 export function stableId(prefix: string, value: string): string {

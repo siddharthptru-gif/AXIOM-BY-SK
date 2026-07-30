@@ -21,7 +21,7 @@ The production CSP starts from `default-src 'none'`, allows only local scripts a
 
 Two extension systems exist and they are not the same thing. AXIOM's own native extensions are declarative only: executable extension entry points are rejected, and that path has no dormant process launcher. Extensions installed from the Open VSX registry are a separate subsystem, and those do run code.
 
-Running that code is a privilege grant, described here in the terms the consent prompt uses. An extension host is a `utilityProcess` — a real Node process with the user's own OS privileges. It can read and write files and reach the network through Node directly. The request set the `vscode` shim offers bounds what the *API* provides; it does not sandbox Node, and nothing in this document should be read as claiming otherwise. This is the same trust model VS Code asks users to accept, stated plainly rather than implied.
+Running that code is a privilege grant, described here in the terms the consent prompt uses. An extension host is a `utilityProcess` — a real Node process with the user's own OS privileges. It can read and write files and reach the network through Node directly. The request set the `vscode` shim offers bounds what the _API_ provides; it does not sandbox Node, and nothing in this document should be read as claiming otherwise. This is the same trust model VS Code asks users to accept, stated plainly rather than implied.
 
 What is enforced:
 

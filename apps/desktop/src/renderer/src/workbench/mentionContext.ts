@@ -86,10 +86,7 @@ async function resolveRepo(root: string | null): Promise<string> {
   if (!root) return '';
   try {
     const profile = await window.axiom.core.project.understand(root);
-    const parts = [
-      `Name: ${profile.name ?? '(unnamed)'}`,
-      `Files indexed: ${profile.totalFiles}`,
-    ];
+    const parts = [`Name: ${profile.name ?? '(unnamed)'}`, `Files indexed: ${profile.totalFiles}`];
     if (profile.languages.length > 0) {
       parts.push(
         `Languages: ${profile.languages

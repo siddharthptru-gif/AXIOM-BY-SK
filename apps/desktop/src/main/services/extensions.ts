@@ -237,7 +237,10 @@ export async function setSandboxExtensionEnabledState(
   else delete state[id];
   await assertWorkspaceTrusted(canonicalRoot);
   await writeState(state);
-  void appendAudit('extension.sandbox', `WASM extension ${enabled ? 'enabled' : 'disabled'}: ${id}`);
+  void appendAudit(
+    'extension.sandbox',
+    `WASM extension ${enabled ? 'enabled' : 'disabled'}: ${id}`,
+  );
   return listExtensions(canonicalRoot);
 }
 

@@ -28,14 +28,16 @@ let lastActiveId: string | null = null;
  * captured text matches the rendered output.
  */
 export function stripAnsi(input: string): string {
-  return input
-    // OSC ... BEL | ST
-    .replace(/\u001b\][^\u0007\u001b]*(?:\u0007|\u001b\\)/g, '')
-    // CSI sequences
-    .replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, '')
-    // Two-character escapes
-    .replace(/\u001b[@-Z\\-_]/g, '')
-    .replace(/\r/g, '');
+  return (
+    input
+      // OSC ... BEL | ST
+      .replace(/\u001b\][^\u0007\u001b]*(?:\u0007|\u001b\\)/g, '')
+      // CSI sequences
+      .replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, '')
+      // Two-character escapes
+      .replace(/\u001b[@-Z\\-_]/g, '')
+      .replace(/\r/g, '')
+  );
 }
 
 /** Record a chunk of output for a terminal. Called by the terminal view. */

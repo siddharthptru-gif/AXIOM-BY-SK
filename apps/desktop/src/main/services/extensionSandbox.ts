@@ -54,10 +54,7 @@ function signatureVerified(
   }
 }
 
-async function inspectOne(
-  root: string,
-  extensionId: string,
-): Promise<ExtensionSandboxStatus> {
+async function inspectOne(root: string, extensionId: string): Promise<ExtensionSandboxStatus> {
   const resolved = await resolveExtensionWasm(extensionId, root);
   if (!resolved?.manifest.runtime) throw new Error('Extension does not declare a WASM runtime.');
   const runtime = resolved.manifest.runtime;
@@ -95,7 +92,7 @@ async function inspectOne(
     executionTimeoutMs: runtime.timeoutMs ?? DEFAULT_WASM_SANDBOX_POLICY.executionTimeoutMs,
     lastError:
       lastErrors.get(extensionId) ??
-      (integrityVerified ? null : shapeErrors[0] ?? 'WASM integrity verification failed.'),
+      (integrityVerified ? null : (shapeErrors[0] ?? 'WASM integrity verification failed.')),
   };
 }
 
@@ -117,7 +114,8 @@ export async function listExtensionSandboxes(root: string): Promise<ExtensionSan
         memoryLimitMb: manifest.runtime.memoryLimitMb ?? 32,
         executionTimeoutMs:
           manifest.runtime.timeoutMs ?? DEFAULT_WASM_SANDBOX_POLICY.executionTimeoutMs,
-        lastError: error instanceof Error ? error.message.slice(0, 500) : 'Sandbox inspection failed.',
+        lastError:
+          error instanceof Error ? error.message.slice(0, 500) : 'Sandbox inspection failed.',
       });
     }
   }
@@ -190,14 +188,17 @@ export async function enableSandboxExtension(
   confirmation: unknown,
   allowUnsigned: unknown,
 ): Promise<ExtensionSandboxStatus[]> {
-  if (confirmation !== true) throw new Error('Enabling a sandboxed extension requires explicit confirmation.');
+  if (confirmation !== true)
+    throw new Error('Enabling a sandboxed extension requires explicit confirmation.');
   const id = typeof extensionId === 'string' ? extensionId.trim() : '';
   if (!id) throw new Error('Extension id is required.');
   const resolved = await resolveExtensionWasm(id, root);
-  if (!resolved?.manifest.runtime) throw new Error('Extension does not declare a valid WASM runtime.');
+  if (!resolved?.manifest.runtime)
+    throw new Error('Extension does not declare a valid WASM runtime.');
   const runtime = resolved.manifest.runtime;
   const inspection = await inspectOne(root, id);
-  if (!inspection.integrityVerified) throw new Error(inspection.lastError ?? 'WASM integrity verification failed.');
+  if (!inspection.integrityVerified)
+    throw new Error(inspection.lastError ?? 'WASM integrity verification failed.');
   if (allowUnsigned !== true) {
     throw new Error(
       inspection.signatureVerified
@@ -219,7 +220,8 @@ export async function enableSandboxExtension(
     lastErrors.delete(id);
     await setSandboxExtensionEnabledState(id, true, root);
   } catch (error) {
-    const message = error instanceof Error ? error.message.slice(0, 500) : 'WASM activation failed.';
+    const message =
+      error instanceof Error ? error.message.slice(0, 500) : 'WASM activation failed.';
     lastErrors.set(id, message);
     await setSandboxExtensionEnabledState(id, false, root).catch(() => undefined);
     throw new Error(message);

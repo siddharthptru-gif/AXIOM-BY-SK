@@ -322,7 +322,10 @@ async function resolveManagers(refresh: boolean): Promise<ResolvedManager[]> {
   return managers;
 }
 
-function findManager(managers: readonly ResolvedManager[], id: string): ResolvedManager | undefined {
+function findManager(
+  managers: readonly ResolvedManager[],
+  id: string,
+): ResolvedManager | undefined {
   return managers.find((entry) => entry.definition.id === id);
 }
 

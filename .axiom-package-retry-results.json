@@ -6,20 +6,10 @@
     {
       "name": "package-dir",
       "command": "npm.cmd",
-      "args": [
-        "--prefix",
-        "apps/desktop",
-        "run",
-        "package:dir"
-      ],
+      "args": ["--prefix", "apps/desktop", "run", "package:dir"],
       "launcher": {
         "command": "C:\\Windows\\system32\\cmd.exe",
-        "args": [
-          "/d",
-          "/s",
-          "/c",
-          "npm.cmd --prefix apps/desktop run package:dir"
-        ]
+        "args": ["/d", "/s", "/c", "npm.cmd --prefix apps/desktop run package:dir"]
       },
       "status": 0,
       "signal": null,
@@ -46,13 +36,7 @@
     {
       "name": "axiom-process-check",
       "command": "C:\\Windows\\System32\\tasklist.exe",
-      "args": [
-        "/FI",
-        "IMAGENAME eq AXIOM.exe",
-        "/FO",
-        "CSV",
-        "/NH"
-      ],
+      "args": ["/FI", "IMAGENAME eq AXIOM.exe", "/FO", "CSV", "/NH"],
       "launcher": null,
       "status": 0,
       "signal": null,

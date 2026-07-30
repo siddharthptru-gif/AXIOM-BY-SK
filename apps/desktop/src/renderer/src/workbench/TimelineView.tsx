@@ -63,7 +63,9 @@ export function dayLabel(at: number, now: number): string {
   const day = new Date(at);
   const today = new Date(now);
   const sameDay = (a: Date, b: Date): boolean =>
-    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
   if (sameDay(day, today)) return 'Today';
   const yesterday = new Date(now - 24 * 60 * 60 * 1000);
   if (sameDay(day, yesterday)) return 'Yesterday';
@@ -83,7 +85,10 @@ function fmtTime(at: number): string {
 }
 
 /** Order-preserving day grouping of an already newest-first checkpoint list. */
-function groupByDay(checkpoints: readonly Checkpoint[], now: number): Array<{
+function groupByDay(
+  checkpoints: readonly Checkpoint[],
+  now: number,
+): Array<{
   label: string;
   items: Checkpoint[];
 }> {
@@ -123,9 +128,7 @@ export function TimelineView() {
             : (list[0]?.runId ?? null),
         );
       })
-      .catch((cause: unknown) =>
-        setError(cause instanceof Error ? cause.message : String(cause)),
-      )
+      .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))
       .finally(() => setLoading(false));
   }, []);
 
@@ -224,27 +227,24 @@ export function TimelineView() {
     [load],
   );
 
-  const restoreEntry = useCallback(
-    (entry: SnapshotEntry): void => {
-      setBusy(true);
-      setError(null);
-      void window.axiom.snapshots
-        .restoreEntry(entry.id)
-        .then((result) => {
-          notifyInfo(
-            result ? `Restored ${baseName(result.path)}.` : 'That snapshot is no longer available.',
-            { source: 'Timeline' },
-          );
-        })
-        .catch((cause: unknown) => {
-          const detail = cause instanceof Error ? cause.message : String(cause);
-          setError(detail);
-          notifyError('Could not restore that file', { source: 'Timeline', detail });
-        })
-        .finally(() => setBusy(false));
-    },
-    [],
-  );
+  const restoreEntry = useCallback((entry: SnapshotEntry): void => {
+    setBusy(true);
+    setError(null);
+    void window.axiom.snapshots
+      .restoreEntry(entry.id)
+      .then((result) => {
+        notifyInfo(
+          result ? `Restored ${baseName(result.path)}.` : 'That snapshot is no longer available.',
+          { source: 'Timeline' },
+        );
+      })
+      .catch((cause: unknown) => {
+        const detail = cause instanceof Error ? cause.message : String(cause);
+        setError(detail);
+        notifyError('Could not restore that file', { source: 'Timeline', detail });
+      })
+      .finally(() => setBusy(false));
+  }, []);
 
   if (!open) return null;
 

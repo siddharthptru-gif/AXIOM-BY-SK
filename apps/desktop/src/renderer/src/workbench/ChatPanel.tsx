@@ -898,11 +898,7 @@ export function ChatPanel({
           throw new Error('Main returned an empty workspace context.');
         }
         contextMessages.push(
-          buildAgentUntrustedMessage(
-            'workspace retrieval context',
-            ctx.text,
-            crypto.randomUUID(),
-          ),
+          buildAgentUntrustedMessage('workspace retrieval context', ctx.text, crypto.randomUUID()),
         );
         manifestContext = {
           sources: ctx.sources.map((s) => ({
@@ -918,9 +914,7 @@ export function ChatPanel({
         setContextNote(
           `Selected workspace attached${
             n > 0 ? ` with ${n} grounded content ${n === 1 ? 'file' : 'files'}` : ''
-          } (~${ctx.tokensEstimated} tokens)${
-            ctx.truncated ? ', fitted to context budget' : ''
-          }`,
+          } (~${ctx.tokensEstimated} tokens)${ctx.truncated ? ', fitted to context budget' : ''}`,
         );
       } catch (cause) {
         if (!requestIsCurrent()) return true;
@@ -1529,7 +1523,7 @@ export function ChatPanel({
                   <CopyMessageButton
                     text={
                       m.role === 'assistant'
-                        ? (extractThinking(m.content).answer || m.content)
+                        ? extractThinking(m.content).answer || m.content
                         : m.content
                     }
                     label={m.role === 'user' ? 'your message' : 'this response'}

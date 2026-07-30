@@ -116,15 +116,18 @@ function safeRelativePath(value: string): string | null {
 function sensitiveSnapshotPath(relativePath: string): boolean {
   const segments = relativePath.replaceAll('\\', '/').split('/');
   const name = segments.at(-1)?.toLowerCase() ?? '';
-  const sourceModule = /\.(?:c|cc|cpp|cxx|h|hh|hpp|hxx|cs|go|java|js|jsx|mjs|cjs|ts|tsx|py|rb|rs|swift|kt|kts|scala|php|vue|svelte)$/i.test(
-    name,
-  );
+  const sourceModule =
+    /\.(?:c|cc|cpp|cxx|h|hh|hpp|hxx|cs|go|java|js|jsx|mjs|cjs|ts|tsx|py|rb|rs|swift|kt|kts|scala|php|vue|svelte)$/i.test(
+      name,
+    );
   const environmentTemplate = /^\.env(?:\.[a-z0-9_-]+)*\.(?:example|sample|template)$/i.test(name);
   const secretLikeName =
     /^(?:secret|secrets|credential|credentials)(?:[._-]|$)/i.test(name) ||
     /(?:^|[._-])(?:client[_-]?secret|private[_-]?key|access[_-]?token)(?:[._-]|$)/i.test(name);
   return (
-    segments.some((segment) => segment.toLowerCase() === '.git' || segment.toLowerCase() === 'node_modules') ||
+    segments.some(
+      (segment) => segment.toLowerCase() === '.git' || segment.toLowerCase() === 'node_modules',
+    ) ||
     name === '.env' ||
     (name.startsWith('.env.') && !environmentTemplate) ||
     (secretLikeName && !sourceModule) ||
@@ -307,7 +310,8 @@ async function packageScripts(root: string): Promise<Record<string, string>> {
   if (!scriptsValue || typeof scriptsValue !== 'object' || Array.isArray(scriptsValue)) return {};
   const scripts: Record<string, string> = {};
   for (const [name, command] of Object.entries(scriptsValue as Record<string, unknown>)) {
-    if (SCRIPT_NAME.test(name) && typeof command === 'string') scripts[name] = command.slice(0, 10_000);
+    if (SCRIPT_NAME.test(name) && typeof command === 'string')
+      scripts[name] = command.slice(0, 10_000);
   }
   return scripts;
 }
@@ -388,7 +392,8 @@ export async function prepareVerificationExecution(
   requestedCheckIds: unknown,
   confirmation: unknown,
 ): Promise<VerificationExecutionApprovalDescriptor> {
-  if (confirmation !== true) throw new Error('Running workspace checks requires explicit confirmation.');
+  if (confirmation !== true)
+    throw new Error('Running workspace checks requires explicit confirmation.');
   if (typeof planId !== 'string') throw new TypeError('Verification plan id is required.');
   prunePlans();
   bindOwner(owner);
@@ -423,11 +428,17 @@ export async function prepareVerificationExecution(
     try {
       const dependencyStat = await fs.lstat(dependencyRoot);
       if (dependencyStat.isSymbolicLink() || !dependencyStat.isDirectory()) {
-        throw new Error('Workspace node_modules must be a real directory for isolated verification.');
+        throw new Error(
+          'Workspace node_modules must be a real directory for isolated verification.',
+        );
       }
       const realDependencies = await fs.realpath(dependencyRoot);
       const dependencyRelative = relative(await fs.realpath(stored.plan.root), realDependencies);
-      if (!dependencyRelative || dependencyRelative.startsWith('..') || isAbsolute(dependencyRelative)) {
+      if (
+        !dependencyRelative ||
+        dependencyRelative.startsWith('..') ||
+        isAbsolute(dependencyRelative)
+      ) {
         throw new Error('Workspace node_modules resolves outside the trusted workspace.');
       }
       await fs.symlink(
@@ -536,11 +547,16 @@ async function runCheck(
       else resolve(value);
     };
     const onAbort = (): void => {
-      void terminateProcessTree(child).finally(() => finish(null, new Error('Verification cancelled.')));
+      void terminateProcessTree(child).finally(() =>
+        finish(null, new Error('Verification cancelled.')),
+      );
     };
     const timer = setTimeout(() => {
       void terminateProcessTree(child).finally(() =>
-        finish(null, new Error(`Verification timed out after ${CHECK_TIMEOUT_MS / 60_000} minutes.`)),
+        finish(
+          null,
+          new Error(`Verification timed out after ${CHECK_TIMEOUT_MS / 60_000} minutes.`),
+        ),
       );
     }, CHECK_TIMEOUT_MS);
     active.controller.signal.addEventListener('abort', onAbort, { once: true });
@@ -673,9 +689,7 @@ export async function requireVerifiedPlan(
 
 export async function cancelVerification(ownerId: number, planId: unknown): Promise<void> {
   if (typeof planId !== 'string') throw new TypeError('Verification plan id is required.');
-  const preparedItems = [...prepared.values()].filter(
-    (item) => item.descriptor.planId === planId,
-  );
+  const preparedItems = [...prepared.values()].filter((item) => item.descriptor.planId === planId);
   for (const item of preparedItems) {
     if (item.descriptor.ownerId !== ownerId) {
       throw new Error('Verification is owned by another window.');

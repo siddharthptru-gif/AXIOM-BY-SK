@@ -18,9 +18,7 @@ export function Docs() {
         <li>
           Download <code>{RELEASE.fileName}</code> ({RELEASE_SIZE}).
         </li>
-        <li>
-          Optional but recommended — verify it. Open Command Prompt in your Downloads folder:
-        </li>
+        <li>Optional but recommended — verify it. Open Command Prompt in your Downloads folder:</li>
       </ol>
       <pre>
         <code>{VERIFY_COMMAND}</code>
@@ -30,8 +28,8 @@ export function Docs() {
       </p>
       <ol start={3}>
         <li>
-          Run the installer. This build is <strong>unsigned</strong>, so Windows SmartScreen
-          will show &ldquo;Windows protected your PC&rdquo;. Choose{' '}
+          Run the installer. This build is <strong>unsigned</strong>, so Windows SmartScreen will
+          show &ldquo;Windows protected your PC&rdquo;. Choose{' '}
           <strong>More info → Run anyway</strong>. If that is not acceptable to you, verify the
           checksum above first — that is exactly what it is for.
         </li>
@@ -43,17 +41,17 @@ export function Docs() {
 
       <h2>First run</h2>
       <p>
-        AXIOM opens on a welcome view. Nothing is asked of you: there is no account, no sign-in,
-        no licence key and no trial. Two things get you working:
+        AXIOM opens on a welcome view. Nothing is asked of you: there is no account, no sign-in, no
+        licence key and no trial. Two things get you working:
       </p>
       <ol>
         <li>
           <strong>Open a folder.</strong> File → Open Folder, or the button on the welcome view.
         </li>
         <li>
-          <strong>Trust the folder.</strong> AXIOM asks once, in a native dialog, whether you
-          trust the authors of the files in it. Trust is what allows terminals, tasks, agents,
-          debuggers, language servers and extensions to run. It is remembered per folder.
+          <strong>Trust the folder.</strong> AXIOM asks once, in a native dialog, whether you trust
+          the authors of the files in it. Trust is what allows terminals, tasks, agents, debuggers,
+          language servers and extensions to run. It is remembered per folder.
         </li>
       </ol>
       <p>
@@ -63,9 +61,8 @@ export function Docs() {
 
       <h2>Configure a provider</h2>
       <p>
-        AXIOM has no built-in model and takes no cut. You supply an endpoint and a key, and it
-        talks directly to that endpoint. Open the AI panel and choose{' '}
-        <strong>Provider Settings</strong>.
+        AXIOM has no built-in model and takes no cut. You supply an endpoint and a key, and it talks
+        directly to that endpoint. Open the AI panel and choose <strong>Provider Settings</strong>.
       </p>
 
       <h3>OpenAI, Anthropic, or Gemini</h3>
@@ -77,12 +74,12 @@ export function Docs() {
 
       <h3>Any OpenAI-compatible gateway</h3>
       <p>
-        Choose <strong>Custom (OpenAI-Compatible)</strong> and enter the base URL — it usually
-        ends in <code>/v1</code>. Press <strong>Fetch Models</strong> to list what the endpoint
-        actually serves, pick one, then <strong>Test Connection</strong>. The test does two
-        things: it confirms the endpoint and key work, and it sends one tiny completion to prove
-        the selected model can actually answer. A gateway that lists a model it cannot serve
-        fails the test rather than failing later in the middle of your work.
+        Choose <strong>Custom (OpenAI-Compatible)</strong> and enter the base URL — it usually ends
+        in <code>/v1</code>. Press <strong>Fetch Models</strong> to list what the endpoint actually
+        serves, pick one, then <strong>Test Connection</strong>. The test does two things: it
+        confirms the endpoint and key work, and it sends one tiny completion to prove the selected
+        model can actually answer. A gateway that lists a model it cannot serve fails the test
+        rather than failing later in the middle of your work.
       </p>
 
       <h3>Ollama — fully local, no key</h3>
@@ -95,20 +92,20 @@ export function Docs() {
       <p>There are two AI surfaces, and the difference matters.</p>
       <h3>Ask</h3>
       <p>
-        A conversation about the workspace you have open. It grounds its answer in your files
-        and cites them. It has <strong>no tools</strong> — it cannot create, edit or delete
-        anything, and it cannot run a command. If you ask Ask to build something, it will tell
-        you to switch to Build, because that is the honest answer.
+        A conversation about the workspace you have open. It grounds its answer in your files and
+        cites them. It has <strong>no tools</strong> — it cannot create, edit or delete anything,
+        and it cannot run a command. If you ask Ask to build something, it will tell you to switch
+        to Build, because that is the honest answer.
       </p>
       <h3>Build</h3>
       <p>
-        An agent. It inspects the workspace, writes files, runs commands, and reports what it
-        did. Each step appears in the transcript: the tool it used, the diff it produced, and
-        for a command, the command itself with its exit code and captured output.
+        An agent. It inspects the workspace, writes files, runs commands, and reports what it did.
+        Each step appears in the transcript: the tool it used, the diff it produced, and for a
+        command, the command itself with its exit code and captured output.
       </p>
       <p>
-        Describe an outcome rather than a procedure. &ldquo;Add a dark mode toggle that persists
-        to localStorage&rdquo; works better than &ldquo;create a file called theme.ts&rdquo;.
+        Describe an outcome rather than a procedure. &ldquo;Add a dark mode toggle that persists to
+        localStorage&rdquo; works better than &ldquo;create a file called theme.ts&rdquo;.
       </p>
 
       <h2>Permissions: trusting a folder and allowing edits</h2>
@@ -119,27 +116,26 @@ export function Docs() {
           execution at all.
         </li>
         <li>
-          <strong>Edit permission</strong> controls whether each individual file write needs
-          your approval. By default every write shows you a diff first. In the Build composer
-          you can tick the box to allow edits for the session, or press{' '}
+          <strong>Edit permission</strong> controls whether each individual file write needs your
+          approval. By default every write shows you a diff first. In the Build composer you can
+          tick the box to allow edits for the session, or press{' '}
           <strong>Always allow in this folder</strong> to remember it across restarts.
         </li>
       </ul>
       <p>
-        Allowing edits never allows anything else. Running a command, a Git push, a network
-        write, an MCP tool call and any action classed as high-risk still ask you every single
-        time, in a native dialog that shows the exact thing about to happen. That boundary is
-        not configurable, because arbitrary command execution is the one action you cannot undo
-        from a snapshot.
+        Allowing edits never allows anything else. Running a command, a Git push, a network write,
+        an MCP tool call and any action classed as high-risk still ask you every single time, in a
+        native dialog that shows the exact thing about to happen. That boundary is not configurable,
+        because arbitrary command execution is the one action you cannot undo from a snapshot.
       </p>
 
       <h2>Reverting a change</h2>
       <p>Every file AXIOM writes is snapshotted first. Three ways back:</p>
       <ul>
         <li>
-          <strong>The review bar</strong> at the end of a Build turn: &ldquo;N files
-          changed&rdquo; with <strong>Review edits</strong>, <strong>Accept all files</strong>{' '}
-          and <strong>Reject edits</strong>. Rejecting restores every file that turn touched.
+          <strong>The review bar</strong> at the end of a Build turn: &ldquo;N files changed&rdquo;
+          with <strong>Review edits</strong>, <strong>Accept all files</strong> and{' '}
+          <strong>Reject edits</strong>. Rejecting restores every file that turn touched.
         </li>
         <li>
           <strong>Inline review</strong> in the editor: each AI change is decorated in the file
@@ -147,13 +143,13 @@ export function Docs() {
         </li>
         <li>
           <strong>Timeline / Checkpoints</strong>: the full history of snapshots, with a diff
-          against what is on disk right now, and a two-step restore that names every file it
-          will rewrite.
+          against what is on disk right now, and a two-step restore that names every file it will
+          rewrite.
         </li>
       </ul>
       <p>
-        A file you edited yourself after AXIOM wrote it is left untouched by a revert rather
-        than being clobbered.
+        A file you edited yourself after AXIOM wrote it is left untouched by a revert rather than
+        being clobbered.
       </p>
 
       <h2>Keyboard shortcuts</h2>
@@ -196,8 +192,8 @@ export function Docs() {
   audit-log.jsonl        hash-chained local audit log`}</code>
       </pre>
       <p>
-        To wipe AXIOM completely, uninstall it and delete that folder. There is no server-side
-        copy of any of it.
+        To wipe AXIOM completely, uninstall it and delete that folder. There is no server-side copy
+        of any of it.
       </p>
 
       <h2>Troubleshooting</h2>
@@ -209,41 +205,40 @@ export function Docs() {
       <h3>HTTP 401 or 403</h3>
       <p>
         The endpoint rejected your key. Re-enter it in Provider Settings. Keys are bound to the
-        exact endpoint they were saved for, so if you changed the base URL you must re-enter the
-        key to authorise the new one.
+        exact endpoint they were saved for, so if you changed the base URL you must re-enter the key
+        to authorise the new one.
       </p>
       <h3>HTTP 429</h3>
       <p>
-        You hit the provider&rsquo;s rate limit. AXIOM backs off and retries on its own. If it
-        keeps happening, your tier is the limit — configure a fallback provider so it can route
-        around a saturated one.
+        You hit the provider&rsquo;s rate limit. AXIOM backs off and retries on its own. If it keeps
+        happening, your tier is the limit — configure a fallback provider so it can route around a
+        saturated one.
       </p>
       <h3>HTTP 500, or &ldquo;the provider could not complete the request&rdquo;</h3>
       <p>
-        This is a failure inside the provider or its upstream, not in AXIOM. The error now
-        includes the provider&rsquo;s own reason. It happens most often on aggregator gateways
-        that advertise a large model catalogue but cannot currently serve every entry in it. Try
-        a different model; if a different model works, the endpoint is fine and that one route
-        is broken.
+        This is a failure inside the provider or its upstream, not in AXIOM. The error now includes
+        the provider&rsquo;s own reason. It happens most often on aggregator gateways that advertise
+        a large model catalogue but cannot currently serve every entry in it. Try a different model;
+        if a different model works, the endpoint is fine and that one route is broken.
       </p>
       <h3>Fetch Models returns nothing</h3>
       <p>
-        The base URL is probably missing its version segment. Most OpenAI-compatible gateways
-        need to end in <code>/v1</code>.
+        The base URL is probably missing its version segment. Most OpenAI-compatible gateways need
+        to end in <code>/v1</code>.
       </p>
       <h3>Build replies with an explanation instead of editing files</h3>
       <p>
         Check you are in <strong>Build</strong> and not <strong>Ask</strong> or{' '}
-        <strong>Chat</strong> — those two have no tools by design. If you are in Build, the
-        model is likely too small to drive a tool loop reliably; a mid-size model will behave
-        far better than a small local one for agent work.
+        <strong>Chat</strong> — those two have no tools by design. If you are in Build, the model is
+        likely too small to drive a tool loop reliably; a mid-size model will behave far better than
+        a small local one for agent work.
       </p>
 
       <h2>Uninstalling</h2>
       <p>
-        Settings → Apps → Installed apps → AXIOM → Uninstall. Your data folder is left in place
-        so a reinstall keeps your settings; delete{' '}
-        <code>%APPDATA%\@axiom\desktop</code> if you want it gone.
+        Settings → Apps → Installed apps → AXIOM → Uninstall. Your data folder is left in place so a
+        reinstall keeps your settings; delete <code>%APPDATA%\@axiom\desktop</code> if you want it
+        gone.
       </p>
     </PageShell>
   );
