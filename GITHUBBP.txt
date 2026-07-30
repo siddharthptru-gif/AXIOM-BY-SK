@@ -1,0 +1,278 @@
+Implement a complete production-ready GitHub OAuth integration for my Electron desktop IDE.
+
+This IDE must provide a professional Source Control experience similar to Cursor and VS Code.
+
+=========================================
+OAuth Configuration
+=========================================
+
+Use the following GitHub OAuth credentials.
+
+Client ID:
+<PASTE_YOUR_CLIENT_ID>
+
+Client Secret:
+<PASTE_YOUR_CLIENT_SECRET>
+
+Redirect URI:
+http://127.0.0.1:45872/auth/github/callback
+
+=========================================
+Architecture
+=========================================
+
+The implementation must follow Electron security best practices.
+
+Renderer Process:
+- UI only
+- Never access Client Secret
+- Never perform OAuth token exchange
+- Never access GitHub credentials directly
+
+Electron Main Process:
+- Start and stop temporary localhost server
+- Handle complete OAuth flow
+- Exchange authorization code for access token
+- Store credentials securely
+- Perform GitHub API requests
+- Perform Git operations
+
+Use Electron IPC for communication.
+
+=========================================
+GitHub Login Flow
+=========================================
+
+When user clicks:
+
+Connect GitHub
+
+Automatically:
+
+1. Start temporary localhost server.
+
+2. Open default browser.
+
+3. Navigate to GitHub OAuth authorization page using the supplied Client ID.
+
+4. Wait for GitHub callback.
+
+5. Capture authorization code.
+
+6. Exchange authorization code using the supplied Client Secret.
+
+7. Receive GitHub access token.
+
+8. Validate token.
+
+9. Fetch authenticated user.
+
+10. Store token securely.
+
+11. Stop localhost server.
+
+12. Update UI.
+
+Show:
+
+- Avatar
+- Username
+- Connected account
+
+=========================================
+Secure Storage
+=========================================
+
+Use keytar.
+
+Never store tokens inside:
+
+- JSON
+- Local Storage
+- Session Storage
+- Plain Text Files
+- SQLite without encryption
+
+=========================================
+Disconnect
+=========================================
+
+Implement:
+
+Disconnect GitHub
+
+This must:
+
+- Delete stored token
+- Remove cached account
+- Refresh UI
+
+=========================================
+Git Integration
+=========================================
+
+Use system Git.
+
+Do NOT implement Git manually.
+
+Use simple-git.
+
+Support:
+
+git status
+git add
+git commit
+git push
+git pull
+git fetch
+git checkout
+git branch
+git merge
+
+=========================================
+Repository Detection
+=========================================
+
+When project opens:
+
+Automatically detect Git repository.
+
+If repository doesn't exist:
+
+Display:
+
+Initialize Repository
+
+Run:
+
+git init
+
+=========================================
+First Push
+=========================================
+
+If remote origin doesn't exist:
+
+Ask:
+
+Create GitHub Repository?
+
+If accepted:
+
+Create repository using GitHub REST API.
+
+Automatically execute:
+
+git remote add origin <repo>
+
+git push -u origin main
+
+=========================================
+Source Control UI
+=========================================
+
+Create Source Control sidebar.
+
+Display:
+
+- Current branch
+- Changed files
+- Staged files
+- Unstaged files
+- Commit history
+- Repository status
+
+=========================================
+Commit
+=========================================
+
+Commit message textbox.
+
+Button:
+
+Commit & Push
+
+Internally execute:
+
+git add .
+git commit -m "<message>"
+git push
+
+Show progress.
+
+Show notifications.
+
+=========================================
+Diff Viewer
+=========================================
+
+Implement VS Code style diff viewer.
+
+Support:
+
+- Modified
+- Added
+- Deleted
+
+=========================================
+Branch Management
+=========================================
+
+Support:
+
+- Create Branch
+- Delete Branch
+- Switch Branch
+- Merge
+- Rebase
+
+=========================================
+Performance
+=========================================
+
+Everything must be asynchronous.
+
+Never block UI.
+
+Automatically refresh repository state.
+
+Watch filesystem changes.
+
+=========================================
+Error Handling
+=========================================
+
+Handle:
+
+- Git not installed
+- OAuth failure
+- Invalid Client Secret
+- Network errors
+- Merge conflicts
+- Push rejected
+- Missing remote
+- Repository not initialized
+
+Provide clear user-friendly recovery actions.
+
+=========================================
+Code Quality
+=========================================
+
+Write production-quality code.
+
+Use TypeScript.
+
+Follow Electron best practices.
+
+Use proper abstraction layers.
+
+Avoid duplicated code.
+
+Provide modular services.
+
+=========================================
+Final Goal
+=========================================
+
+The final experience should feel identical to modern professional IDEs like Cursor and VS Code, allowing users to connect GitHub once and then use one-click commit, push, pull, branch management, and repository creation with a polished and secure workflow.

@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build outputs (TS/Electron)
+dist/
+build/
+out/
+**/out/
+**/dist/
+**/build/
+*.tsbuildinfo
+release/
+.vite/
+
+# Rust build artifacts
+target/
+crates/**/target/
+
+# Lockfiles (managed by their toolchains, not Prettier)
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+Cargo.lock
+
+# Authored specification document — preserve exact formatting (tables/ASCII diagrams)
+PRD.md
+
+# Caches / coverage / logs
+.cache/
+.turbo/
+coverage/
+.nyc_output/
+*.log

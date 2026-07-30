@@ -1,0 +1,24 @@
+REAL EXTENSION COMPATIBILITY CHECK
+
+Test against at least these extensions:
+
+□ GitHub Pull Requests
+□ Error Lens
+□ Prettier
+□ ESLint
+□ Docker
+□ GitLens
+□ Live Server
+□ Code Spell Checker
+□ Material Icon Theme
+□ Python
+
+For each extension report:
+
+- Installed successfully?
+- Activated?
+- No runtime errors?
+- Commands working?
+- UI working?
+- Logs clean?
+- Unsupported APIs (if any)?

@@ -1,0 +1,25 @@
+STAMP 2026-07-26T11-49-15-729Z
+CHECKS 2  FAILED 1
+tsc-node: status=2 (6s)
+tsc-web: status=0 (9.7s)
+
+===== tsc-node =====
+apps/desktop/src/preload/index.ts(753,18): error TS2304: Cannot find name 'CommandConsentScope'.
+
+{
+  "stamp": "2026-07-26T11-49-15-729Z",
+  "results": [
+    {
+      "name": "tsc-node",
+      "status": 2,
+      "seconds": 6,
+      "output": "apps/desktop/src/preload/index.ts(753,18): error TS2304: Cannot find name 'CommandConsentScope'."
+    },
+    {
+      "name": "tsc-web",
+      "status": 0,
+      "seconds": 9.7,
+      "output": ""
+    }
+  ]
+}

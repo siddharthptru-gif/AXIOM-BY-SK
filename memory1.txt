@@ -1,0 +1,453 @@
+AXIOM - SESSION HANDOFF MEMORY (memory1.txt)
+Written: 2026-07-30. READ THIS FIRST before any "PRD se build / implement karo" request.
+Language note: the user writes Hinglish - reply in their style. This file is in English
+because it is full of code identifiers that must not be paraphrased.
+
+================================================================================
+0. WHAT THIS FILE IS
+================================================================================
+A complete carry-over of the AXIOM Extension Platform work, so a brand-new session can
+resume with zero re-derivation. If the user says "PRD se build karo / implement karo":
+  -> obey section 2 (STANDING BRIEF) literally,
+  -> follow section 13 (WORKFLOW),
+  -> report in the format of section 12.
+
+================================================================================
+1. PROJECT IDENTITY & PATHS
+================================================================================
+- AXIOM is an EXISTING, working production IDE: Electron + Monaco + React + a Rust core.
+  It is NOT greenfield. Never rewrite it. Never "start fresh".
+- Repo root:   C:\Users\SIDHU\SK IDE
+- App:         apps/desktop        (all paths below are relative to this unless stated)
+- Main PRD:    C:\Users\SIDHU\SK IDE\PRD.md   (~8000 lines, Phases 1-264, Epochs A-J)
+    Extension Platform in the main PRD = Epoch I, Phases 239-246:
+      239 Extension Host | 240 Extension API Surface | 241 AI Contribution Points
+      242 Manifest/Permissions/Broker | 243 Registry/Marketplace
+      244 VS Code Compatibility Layer | 245 Extension Management UI | 246 SDKs
+- There is ALSO a second document, "AXIOM_EXTENSION_PRD.md", with its own Phases 1-8 and
+  section numbers (§1..§8). IT IS NOT ON DISK - the user pastes it into the chat. All past
+  reports use ITS numbering, e.g. "Phase 7 §8". When the user says "next unfinished phase",
+  that is the document being referred to. Phases 1-7 of it are DONE (see section 8).
+- Git: branch main. The whole tree is currently staged as new (status "A"), so git CANNOT
+  tell you added-vs-modified for a phase. Use docblock tags instead:
+      grep -rlE "PRD Phase 7|Phase 7 §" src --include=*.ts --include=*.tsx
+- Other useful root files: SECURITY.md, docs/PROGRESS.md, docs/security-architecture.md,
+  docs/release-hardening.md, MEMORY.txt.
+
+================================================================================
+2. STANDING BRIEF (always in force - user's own words, do not soften)
+================================================================================
+- "DO NOT rewrite the application. DO NOT redesign unrelated systems. DO NOT replace
+  existing architecture unless absolutely required. Make incremental, production-safe
+  changes."
+- PROTECTED SUBSYSTEMS - do NOT modify unless the PRD explicitly requires it:
+  Editor, Monaco integration, AI Chat, Explorer, Terminal, Workspace, File operations,
+  Search, Settings, existing IPC, existing UI, existing themes.
+  "These systems are already working. Only extend them when required for Extension
+  Platform compatibility."
+- IN SCOPE: Extension Host, Runtime, Lifecycle, Activation, Registry, VSIX Installation,
+  Open VSX, OAuth, Webviews, Tree Views, Commands, Contribution Points, Activity Bar
+  Contributions, Sidebar Views, Command Palette Integration, Extension API Compatibility,
+  Logging, Crash Recovery, Extension Isolation.
+- "Never assume the existing implementation is wrong. Prefer extending existing code over
+  replacing it." Reuse existing modules, keep APIs backward compatible, minimise churn.
+- "Do NOT hardcode support for Claude Code. Implement the generic VS Code Extension
+  Platform described in the PRD."
+- "Do not mark the task complete until the implemented functionality matches the PRD."
+- If a change breaks unrelated functionality: roll THAT change back and pick a safer path.
+
+================================================================================
+3. HARD RULES FOR EVERY NEW PHASE (verbatim from the user)
+================================================================================
+- Continue exactly from the current codebase. Do NOT rewrite completed phases.
+- Preserve complete backward compatibility with all earlier phases.
+- Do not introduce breaking API changes.
+- Every new feature must INTEGRATE into the existing architecture, not replace it.
+- Every public API must behave as closely as possible to VS Code.
+- Never leave TODOs, placeholders, fake implementations, or partially-working APIs.
+- Any API that cannot be fully implemented in the phase must THROW a clear
+  "not implemented" error instead of silently succeeding.
+- Keep pure logic in common/, I/O in main/, UI in renderer/.
+- Validate every IPC boundary. Preserve all previous validation suites.
+- No placeholder listeners, no fake events, NO POLLING. Everything must behave like VS Code.
+- "Do not begin any later PRD phase."
+
+SECURITY GUARANTEES from Phases 1-6 that must never regress (verbatim):
+  no renderer Node.js access, no Electron exposure, no eval(), no new Function(),
+  no unsafe HTML, validate every IPC payload, validate terminal paths, validate task
+  execution requests, validate DAP messages, workspace boundary enforcement,
+  strict permission validation.
+
+================================================================================
+4. ARCHITECTURE MAP (where things live)
+================================================================================
+- src/common/*.ts        PURE logic only. No I/O, no Electron, no DOM. ~200 modules.
+- src/main/services/*.ts I/O half (Node): fs, spawn, watchers, adapters, marketplace.
+- src/main/extensionHostWorker.ts   THE `vscode` SHIM. This is the single biggest file
+                         (~7000 lines). It builds the `vscode` object handed to extensions,
+                         holds the op-dispatch table, mints handles/tokens, and forwards to
+                         Main. Every "does AXIOM support X?" question is answered here.
+- src/common/vscodeHost.ts          host <-> worker op protocol (op names + payload shapes).
+- src/common/ipc.ts + src/main/ipc.ts   the IPC channel table and Main-side validation.
+- src/preload/index.ts   the ONLY renderer bridge. contextIsolation on; no Node in renderer.
+- src/renderer/src/editor/*         Monaco-facing glue (extensionProviders.ts registers the
+                         shim's providers into Monaco; extensionLanguageConvert.ts converts
+                         wire types <-> monaco types; *Bus.ts files fan events to the UI).
+- src/renderer/src/workbench/*.tsx  panels/views (HierarchyView, DebugPanel, TerminalArea,
+                         ExtensionDetailPanel, PerformanceView, ...).
+- src/renderer/src/state/*          React state stores (terminals.tsx, extensionTerminalBus).
+
+Key extension-platform modules in common/ (there are more, grep "vscode" in src/common):
+  vscodeCompat.ts vscodeHost.ts vscodeManifest.ts vscodeMenus.ts vscodeViews.ts
+  vscodeTree.ts vscodeWebview.ts vscodeAuth.ts vscodeContextKeys.ts vscodeLanguages.ts
+  vscodeLanguageWire.ts vscodeSemanticTokens.ts vscodeWorkspaceEdit.ts vscodeDocumentSync.ts
+  vscodeGlob.ts vscodeFileWatch.ts vscodeTerminalRuntime.ts vscodeTaskRuntime.ts
+  vscodeDebugRuntime.ts vscodeProviderEvents.ts hierarchyTree.ts inlineValues.ts
+
+================================================================================
+5. TYPESCRIPT / TOOLING CONSTRAINTS (these bite constantly)
+================================================================================
+tsconfig.base.json is STRICT and includes:
+  strict, noUnusedLocals, noUnusedParameters, noImplicitReturns,
+  noFallthroughCasesInSwitch,
+  noUncheckedIndexedAccess: true     -> arr[i] is T | undefined. Always guard.
+  exactOptionalPropertyTypes: true   -> OMIT the key; never pass `undefined` explicitly.
+  verbatimModuleSyntax, isolatedModules  -> use `import type` for type-only imports.
+  moduleResolution: Bundler
+tsconfig.web.json adds DOM libs + jsx: react-jsx (renderer). tsconfig.node.json = main/preload.
+
+THERE IS NO ESLINT IN THIS REPO. "lint" means: prettier --write  +  tsc --noEmit.
+.prettierrc = { semi:true, singleQuote:true, printWidth:100, tabWidth:2,
+                trailingComma:'all', endOfLine:'lf' }
+
+COMMANDS (run from C:\Users\SIDHU\SK IDE\apps\desktop unless noted):
+  npx prettier --write <files>                       # from repo root, paths repo-relative
+  npx tsc --noEmit -p tsconfig.web.json
+  NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit -p tsconfig.node.json
+  npx electron-vite build                            # builds main -> preload -> renderer
+  node scripts/validate-*.cjs                        # the six suites, see section 6
+
+IMPORTANT TRAP: prettier reflows source at printWidth 100. Validator assertions that grep
+source TEXT must be whitespace-tolerant (use \s*, \s*\n\s*). A single-line regex WILL break
+after a reformat and it looks like a real regression when it is not. This has already
+happened twice (WS-10/WS-11, and the `isTrusted` assertion at validate-security-hardening
+line ~2005). Always read the source before "fixing" either side.
+
+================================================================================
+6. THE SIX VALIDATORS (this repo has NO unit-test framework - these ARE the tests)
+================================================================================
+All live in apps/desktop/scripts/ and transpile TS in-process (they `load()` a .ts file and
+execute it), so they assert on real module behaviour AND on source text.
+
+  1. validate-extension-platform.cjs   the big one. 61+ named suites. Includes
+     validateCompatClassifier (assertions C-1..C-17) and the WS-* workspace-symbol suites.
+  2. validate-security-hardening.cjs   8 suites; the Phase 1-6 security guarantees + the
+     Phase 7 §8 additions (mint-token identity, inline value evaluation, hierarchy bounds,
+     pushed refresh batches). Also runs a packaging suite that spawns PowerShell
+     (set-windows-asar-integrity.ps1) - that is what dies first when the host is out of RAM.
+  3. validate-real-extensions.cjs      installs the real VSIX corpus and reports compat.
+  4. validate-agentic-chat.cjs         7 suites (AI chat contracts, approval policy, logo hash).
+  5. validate-github-scm.cjs           SCM/transport/trust/a11y.
+  6. validate-god-mode.cjs             10 capability domains + adversarial sandbox cases.
+
+ALL SIX MUST BE GREEN (exit 0) BEFORE ANY PHASE IS REPORTED COMPLETE.
+Last full run (2026-07-30): all six exit 0.
+  - platform:  "All 61 extension-platform suites passed."
+  - security:  8/8 PASS lines
+  - real ext:  7/7 installed, 21/21 delivered API groups "implemented", regressed = []
+  - agentic:   7 PASS lines | github-scm: pass | god-mode: 10 domains pass
+
+================================================================================
+7. HOW validate-real-extensions.cjs WORKS (understand this BEFORE editing it)
+================================================================================
+- PROBES = [groupName, [memberName, ...]]. Each member is searched in the extension's
+  bundled JS with a plain text.includes(). probeBundle() returns { used, groups }.
+- main() then calls compat.assessExtension(probe.used).
+  *** THEREFORE: every probe member name flows into classifyApi(). A probe member that is
+  NOT in API_SUPPORT falls through to the conservative default and makes the whole
+  extension read "Not compatible". ALWAYS add the API_SUPPORT entry FIRST, and only probe
+  for names the table classifies. ***
+- SHIM_PROBES = group -> regex over src/main/extensionHostWorker.ts, giving shimStatus:
+  implemented / not implemented / unclassified.
+  Anchor these on a DISPATCH OP or a request() call, NOT on an identifier - a registration
+  name may already have existed in an earlier phase and would pass falsely.
+  Examples that are in place:
+    ['workspaceSymbols', /'workspaceSymbol:resolve': \(provider, payload, token\) =>/]
+    ['callHierarchy',    /'callHierarchy:incoming': \(provider, payload, token\) =>/]
+    ['typeHierarchy',    /'typeHierarchy:supertypes': \(provider, payload, token\) =>/]
+    ['inlineValues',     /'inlineValue:provide': \(provider, payload, token, document\) =>/]
+    ['providerEvents',   /void request\('languages\.providerChanged', \{ handle \}\)/]
+- DELIVERED_API_GROUPS is the REGRESSION GATE: any group listed there whose shimStatus is
+  not 'implemented' sets process.exitCode = 1. 21 groups are listed today.
+- Report artifact: %TEMP%\axiom-ext\real-extension-report.json
+
+THE CORPUS (7 extensions, do not change the set - "the same extension corpus" matters):
+  node scripts/fetch-real-extensions.cjs      # downloads from Open VSX
+  AXIOM_VSIX_DIR defaults to  %TEMP%\axiom-ext\vsix
+  *** NEVER delete %TEMP%\axiom-ext - it holds the corpus. (I did once; had to re-fetch.) ***
+  Downloads negotiate the host target via resolveInstallCandidate (NOT "latest") and verify
+  the published digest. Versions last fetched (host target win32-x64):
+    anthropic.claude-code   2.1.220  [win32-x64]  87431 KiB
+    continue.continue       2.1.0    [win32-x64]  72724 KiB
+    saoudrizwan.claude-dev  4.0.12   [universal]  10186 KiB
+    ms-python.python        2026.4.0 [universal]   6667 KiB
+    esbenp.prettier-vscode  11.0.3   [universal]   2412 KiB
+    dbaeumer.vscode-eslint  3.0.34   [universal]    258 KiB
+    usernamehw.errorlens    3.26.0   [universal]     59 KiB
+
+================================================================================
+8. PHASE STATUS (extension-PRD numbering) - Phases 1-7 ARE COMPLETE
+================================================================================
+Phase 1-3  extension host, activation, registry, VSIX install, Open VSX, permissions.
+Phase 4    webviews (panels, view providers, serializer), authentication.getSession,
+           secrets (get/store/onDidChange), registerUriHandler, env.asExternalUri.
+Phase 5    contributed workbench: tree views, createTreeView/registerTreeDataProvider,
+           commands.setContext, menus, activity bar / sidebar contributions.
+Phase 6    the language platform: 28+ languages.register*Provider registrations forwarded
+           to a real registry and into Monaco, workspace.applyEdit, document lifecycle
+           events (open/change/save/close), all the provider VALUE TYPES.
+Phase 7    §1 terminals (createTerminal, Pseudoterminal, terminal profile providers, the 5
+           terminal events) | §2 tasks (registerTaskProvider, executeTask, fetchTasks,
+           taskExecutions, 4 lifecycle events) | §3 debug (startDebugging, adapter descriptor
+           factories, configuration providers, inline adapters, DAP framed in Main, 4 events)
+           | §4-§5 createFileSystemWatcher (recursive, glob-matched, debounced, in Main) +
+           onDidCreate/Rename/DeleteFiles + workspace.fs.copy/rename
+           | §8 provider refresh + hierarchy + inline values + workspace symbol identity.
+
+PHASE 7 §8 - what was actually built (the last thing finished):
+  - 5 provider change events wired end to end: onDidChangeCodeLenses, onDidChangeInlayHints,
+    onDidChangeSemanticTokens, onDidChangeFoldingRanges, onDidChangeInlineValues.
+    (DocumentRangeSemanticTokensProvider is deliberately EXCLUDED - upstream VS Code defines
+    no change event for it, so claiming one would advertise a refresh that cannot arrive.)
+  - Flow: worker registerLanguageProvider subscribes the provider's own change event, BOUND
+    to the provider (so a prototype method does not throw on the extension's `this`), then
+    `void request('languages.providerChanged', { handle })` -> vscodeHost op ->
+    main/services/extensionLanguages.ts -> ipc -> renderer editor/extensionProviders.ts,
+    which re-queries Monaco for the changed feature.
+  - Coalescing lives in src/common/vscodeProviderEvents.ts and is PURE:
+      PROVIDER_CHANGE_EVENTS (5), MONACO_REFRESHED_FEATURES (no inlineValue - standalone
+      Monaco has no inline-values provider, AXIOM draws those itself),
+      PROVIDER_CHANGE_DEBOUNCE_MS = 50, PROVIDER_CHANGE_WINDOW_MS = 1000,
+      MAX_CHANGES_PER_WINDOW = 20, MAX_PENDING_PROVIDER_CHANGES = 512,
+      ProviderChangeCoalescer, normalizeProviderChangeBatch (validated in the renderer),
+      changedFeatures.
+      *** TIME IS A PARAMETER - the coalescer has no clock. That is HOW the "no polling"
+      requirement is satisfied by construction. Keep it that way. ***
+  - Type Hierarchy UI + lazy bidirectional expansion: src/common/hierarchyTree.ts,
+    renderer/src/editor/hierarchyBus.ts, renderer/src/workbench/HierarchyView.tsx.
+    (The older callHierarchy.ts / CallHierarchyView.tsx are the LSP-backed Phase 95
+    surfaces - different thing, do not confuse them.)
+  - Inline Values UI: src/common/inlineValues.ts + editor/inlineValuesBus.ts; values are
+    drawn at end-of-line while a debug session is PAUSED.
+  - resolveWorkspaceSymbol + workspace-symbol identity: provider-minted ids carry identity.
+    MINT-TOKEN MODEL (3 processes): worker mintValue -> Main remapMintIds / mintMainToken ->
+    the renderer only ever holds MAIN tokens. TOKEN_ROUTED_OPS = resolve, incoming, outgoing,
+    supertypes, subtypes. forgetTokensFor* runs on disposal. Never leak a worker id to the
+    renderer.
+
+Phase 7 files ADDED (docblock-tagged):
+  common/vscodeTerminalRuntime.ts, main/services/extensionTerminals.ts,
+  renderer/src/state/extensionTerminalBus.ts                                       (§1)
+  common/vscodeTaskRuntime.ts, main/services/extensionTasks.ts                     (§2)
+  common/vscodeDebugRuntime.ts, main/services/extensionDebug.ts                    (§3)
+  common/vscodeFileWatch.ts, main/services/extensionFileEvents.ts                  (§4-5)
+  common/vscodeProviderEvents.ts, common/hierarchyTree.ts, common/inlineValues.ts,
+  renderer/src/editor/hierarchyBus.ts, renderer/src/editor/inlineValuesBus.ts,
+  renderer/src/workbench/HierarchyView.tsx                                         (§8)
+Phase 7 files MODIFIED (extended, never replaced):
+  common/ipc.ts, common/vscodeHost.ts, common/vscodeCompat.ts, main/extensionHostWorker.ts,
+  main/ipc.ts, main/index.ts, main/services/extensionLanguages.ts, main/services/terminal.ts,
+  preload/index.ts, renderer/src/App.tsx, renderer/src/env.d.ts,
+  renderer/src/editor/EditorPane.tsx, renderer/src/editor/extensionProviders.ts,
+  renderer/src/state/terminals.tsx, renderer/src/workbench/{DebugPanel,TerminalArea,
+  TerminalView}.tsx
+
+================================================================================
+9. THE COMPAT TABLE RULE (highest-value lesson - do not forget this)
+================================================================================
+src/common/vscodeCompat.ts holds API_SUPPORT: Record<string, 'supported'|'partial'|
+'unsupported'>, plus classifyApi() and assessExtension().
+
+*** EVERY PHASE MUST UPDATE API_SUPPORT, OR COMPATIBILITY VERDICTS GO STALE AND REAL,
+    WORKING EXTENSIONS READ "Not compatible". ***
+This already happened for real: the Phase 7 §1-§4 value types (Task, ShellExecution,
+ProcessExecution, CustomExecution, ShellQuoting, TaskGroup/Scope/RevealKind/PanelKind,
+TerminalLocation/ExitReason/Profile, EnvironmentVariableMutatorType, the four DebugAdapter*
+descriptors, DebugConsoleMode, DebugConfigurationProviderTriggerKind, FileChangeType) were
+exported by the shim but MISSING from the table. Result: anthropic.claude-code read
+"not compatible 0.95" and usernamehw.errorlens read "not compatible 0.80" even though every
+API they use is shimmed. Fixed 2026-07-30; both now read compatible 1.00.
+
+How classifyApi works (in order): exact key -> bare member name (API_SUPPORT_BY_MEMBER,
+built once at load, skipping GENERIC_MEMBER_NAMES = get/store/delete/onDidChange/match/
+dispose/copy/rename) -> namespace heuristic -> 'unsupported' (conservative default).
+WHY bare-member lookup exists: a probe over MINIFIED bundled code recovers
+`createWebviewPanel`, not `window.createWebviewPanel`, and `new vscode.WorkspaceEdit()` as
+just `WorkspaceEdit`. So value-type CLASS NAMES need their own entries too.
+Namespace heuristics today: notebooks/scm/tests/lm/chat -> unsupported; debug -> unsupported
+(only the curated members ship); tasks -> unsupported (same); languages -> unsupported (only
+the curated registrations ship); window.show* -> supported; authentication/secrets/commands
+-> supported; workspace -> partial; unknown -> unsupported.
+
+Pin every new claim in validate-extension-platform.cjs so the table can never drift ahead of
+the shim. The existing pattern (C-15..C-17):
+  C-15   compat.classifyApi(name) === 'supported' for each new value type
+  C-15b  new RegExp(`\\n {2}${name},`).test(shim)   <- the name really is exported by
+         src/main/extensionHostWorker.ts's `vscode` object
+  C-16   every Object.values(PROVIDER_CHANGE_EVENTS) classifies 'supported'
+  C-16b  classifyApi('onDidChange') === 'unsupported' AND
+         classifyApi('onDidChangeBreakpoints') === 'partial'
+  C-17   classifyApi('resolveWorkspaceSymbol') === 'supported' AND
+         shim.includes("'workspaceSymbol:resolve'")
+
+NOTE (open item, Phase 244 scope): vscodeCompat.ts has NO importer under src/ - verified by
+search. It feeds the validators and the JSON compatibility report, not the UI. The Extensions
+UI (renderer/src/workbench/ExtensionDetailPanel.tsx) shows ENGINE-RANGE compatibility from
+reportCompatibility(manifest, AXIOM_VSCODE_API_VERSION) in main/services/marketplaceExtensions
+.ts. Wiring the API-level label into that panel is unfinished Phase 244 UI work - it was
+deliberately NOT started because it was not in Phase 7's assigned item list.
+
+================================================================================
+10. CURRENT REAL-EXTENSION COMPATIBILITY (measured 2026-07-30, 7/7 installed)
+================================================================================
+  extension                version   verdict          coverage  remaining unsupported
+  anthropic.claude-code    2.1.220   compatible       1.00 (44)  -
+  esbenp.prettier-vscode   11.0.3    compatible       1.00 (9)   -
+  usernamehw.errorlens     3.26.0    compatible       1.00 (5)   -
+  continue.continue        2.1.0     not compatible   0.97 (32)  registerInlineCompletionItemProvider
+  saoudrizwan.claude-dev   4.0.12    not compatible   0.96 (25)  lm.selectChatModels
+  dbaeumer.vscode-eslint   3.0.34    not compatible   0.95 (65)  registerInlineCompletionItemProvider,
+                                                                 LanguageClient, notebooks.*
+  ms-python.python         2026.4.0  not compatible   0.95 (84)  the above + vscode-languageclient
+
+Verdict rule is intentionally conservative: ONE unsupported API -> overall "not compatible".
+Full remaining-unsupported list, deduped:
+  - languages.registerInlineCompletionItemProvider  (ghost text; main PRD Phase 183)
+  - lm.selectChatModels, chat.createChatParticipant (language-model / chat participant APIs)
+  - notebooks.* (notebook serializer & notebook APIs)
+  - debug.addBreakpoints / debug.removeBreakpoints = unsupported;
+    debug.onDidChangeBreakpoints = partial   (breakpoints were outside Phase 7)
+  - SCM provider API
+  - LanguageClient / vscode-languageclient: this is the extension's own npm dependency, NOT a
+    host API. It is left classified unsupported ON PURPOSE: the library drives supported
+    registrations, but a full LSP client has never been exercised under the shim, so claiming
+    it would be a guess. The validator marks the group "unclassified".
+
+Corpus group reach for the Phase 7 §8 groups: providerEvents 5, callHierarchy 5,
+inlineValues 4, typeHierarchy 2, workspaceSymbols 2 - all "implemented".
+Groups correctly NOT delivered: notebooks (2 ext) not implemented, lm (1) not implemented,
+languageClient (2) unclassified.
+
+================================================================================
+11. KNOWN HOST/ENVIRONMENT PROBLEM (not a code bug - re-check before blaming code)
+================================================================================
+This Windows 10 machine is in a wedged low-memory state and it BLOCKS the renderer bundle.
+Evidence captured 2026-07-30:
+  commit limit 54438 MB, committed ~53600 MB  (~800 MB headroom)
+  Available MBytes = 0 ; FreePhys ~1.8 GB of 24 GB
+  Modified Page List = 18501 MB  (dirty pages Windows cannot flush)
+  all processes together = 4288 MB private; kernel pools = 809 MB paged + 536 MB nonpaged
+  => ~48 GB of commit charge attributable to NO process (kernel/driver level)
+  page file is SYSTEM-MANAGED at 30444 MB and 100% used, and is not growing, although
+  C: has 32.6 GB free. `Write-VolumeCache -DriveLetter C` recovered nothing.
+Symptoms seen: `electron-vite build` main OK (3.4 s) and preload OK (78 ms), then renderer
+dies with `FATAL ERROR: NewSpace::EnsureCurrentCapacity Allocation failed` at ~450 MB under a
+4096 MB cap and at ~560 MB under a 1536 MB cap - i.e. V8 was refused ~30 MB by the OS, far
+below its own limit. An earlier session saw `Zone Allocation failed - process out of memory`
+from the same cause, and PowerShell itself failed with System.OutOfMemoryException inside the
+security validator's packaging suite.
+WHAT TO DO: a reboot is the clean fix and it is the USER'S call - ask, do not change the page
+file or kill their apps. Chrome (~1.3 GB) is the only obvious reclaimable chunk.
+Cleaning my own %TEMP%\axiom-* scratch dirs freed ~980 MB once - BUT NEVER DELETE axiom-ext.
+Report a blocked build as HOST-BLOCKED with these counters, never as a code failure.
+
+================================================================================
+12. REQUIRED REPORT FORMAT (12 numbered sections - the user expects exactly this)
+================================================================================
+  1. Files added
+  2. Files modified
+  3. Purpose of every added file
+  4. Purpose of every modified file
+  5. Architecture decisions
+  6. Security review
+  7. Performance impact
+  8. Validation suites
+  9. Build results
+ 10. Previous bugs discovered and fixed
+ 11. Real extension compatibility report
+ 12. Remaining PRD work
+Plus, mandatory:
+  - Separate claims into "Statically verified / Dynamically verified / Not exercised".
+  - "Do not claim runtime functionality unless it has actually been exercised in a running
+    packaged application." Validators run in-process = dynamically verified in-process only.
+  - List EVERY remaining unsupported API. If coverage changed, explain EXACTLY why.
+  - If the phase's whole scope is done, say explicitly that no work from this phase remains.
+  - "Do not begin any later PRD phase."
+
+================================================================================
+13. WORKFLOW FOR THE NEXT "implement from the PRD" REQUEST
+================================================================================
+  1. Read the PRD section for the phase (ask the user to paste AXIOM_EXTENSION_PRD.md if the
+     phase numbering is §-style; PRD.md on disk covers the 1-264 numbering).
+  2. AUDIT the existing implementation first - grep the shim, the op table, common/, the
+     validators. Never write code before this.
+  3. Produce: implemented features / missing features / GAP ANALYSIS / implementation plan.
+  4. Only then code. Pure logic -> common/, I/O -> main/, UI -> renderer/. Extend, never
+     replace. Validate every new IPC payload on the Main side.
+  5. UPDATE API_SUPPORT in common/vscodeCompat.ts for everything the phase delivers
+     (section 9), and pin each claim with an assertion that greps the shim.
+  6. Extend the validators: new labelled assertions for every new feature + regression
+     coverage, and add new DELIVERED_API_GROUPS entries with OP-ANCHORED shim probes.
+  7. GATE, in this order:
+       prettier --write on every touched file  (then --check to confirm)
+       tsc --noEmit -p tsconfig.web.json
+       NODE_OPTIONS=--max-old-space-size=8192 tsc --noEmit -p tsconfig.node.json
+       npx electron-vite build
+       all six validators, one at a time (memory)
+       node scripts/fetch-real-extensions.cjs only if the corpus is missing
+  8. Write the 12-section report (section 12).
+
+================================================================================
+14. HARNESS / BEHAVIOUR NOTES FOR ME
+================================================================================
+- Do NOT call the Agent/Task tool. Do NOT use workflows or deep-research. The user has not
+  asked for them.
+- Write tool: keep content <= ~50 lines, then append with Edit in <= 50-line chunks. Comply
+  silently - never mention the limit, never ask about switching tools.
+- Reply in the user's language/style (Hinglish is fine); keep summaries short.
+- The user's memory index is at
+  C:\Users\SIDHU\.claude\projects\C--Users-SIDHU-SK-IDE\memory\MEMORY.md and already holds:
+  axiom-extension-platform-scope.md, axiom-milestone-workflow.md, axiom-compat-table-per-phase.md
+
+================================================================================
+15. GOTCHAS / SCARS (each of these cost real time - do not repeat them)
+================================================================================
+1. Prettier reflow breaks source-grepping assertions. Read the source before deciding whether
+   the assertion or the code is wrong. Fix the ASSERTION when the semantics never changed.
+2. A probe member missing from API_SUPPORT silently corrupts every affected extension's
+   verdict. Table first, probes second. Always.
+3. Shim probes must anchor on a dispatch op / request() call, not on a registration name -
+   the names usually existed one phase earlier.
+4. NEVER delete %TEMP%\axiom-ext (the VSIX corpus lives there). Only clear axiom-* scratch
+   dirs, and list them before deleting.
+5. Provider change events must be BOUND to the provider before subscribing, or a prototype
+   method throws on the extension's own `this`.
+6. exactOptionalPropertyTypes: omit optional keys entirely; passing `undefined` is a type error.
+7. noUncheckedIndexedAccess: every indexed read is possibly undefined.
+8. Do not add a change event that upstream VS Code does not define (the
+   DocumentRangeSemanticTokens case) - it advertises a refresh that can never arrive.
+9. Keep the coalescer clock-free (time as a parameter). That is the "no polling" proof.
+10. Renderer must never receive a worker-minted id - only Main tokens (forgetTokensFor* on
+    disposal).
+11. Only claim what was actually exercised. In-process validator execution is NOT the same as
+    a running packaged app - say so.
+
+================================================================================
+16. ONE-LINE STATUS AT HANDOFF (2026-07-30)
+================================================================================
+Phase 7 (extension-PRD numbering) is COMPLETE: §1 terminals, §2 tasks, §3 debug, §4-§5 file
+watcher + workspace file events, §8 provider refresh events + Type Hierarchy UI + Inline
+Values UI + resolveWorkspaceSymbol identity. All six validators exit 0. Both typechecks exit
+0. main + preload bundles build green; the renderer bundle is blocked ONLY by the host memory
+condition in section 11. Nothing from Phase 7 remains. Next phase must not be started until
+the user asks.

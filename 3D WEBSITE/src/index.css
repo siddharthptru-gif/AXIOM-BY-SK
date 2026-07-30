@@ -1,0 +1,442 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Design tokens. Everything on this site is derived from the AXIOM mark: near-black
+ * surfaces, a single violet -> cyan accent axis, silver-white type. No other hues.
+ */
+:root {
+  --void: #05050a;
+  --canvas: #0a0a12;
+  --panel: #12121c;
+  --raised: #1a1a28;
+  --hairline: #23233a;
+
+  --violet: #8b5cf6;
+  --violet-deep: #6d28d9;
+  --magenta: #c026d3;
+  --blue: #3b82f6;
+  --cyan: #22d3ee;
+  --ice: #a5f3fc;
+
+  --fg-max: #ffffff;
+  --fg: #e8e8f0;
+  --fg-muted: #a0a0b8;
+  --fg-faint: #6b6b85;
+
+  --accent-gradient: linear-gradient(
+    100deg,
+    #8b5cf6 0%,
+    #6366f1 35%,
+    #3b82f6 65%,
+    #22d3ee 100%
+  );
+
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+
+  color-scheme: dark;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Figtree', 'Inter', system-ui, sans-serif;
+  background: var(--void);
+  color: var(--fg);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Motion is decoration. With reduced motion requested, nothing moves at all. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Focus is never removed, only restyled. */
+:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: rgba(139, 92, 246, 0.35);
+  color: var(--fg-max);
+}
+
+@layer components {
+  /* The signature gradient as text. */
+  .grad-text {
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  .grad-rule {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(139, 92, 246, 0.55) 25%,
+      rgba(34, 211, 238, 0.55) 75%,
+      transparent 100%
+    );
+  }
+
+  /* Panels read as glass over the 3D scene without washing out the type behind. */
+  .glass {
+    background: rgba(18, 18, 28, 0.62);
+    backdrop-filter: blur(14px) saturate(120%);
+    -webkit-backdrop-filter: blur(14px) saturate(120%);
+    border: 1px solid var(--hairline);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      0 24px 60px -30px rgba(0, 0, 0, 0.9);
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.85rem;
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--fg-faint);
+    background: rgba(10, 10, 18, 0.6);
+  }
+
+  /* Primary action. The gradient sits on a pseudo-element so hover can lift it
+     without re-painting the label. */
+  .btn-primary {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 0.95rem 1.75rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #06060c;
+    isolation: isolate;
+    overflow: hidden;
+    transition:
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 220ms ease;
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+  }
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--accent-gradient);
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 0 32px -6px rgba(139, 92, 246, 0.6),
+      0 0 60px -20px rgba(34, 211, 238, 0.5);
+  }
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.9rem 1.5rem;
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--fg);
+    background: rgba(18, 18, 28, 0.5);
+    transition:
+      border-color 200ms ease,
+      color 200ms ease,
+      background 200ms ease;
+  }
+  .btn-ghost:hover {
+    border-color: rgba(139, 92, 246, 0.5);
+    color: var(--fg-max);
+    background: rgba(26, 26, 40, 0.7);
+  }
+
+  /* Long-form pages: docs and legal. */
+  .prose-axiom {
+    max-width: 72ch;
+  }
+  .prose-axiom h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+    color: var(--fg-max);
+    margin-top: 3rem;
+    margin-bottom: 0.85rem;
+  }
+  .prose-axiom h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 500;
+    font-size: 1.075rem;
+    color: var(--fg-max);
+    margin-top: 1.85rem;
+    margin-bottom: 0.5rem;
+  }
+  .prose-axiom p,
+  .prose-axiom li {
+    color: var(--fg-muted);
+    line-height: 1.75;
+    font-size: 0.975rem;
+  }
+  .prose-axiom p {
+    margin-bottom: 1rem;
+  }
+  .prose-axiom ul,
+  .prose-axiom ol {
+    margin: 0 0 1.15rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+  .prose-axiom ul {
+    list-style: disc;
+  }
+  .prose-axiom ol {
+    list-style: decimal;
+  }
+  .prose-axiom strong {
+    color: var(--fg);
+    font-weight: 600;
+  }
+  .prose-axiom a {
+    color: var(--cyan);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .prose-axiom code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.855em;
+    padding: 0.12em 0.4em;
+    border-radius: 4px;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    color: var(--ice);
+    overflow-wrap: anywhere;
+  }
+  .prose-axiom pre {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    line-height: 1.7;
+    padding: 1rem 1.1rem;
+    margin-bottom: 1.15rem;
+    border-radius: 10px;
+    background: #07070d;
+    border: 1px solid var(--hairline);
+    color: var(--fg-muted);
+    overflow-x: auto;
+  }
+  .prose-axiom pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+  }
+}
+
+/* The scroll hint's single ambient animation. */
+@keyframes axiom-drift {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(7px);
+    opacity: 1;
+  }
+}
+.scroll-hint-dot {
+  animation: axiom-drift 2.1s ease-in-out infinite;
+}
+
+/* ===========================================================================
+   Type over the animated backdrop
+   ===========================================================================
+   The background now moves and carries colour, so the type needs help that flat
+   black never required. Two mechanisms, both cheap:
+
+   - `.text-scrim` puts a soft radial pool of near-black behind a block of copy, so
+     body text keeps its contrast ratio even when a bright streak passes under it.
+     The shader's own vignette does half this job; this finishes it.
+   - `.text-lift` adds a tight dark shadow to large display type, which reads as the
+     letterform sitting slightly above the field instead of dissolving into it.
+
+   Nothing here changes a single word of copy, a font family, or a size.
+   =========================================================================== */
+
+.text-scrim {
+  position: relative;
+  isolation: isolate;
+}
+.text-scrim::before {
+  content: '';
+  position: absolute;
+  inset: -14% -18%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(
+    58% 58% at 50% 50%,
+    rgba(5, 5, 10, 0.86) 0%,
+    rgba(5, 5, 10, 0.62) 52%,
+    rgba(5, 5, 10, 0) 100%
+  );
+  pointer-events: none;
+}
+
+.text-lift {
+  text-shadow:
+    0 1px 2px rgba(5, 5, 10, 0.9),
+    0 4px 28px rgba(5, 5, 10, 0.75);
+}
+
+/* ---------------------------------------------------------------------------
+   Per-letter hover: glow and a small lift
+   ---------------------------------------------------------------------------
+   Entirely declarative. Hovering a word warms the whole word a little; hovering one
+   character lifts it further and gives it the accent glow. No listeners, no state, no
+   per-frame cost, and it keeps working while the page is scrolling.
+   --------------------------------------------------------------------------- */
+
+.split-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.split-char {
+  display: inline-block;
+  will-change: transform;
+  transition:
+    transform 300ms var(--ease-spring),
+    text-shadow 300ms ease,
+    color 300ms ease;
+}
+
+/* Word-level: a gentle collective lift, so the cursor feels like it has weight. */
+.split-word:hover .split-char {
+  transform: translateY(-2px);
+  color: var(--fg-max);
+  text-shadow: 0 0 16px rgba(139, 92, 246, 0.45);
+}
+
+/* Character-level: the one under the cursor goes further and picks up the accent. */
+.split-word:hover .split-char:hover,
+.split-char:hover {
+  transform: translateY(-7px);
+  color: #ffffff;
+  text-shadow:
+    0 0 6px rgba(255, 255, 255, 0.9),
+    0 0 20px rgba(167, 139, 250, 0.85),
+    0 0 44px rgba(34, 211, 238, 0.55);
+}
+
+/* Gradient words cannot take a text-shadow — the fill is transparent and the shadow
+   would paint straight through it. A drop-shadow filter on the box works instead. */
+.split-word.is-grad {
+  will-change: transform, filter;
+  transition:
+    transform 300ms var(--ease-spring),
+    filter 300ms ease;
+}
+.split-word.is-grad:hover {
+  transform: translateY(-7px);
+  filter: drop-shadow(0 0 18px rgba(139, 92, 246, 0.75))
+    drop-shadow(0 0 40px rgba(34, 211, 238, 0.5));
+}
+
+/* Reduced motion keeps the glow — a colour change is not motion — and drops the lift. */
+@media (prefers-reduced-motion: reduce) {
+  .split-char,
+  .split-word.is-grad,
+  .split-word:hover .split-char,
+  .split-word:hover .split-char:hover,
+  .split-char:hover,
+  .split-word.is-grad:hover {
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* The reference design's hover nudge, reused by the mood switcher. */
+.role-link {
+  transition: transform 300ms var(--ease-spring), opacity 300ms ease;
+}
+.role-link:hover {
+  transform: translateX(4px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .role-link:hover {
+    transform: none;
+  }
+}
+
+/* Nav Link Underline animation */
+.nav-link-underline {
+  position: relative;
+}
+.nav-link-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 300ms var(--ease-spring);
+}
+.nav-link-underline:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/*
+ * Removed with the portfolio copy that used them: `.btn-fill-up` (a #F598F2 pink fill
+ * that is not in the AXIOM palette), `.blend-font` (mix-blend-mode: difference, which
+ * inverts text against the backdrop and destroys legibility), `.animate-dot-pulse`, and
+ * the `videoFadeIn` / `revealUp` / `revealRight` keyframes, which nothing referenced —
+ * reveal animations come from framer-motion in `Reveal.tsx`, and the video crossfade is
+ * a Tailwind opacity transition in `VideoBackdrop.tsx`.
+ *
+ * Nothing background-related was touched.
+ */
+

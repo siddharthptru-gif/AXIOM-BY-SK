@@ -1,0 +1,25 @@
+STAMP 2026-07-26T12-18-47-596Z
+CHECKS 2  FAILED 1
+tsc-node: status=0 (5.8s)
+tsc-web: status=2 (9.6s)
+
+===== tsc-web =====
+apps/desktop/src/renderer/src/workbench/AgentPanel.tsx(1724,18): error TS2304: Cannot find name 'PaperclipIcon'.
+
+{
+  "stamp": "2026-07-26T12-18-47-596Z",
+  "results": [
+    {
+      "name": "tsc-node",
+      "status": 0,
+      "seconds": 5.8,
+      "output": ""
+    },
+    {
+      "name": "tsc-web",
+      "status": 2,
+      "seconds": 9.6,
+      "output": "apps/desktop/src/renderer/src/workbench/AgentPanel.tsx(1724,18): error TS2304: Cannot find name 'PaperclipIcon'."
+    }
+  ]
+}

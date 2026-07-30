@@ -1,0 +1,11 @@
+node_modules
+dist
+.vite
+*.local
+*.tsbuildinfo
+
+# The installer is a ~106 MB build artifact. It is copied into public/downloads by
+# scripts/sync-installer.cjs so the site works offline, but it does not belong in
+# version control — publish it as a GitHub Release asset instead and point
+# src/lib/release.ts at that URL.
+public/downloads/*.exe

@@ -1,0 +1,15 @@
+STAMP 2026-07-27T17-34-05-866Z
+CHECKS 1  FAILED 0
+god-mode: status=0 (102.6s)
+
+{
+  "stamp": "2026-07-27T17-34-05-866Z",
+  "results": [
+    {
+      "name": "god-mode",
+      "status": 0,
+      "seconds": 102.6,
+      "output": "2026-07-27T17:32:28.353Z INFO  [runtimes] Toolchain scan complete {\n  detected: 13,\n  probed: 49,\n  ids: 'node,bun,python,java,rust,go,dotnet,npm,pip,cargo,cmake,git,wsl'\n}\nGod Mode validation passed: 10 capability domains, adversarial sandbox cases, and Main/renderer boundaries verified."
+    }
+  ]
+}

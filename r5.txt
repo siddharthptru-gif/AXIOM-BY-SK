@@ -1,0 +1,3 @@
+.axiom-languages-live-probe.cjs: ALL PASS
+
+PROBES ALL PASS

@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+out/
+build/
+# `build/` normally means generated output, but Electron's authoritative
+# installer inputs live here and must remain versioned.
+!apps/desktop/build/
+!apps/desktop/build/**
+*.tsbuildinfo
+
+# Electron / packaging
+release/
+.vite/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Env & secrets (never commit)
+.env
+process.env.GITHUB_CLIENT_SECRET
+
+.env.*
+*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Caches
+.cache/
+.turbo/
+supabase/.temp/
+
+# Rust build artifacts (Cargo.lock IS committed for the workspace/binary)
+target/
+**/target/

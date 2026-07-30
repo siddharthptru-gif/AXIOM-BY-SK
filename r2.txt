@@ -1,0 +1,15 @@
+STAMP 2026-07-27T17-32-11-772Z
+CHECKS 1  FAILED 0
+security-hardening: status=0 (11.8s)
+
+{
+  "stamp": "2026-07-27T17-32-11-772Z",
+  "results": [
+    {
+      "name": "security-hardening",
+      "status": 0,
+      "seconds": 11.8,
+      "output": "[release-hardening] Removed 2 stale generic update metadata file(s).\n[release-hardening] Windows ElectronAsar resource and Electron fuses applied and verified before signing.\nPASS security hardening: bundles, package policy, fuses, and artifact hashes\nPASS security hardening: runtime, CSP, navigation, DevTools, and diagnostics\nPASS security hardening: logging, updater networking, docs, OAuth, versions, and logo"
+    }
+  ]
+}

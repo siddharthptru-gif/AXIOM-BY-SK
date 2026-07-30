@@ -1,0 +1,68 @@
+STAMP 2026-07-26T11-53-19-750Z
+CHECKS 6  FAILED 1
+tsc-node: status=0 (5.7s)
+tsc-web: status=0 (10s)
+agentic-chat: status=1 (0.6s)
+github-scm: status=0 (0.5s)
+security-hardening: status=0 (3.6s)
+god-mode: status=0 (92.4s)
+
+===== agentic-chat =====
+C:\Users\SIDHU\SK IDE\apps\desktop\scripts\validate-agentic-chat.cjs:12
+  if (!condition) throw new Error(message);
+                  ^
+
+Error: Agent approval must fetch an owned descriptor, show native confirmation, then settle the exact token
+    at assert (C:\Users\SIDHU\SK IDE\apps\desktop\scripts\validate-agentic-chat.cjs:12:25)
+    at Object.<anonymous> (C:\Users\SIDHU\SK IDE\apps\desktop\scripts\validate-agentic-chat.cjs:448:1)
+    at Module._compile (node:internal/modules/cjs/loader:1854:14)
+    at Object..js (node:internal/modules/cjs/loader:1985:10)
+    at Module.load (node:internal/modules/cjs/loader:1577:32)
+    at Module._load (node:internal/modules/cjs/loader:1379:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47
+
+Node.js v24.16.0
+
+{
+  "stamp": "2026-07-26T11-53-19-750Z",
+  "results": [
+    {
+      "name": "tsc-node",
+      "status": 0,
+      "seconds": 5.7,
+      "output": ""
+    },
+    {
+      "name": "tsc-web",
+      "status": 0,
+      "seconds": 10,
+      "output": ""
+    },
+    {
+      "name": "agentic-chat",
+      "status": 1,
+      "seconds": 0.6,
+      "output": "C:\\Users\\SIDHU\\SK IDE\\apps\\desktop\\scripts\\validate-agentic-chat.cjs:12\r\n  if (!condition) throw new Error(message);\r\n                  ^\r\n\r\nError: Agent approval must fetch an owned descriptor, show native confirmation, then settle the exact token\r\n    at assert (C:\\Users\\SIDHU\\SK IDE\\apps\\desktop\\scripts\\validate-agentic-chat.cjs:12:25)\r\n    at Object.<anonymous> (C:\\Users\\SIDHU\\SK IDE\\apps\\desktop\\scripts\\validate-agentic-chat.cjs:448:1)\r\n    at Module._compile (node:internal/modules/cjs/loader:1854:14)\r\n    at Object..js (node:internal/modules/cjs/loader:1985:10)\r\n    at Module.load (node:internal/modules/cjs/loader:1577:32)\r\n    at Module._load (node:internal/modules/cjs/loader:1379:12)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47\r\n\r\nNode.js v24.16.0"
+    },
+    {
+      "name": "github-scm",
+      "status": 0,
+      "seconds": 0.5,
+      "output": "GitHub SCM validation passed (behavioral races, transport safety, trust, recovery, and accessibility)."
+    },
+    {
+      "name": "security-hardening",
+      "status": 0,
+      "seconds": 3.6,
+      "output": "[release-hardening] Removed 2 stale generic update metadata file(s).\n[release-hardening] Windows ElectronAsar resource and Electron fuses applied and verified before signing.\nPASS security hardening: bundles, package policy, fuses, and artifact hashes\nPASS security hardening: runtime, CSP, navigation, DevTools, and diagnostics\nPASS security hardening: logging, updater networking, docs, OAuth, versions, and logo"
+    },
+    {
+      "name": "god-mode",
+      "status": 0,
+      "seconds": 92.4,
+      "output": "God Mode validation passed: 10 capability domains, adversarial sandbox cases, and Main/renderer boundaries verified."
+    }
+  ]
+}

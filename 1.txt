@@ -1,0 +1,104 @@
+Continue implementing the next unfinished phase of AXIOM_EXTENSION_PRD.md.
+
+IMPORTANT RULES
+
+• Continue exactly from the current codebase.
+• Do NOT rewrite completed phases.
+• Preserve complete backward compatibility with Phases 1–6.
+• Do not introduce breaking API changes.
+• Every new feature must integrate into the existing architecture instead of replacing it.
+• Every public API must behave as closely as possible to VS Code.
+• Follow the architecture and security requirements from the PRD exactly.
+• Never leave TODOs, placeholders, fake implementations, or partially-working APIs.
+• Any API that cannot be fully implemented in this phase must throw a clear "not implemented" error instead of silently succeeding.
+• Keep pure logic in common/, I/O in main/, UI in renderer/.
+• Validate every IPC boundary.
+• Preserve all previous validation suites.
+
+==========================================================
+PHASE OBJECTIVE
+==========================================================
+
+Complete every remaining item assigned to the next unfinished PRD phase.
+
+This includes (where required by the PRD):
+
+• createFileSystemWatcher
+• real file watcher events
+• provider refresh events
+• onDidChangeCodeLenses
+• onDidChangeInlayHints
+• semantic token refresh events
+• Type Hierarchy UI
+• Inline Values UI
+• resolveWorkspaceSymbol
+• Workspace Symbol identity plumbing
+• remaining Monaco integration
+• remaining provider events
+• remaining editor refresh pipeline
+• any remaining APIs explicitly assigned to this phase
+
+Implement every required worker → main → renderer event flow.
+
+No placeholder listeners.
+
+No fake events.
+
+No polling.
+
+Everything must behave like VS Code.
+
+==========================================================
+VALIDATION
+==========================================================
+
+Expand every validator.
+
+Existing validators must remain green.
+
+Create new validation suites for every new feature.
+
+Regression coverage is mandatory.
+
+Security validation must be expanded.
+
+Real extension compatibility must be updated.
+
+==========================================================
+REAL EXTENSION COMPATIBILITY
+==========================================================
+
+Repeat the compatibility verification against the same extension corpus.
+
+Do not guess runtime behaviour.
+
+Only claim what has actually been verified.
+
+List every remaining unsupported API.
+
+If coverage changes, explain exactly why.
+
+==========================================================
+REPORT FORMAT
+==========================================================
+
+Return the report in the exact format used for previous phases.
+
+Include:
+
+1. Files added
+2. Files modified
+3. Purpose of every added file
+4. Purpose of every modified file
+5. Architecture decisions
+6. Security review
+7. Performance impact
+8. Validation suites
+9. Build results
+10. Previous bugs discovered and fixed
+11. Real extension compatibility report
+12. Remaining PRD work
+
+If this phase completes the entire assigned PRD scope, explicitly state that no work from this phase remains.
+
+Do not begin any later PRD phase.

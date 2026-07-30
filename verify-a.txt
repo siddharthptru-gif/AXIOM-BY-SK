@@ -1,0 +1,50 @@
+STAMP 2026-07-26T08-28-32-949Z
+CHECKS 6  FAILED 0
+tsc-node: status=0 (4.7s)
+tsc-web: status=0 (8.4s)
+agentic-chat: status=0 (0.6s)
+github-scm: status=0 (0.5s)
+security-hardening: status=0 (3.1s)
+god-mode: status=0 (88.2s)
+
+{
+  "stamp": "2026-07-26T08-28-32-949Z",
+  "results": [
+    {
+      "name": "tsc-node",
+      "status": 0,
+      "seconds": 4.7,
+      "output": ""
+    },
+    {
+      "name": "tsc-web",
+      "status": 0,
+      "seconds": 8.4,
+      "output": ""
+    },
+    {
+      "name": "agentic-chat",
+      "status": 0,
+      "seconds": 0.6,
+      "output": "PASS agentic chat contracts\nPASS grounded prompt, progress/summary, bounded activity, model/follow-tail commands\nPASS guided/autopilot/high-risk policy\nPASS source-bound delete and replay protection\nPASS approval/root/trust/dirty-workspace guards\nPASS titlebar palette and Main validation contracts\nPASS official logo E6137563C6F63E2B0C0E4AA2A1F1B3FD1416008136F10F363440BFEDDE11D7E2"
+    },
+    {
+      "name": "github-scm",
+      "status": 0,
+      "seconds": 0.5,
+      "output": "GitHub SCM validation passed (behavioral races, transport safety, trust, recovery, and accessibility)."
+    },
+    {
+      "name": "security-hardening",
+      "status": 0,
+      "seconds": 3.1,
+      "output": "[release-hardening] Removed 2 stale generic update metadata file(s).\n[release-hardening] Windows ElectronAsar resource and Electron fuses applied and verified before signing.\nPASS security hardening: bundles, package policy, fuses, and artifact hashes\nPASS security hardening: runtime, CSP, navigation, DevTools, and diagnostics\nPASS security hardening: logging, updater networking, docs, OAuth, versions, and logo"
+    },
+    {
+      "name": "god-mode",
+      "status": 0,
+      "seconds": 88.2,
+      "output": "God Mode validation passed: 10 capability domains, adversarial sandbox cases, and Main/renderer boundaries verified."
+    }
+  ]
+}

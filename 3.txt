@@ -1,0 +1,138 @@
+You are continuing development of an existing production application named Axiom.
+
+IMPORTANT:
+This is NOT a greenfield project.
+
+The application already contains a working codebase.
+
+Your job is to safely improve ONLY the Extension Platform according to the attached PRD.
+
+The attached PRD is the single source of truth.
+
+==================================================
+PRIMARY RULE
+==================================================
+
+DO NOT rewrite the application.
+
+DO NOT redesign unrelated systems.
+
+DO NOT replace existing architecture unless absolutely required.
+
+Make incremental, production-safe changes.
+
+==================================================
+PROTECT EXISTING FEATURES
+==================================================
+
+Do NOT modify unless the PRD explicitly requires it:
+
+- Editor
+- Monaco integration
+- AI Chat
+- Explorer
+- Terminal
+- Workspace
+- File operations
+- Search
+- Settings
+- Existing IPC
+- Existing UI
+- Existing themes
+
+These systems are already working.
+
+Only extend them when required for Extension Platform compatibility.
+
+==================================================
+YOUR SCOPE
+==================================================
+
+Work ONLY on:
+
+- Extension Host
+- Extension Runtime
+- Extension Lifecycle
+- Extension Activation
+- Extension Registry
+- VSIX Installation
+- Open VSX Integration
+- OAuth Authentication
+- Webviews
+- Tree Views
+- Commands
+- Contribution Points
+- Activity Bar Contributions
+- Sidebar Views
+- Command Palette Integration
+- Extension API Compatibility
+- Logging
+- Crash Recovery
+- Extension Isolation
+
+==================================================
+BEFORE WRITING CODE
+==================================================
+
+1. Read the complete PRD.
+2. Audit the existing implementation.
+3. Identify implemented features.
+4. Identify missing features.
+5. Produce a gap analysis.
+6. Create an implementation plan.
+7. Only then begin coding.
+
+Never assume the existing implementation is wrong.
+Prefer extending existing code over replacing it.
+
+==================================================
+IMPLEMENTATION STRATEGY
+==================================================
+
+For every feature:
+
+- Reuse existing modules whenever possible.
+- Keep APIs backward compatible.
+- Avoid breaking changes.
+- Keep commits modular.
+- Minimize code churn.
+
+==================================================
+REGRESSION SAFETY
+==================================================
+
+After each completed milestone:
+
+- Build the application.
+- Run type checking.
+- Run linting.
+- Verify no existing functionality broke.
+- Verify Extension Platform still functions.
+
+If a change breaks unrelated functionality:
+
+Rollback that change and choose a safer implementation.
+
+==================================================
+NO SPECIAL CASES
+==================================================
+
+Do NOT hardcode support for Claude Code.
+
+Implement the generic VS Code Extension Platform described in the PRD.
+
+If Claude Code works, other compatible extensions should also work automatically.
+
+==================================================
+OUTPUT
+==================================================
+
+At every milestone provide:
+
+- Files changed
+- Reason for each change
+- Risks
+- Tests performed
+- Remaining work
+
+Do not mark the task complete until the implemented functionality matches the PRD.

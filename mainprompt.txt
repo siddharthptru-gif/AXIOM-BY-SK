@@ -1,0 +1,865 @@
+You are taking over an existing production-oriented Electron IDE project with a partially completed repair. Work autonomously until the application is coherent, validated, and honestly assessed. Do not stop after planning. Do not claim that a feature works unless you traced and validated its real execution path.
+
+# 1. Product memory
+
+Product name:
+Axiom
+
+Tagline:
+Think. Build. Ship.
+
+Repository:
+C:\Users\SIDHU\SK IDE
+
+Primary application:
+C:\Users\SIDHU\SK IDE\apps\desktop
+
+Product description:
+Axiom is an AI-native desktop coding IDE intended to compete in workflow quality with VS Code, Cursor, Windsurf, Kiro, Claude Code, Codex, and similar developer tools. It must work as a complete manual code editor as well as an AI-assisted and agentic IDE.
+
+Current desktop version:
+Approximately 1.0.1 in apps/desktop/package.json.
+
+Platform:
+- Windows
+- PowerShell
+- Node.js >=20
+- npm workspaces
+- Electron 33
+- electron-vite
+- React 18
+- TypeScript 5.6
+- Monaco Editor
+- node-pty
+- isomorphic-git
+- LSP integrations
+- Debug Adapter Protocol integrations
+- MCP integrations
+- BYOK AI providers and custom OpenAI-compatible endpoints
+
+The renderer uses a custom titlebar because Electron uses a hidden native titlebar with titleBarOverlay.
+
+# 2. Repository architecture
+
+Root files and configuration include:
+- package.json
+- package-lock.json
+- tsconfig.base.json
+- .prettierrc
+- .prettierignore
+- .editorconfig
+- .github/workflows/
+- docs/
+- semantic-review/
+- PRD.md
+- MEMORY.txt
+- apps/
+- packages/
+
+Desktop application:
+apps/desktop/
+
+Important desktop files:
+- apps/desktop/package.json
+- apps/desktop/electron.vite.config.ts
+- apps/desktop/electron-builder.yml
+- apps/desktop/tsconfig.node.json
+- apps/desktop/tsconfig.web.json
+- apps/desktop/build/
+- apps/desktop/out/
+
+Desktop source architecture:
+- apps/desktop/src/common/
+  - Shared IPC contracts, pure modules, provider models, stream parsing, trust types, agent types, editor contracts, and other cross-process logic.
+- apps/desktop/src/main/
+  - Electron Main process, application startup, window construction, IPC registration, authorization, secrets, process lifecycle, AI egress, terminals, Git, LSP, debugging, MCP, extensions, and filesystem services.
+- apps/desktop/src/preload/
+  - Minimal allow-listed contextBridge API. Never expose raw ipcRenderer or Node primitives.
+- apps/desktop/src/renderer/
+  - React workbench, Monaco editors, state providers, commands, keybindings, settings, explorer, AI UI, terminal UI, debug UI, Git UI, and styling.
+
+Important renderer areas:
+- src/renderer/src/App.tsx
+- src/renderer/src/main.tsx
+- src/renderer/src/env.d.ts
+- src/renderer/src/commands/
+- src/renderer/src/editor/
+- src/renderer/src/state/
+- src/renderer/src/settings/
+- src/renderer/src/styles/
+- src/renderer/src/workbench/
+
+Important Main services:
+- src/main/services/ai.ts
+- src/main/services/aiGateway.ts
+- src/main/services/secrets.ts
+- src/main/services/agent.ts
+- src/main/services/dialog.ts
+- src/main/services/filesystem.ts
+- src/main/services/pathAuthorization.ts
+- src/main/services/workspaceTrust.ts
+- src/main/services/terminal.ts
+- src/main/services/lsp.ts
+- src/main/services/dap.ts
+- src/main/services/git.ts
+- src/main/services/mcp.ts
+- src/main/services/extensions.ts
+- src/main/services/extensionHost.ts
+- src/main/services/settings.ts
+
+# 3. Working-tree warning
+
+This repository has substantial existing staged, unstaged, and untracked work.
+
+The `main` branch may be unborn. Do not assume that `git diff main` works.
+
+Use:
+- git status --short
+- git diff -- apps/desktop
+- direct reads of relevant untracked files
+
+Treat current files on disk as the source of truth.
+
+Strict Git constraints:
+- Do not stage
+- Do not commit
+- Do not push
+- Do not reset
+- Do not clean
+- Do not stash
+- Do not amend
+- Do not overwrite unrelated changes
+
+Read every file before modifying it.
+
+Do not delete security or durability work just because it is untracked.
+
+# 4. Previous session and unfinished state
+
+A previous repair session was cancelled before validation completed. Preserve and inspect its work; do not assume it is correct.
+
+Files modified during that session include:
+
+- apps/desktop/package.json
+- apps/desktop/src/common/ipc.ts
+- apps/desktop/src/common/streamAssembler.ts
+- apps/desktop/src/main/ipc.ts
+- apps/desktop/src/main/services/ai.ts
+- apps/desktop/src/main/services/dialog.ts
+- apps/desktop/src/preload/index.ts
+- apps/desktop/src/renderer/src/App.tsx
+- apps/desktop/src/renderer/src/commands/keybindings.tsx
+- apps/desktop/src/renderer/src/commands/registry.tsx
+- apps/desktop/src/renderer/src/editor/EditorPane.tsx
+- apps/desktop/src/renderer/src/editor/activeEditorBus.ts
+- apps/desktop/src/renderer/src/env.d.ts
+- apps/desktop/src/renderer/src/state/workspace.tsx
+- apps/desktop/src/renderer/src/styles/premium.css
+- apps/desktop/src/renderer/src/workbench/AgentPanel.tsx
+- apps/desktop/src/renderer/src/workbench/ChatPanel.tsx
+- apps/desktop/src/renderer/src/workbench/EditorArea.tsx
+- apps/desktop/src/renderer/src/workbench/TitleBar.tsx
+
+Work attempted in those files:
+
+1. AI response reliability:
+   - Flush a final SSE `data:` frame when the provider closes without a trailing newline.
+   - Parse string, structured-array, nested text, Responses-style, and simplified OpenAI-compatible completion content.
+   - Reject a completed provider request that returned usage but no renderable answer.
+   - Let a blank primary response fail over instead of appearing successful.
+   - Attribute usage and spend to the actual winning provider/model.
+   - Show actionable Chat and Agent errors rather than an empty message or generic startup failure.
+
+2. Menus:
+   - Add actual Edit and Selection commands backed by the focused Monaco editor.
+   - Add File/Edit/Selection/View/Go/Run/Terminal/Help groups.
+   - Surface missing/rejected command errors instead of silent no-ops.
+   - Rebuild before `electron-vite preview` to prevent stale `out` bundles.
+
+3. Manual file workflows:
+   - Add native multi-file Open File IPC.
+   - Add Ctrl+O and a welcome Open File action.
+   - Add secure OS-dropped file/folder handling using preload `webUtils.getPathForFile`.
+   - Grant exact Main-owned path capabilities rather than trusting renderer strings.
+   - Catch editor file-load failures.
+
+4. UI:
+   - Add keyboard navigation for titlebar menus.
+   - Add an OS-drop overlay.
+   - Improve responsive titlebar and welcome layout behavior.
+
+Formatting was only partially verified because the previous PowerShell execution wrapper produced noisy false exit codes. TypeScript, production build, and packaging were not run after these changes.
+
+Your first responsibility is to inspect this current code, fix any incomplete or invalid implementation, and validate it. Do not simply repeat or layer duplicate implementations on top.
+
+# 5. Visual direction from the attached image
+
+Use the attached screenshot as the spatial and interaction reference. Do not copy third-party branding or proprietary assets.
+
+Required workbench layout:
+
+- A very slim application title/menu bar at the top.
+- Product mark at top-left.
+- Functional menus such as File, Edit, Selection, View, Go, Run, Terminal, and Help.
+- A compact command/search center in the top bar.
+- Left activity rail with Explorer, Search, Source Control, Run/Debug, Extensions or Intelligence, and Settings.
+- Primary sidebar immediately beside the activity rail.
+- Central Monaco editor with tabs, breadcrumbs, minimap, split editors, and a large focused editing canvas.
+- Right-side AI dock with Chat/Agent sessions, model state, conversation content, and composer.
+- Bottom panel for Terminal, Problems, Output, and Debug Console.
+- Compact status bar at the bottom.
+- Every major region must be resizable, collapsible, keyboard accessible, and persisted when practical.
+
+The image is a layout reference, not permission to clone VS Code or another product exactly.
+
+# 6. Color and brand correction
+
+The current black-and-white visual treatment is not acceptable as the final default.
+
+Create a professional “Royal Graphite” default dark theme:
+
+Suggested semantic direction:
+- Window/canvas: deep royal charcoal, not featureless pure black
+- Editor: slightly lighter dark graphite
+- Sidebar and AI dock: layered charcoal surfaces
+- Raised menus/modals: clearly separated graphite
+- Borders: subtle cool-grey borders
+- Primary action/focus/accent: restrained royal blue
+- Text: soft near-white with clear muted hierarchy
+- Semantic colors only for success, warning, error, info, Git additions/removals
+
+Suggested starting palette, adjustable for contrast:
+- --bg-void: #0b0d11
+- --bg-canvas: #101319
+- --bg-editor: #12161c
+- --bg-surface: #171c23
+- --bg-raised: #1d232c
+- --bg-overlay: #242b35
+- --border-subtle: #252c35
+- --border: #303946
+- --fg-default: #dfe5ee
+- --fg-muted: #9da8b7
+- --fg-subtle: #737e8d
+- --brand: #3f7fe8
+- --brand-hover: #5793f2
+- --focus: #6ca4ff
+
+Requirements:
+- Do not tint the Axiom business/product logo black.
+- Preserve the original logo artwork and colors if a real asset exists.
+- If the current SVG uses `currentColor`, give the product mark a dedicated brand color token.
+- The default logo should remain recognizable on the dark titlebar.
+- Do not turn every icon blue; normal workbench icons remain neutral.
+- Use blue only for brand, active focus, selected navigation, and primary actions.
+- Preserve accessibility, light-theme support if currently implemented, and high-contrast behavior.
+- Review installer icons and application icons as well as the in-app mark.
+- Do not invent or permanently replace the company logo if the real asset is missing. Report that an official asset is needed.
+
+# 7. “Not vibe coded” design rules
+
+The application must feel intentionally designed and engineered.
+
+Avoid:
+- Excessive gradients
+- Neon glows
+- Glass effects everywhere
+- Giant rounded cards
+- Oversized marketing copy inside the workbench
+- Random spacing
+- Inconsistent icon sizes
+- Fake controls
+- Placeholder panels
+- Buttons that do nothing
+- Repeated “AI” sparkles as decoration
+- Emoji
+- Unnecessary animations
+- Pure-black surfaces with pure-white borders
+- Artificially copying another product
+
+Use:
+- A strict spacing system
+- Compact 4px-based rhythm
+- Small consistent radii
+- Clear typography hierarchy
+- Precise alignment
+- Restrained motion
+- Excellent hover/focus/pressed/disabled states
+- Real loading, empty, error, offline, and restricted states
+- Tooltips for icon-only controls
+- Accessible labels and keyboard behavior
+- High information density appropriate for a professional IDE
+
+Every visible control must do one of the following:
+1. Perform its documented action.
+2. Be visibly disabled with a clear explanation.
+3. Be hidden until its backend capability exists.
+
+Never leave a visible silent no-op.
+
+# 8. Priority 0 — repair AI Chat and Agent end-to-end
+
+The reported runtime failure was:
+
+- User sends a prompt.
+- UI remains loading.
+- Only token usage such as “x tokens used” appears.
+- No assistant answer arrives.
+- Agent does not inspect or edit the folder.
+- It is unclear whether the configured custom API key or endpoint was called.
+
+Trace and verify the complete path:
+
+Renderer:
+- AiView
+- ChatPanel
+- AgentPanel
+- ComposerPanel where applicable
+- Provider/model settings
+- Stream event subscriptions
+- cancellation
+- loading settlement
+- error display
+
+Bridge:
+- common IPC contract
+- preload API
+- renderer env typing
+
+Main:
+- IPC handlers
+- secrets service
+- provider endpoint binding
+- model resolution
+- AI gateway
+- streaming adapters
+- agent loop
+- tool dispatch
+- cancellation
+- usage and spend
+
+Required behavior:
+
+1. Custom provider setup
+- Custom OpenAI-compatible Base URL is persisted.
+- Selected model is persisted and actually used.
+- Fetched models are selectable.
+- Stored API key is resolved only in Main.
+- The key is bound to its authorized provider/endpoint.
+- Keyless local endpoints remain possible only where intentionally supported.
+- Custom safe headers work.
+- Credential-bearing custom headers remain rejected.
+- No key is returned to renderer, logs, telemetry, errors, or exported diagnostics.
+
+2. Request execution
+- The real configured endpoint is called.
+- OpenAI, Anthropic, Gemini, and custom family adapters use correct request formats.
+- Streaming and non-stream responses both work.
+- Final SSE frames without newline work.
+- Structured content arrays work.
+- Reasoning content does not replace the visible final answer.
+- Tool-only responses are represented meaningfully.
+- Usage cannot make an empty response look successful.
+- Empty output generates a clear provider/model/endpoint-format error.
+- Failover only occurs under intended conditions.
+- Usage and spend are recorded for the provider/model that actually answered.
+
+3. Renderer lifecycle
+- Subscribe before invoking.
+- Discard stale chunks after cancellation, model change, provider change, workspace change, or conversation switch.
+- Settle loading exactly once.
+- Never leave an empty assistant placeholder indefinitely.
+- Show actionable errors in the affected turn and in an accessible alert.
+- Preserve partial text if a stream fails after text began.
+- Stop works promptly.
+
+4. Agent lifecycle
+- Every run produces exactly one terminal final/error/cancelled outcome.
+- Main remains authoritative.
+- Workspace trust is checked before run and before side-effecting tools.
+- Agent tools include real read/list/search/edit/replace/run operations.
+- File edits produce source-bound diffs and approval UI.
+- Approved edits actually reach disk and editor state refreshes.
+- Cancellation reaches active commands and their Windows process trees.
+- Agent startup/preflight errors are shown verbatim but without secrets.
+- Agent should not silently finish with zero content.
+
+5. Diagnostics
+Add or complete a safe AI connection diagnostics surface that shows:
+- provider
+- model
+- normalized endpoint host/path
+- credential status, never credential value
+- last connection-test result
+- last request phase
+- last safe error
+- whether failover was used
+- response format detected
+
+Do not include prompts, source code, API keys, or sensitive headers in diagnostic logs.
+
+A live provider smoke test may require the user’s configured credential. Do not fabricate a successful external call if no valid credential is available. Build and validate the local pipeline, then state exactly what requires a real key.
+
+# 9. Priority 0 — complete manual file editing
+
+Axiom must work as a normal text/code editor without AI.
+
+Required workflows:
+
+- New untitled file
+- Native Open File
+- Native multi-file selection
+- Native Open Folder
+- Open Recent
+- OS drag-and-drop files
+- OS drag-and-drop folders
+- Explorer tree navigation
+- File and folder creation
+- Rename
+- Move
+- Delete/trash
+- Open tabs
+- Preview tabs
+- Pin tabs
+- Reorder tabs
+- Split editors
+- Close/reopen editors
+- Dirty markers
+- Save
+- Save As
+- Save Copy As
+- Save All
+- Revert
+- Auto-save if configured
+- Crash/hot-exit recovery
+- Quick Open
+- Find in file
+- Find/replace
+- Search across files
+- Go to line
+- Go to symbol
+- Formatting
+- Language mode
+- Indentation
+- EOL control
+- Minimap
+- Word wrap
+- Line numbers
+- Breadcrumbs
+- Large-file handling
+- Clear and actionable read/write errors
+
+Security rules:
+- Renderer paths are requests, not authority.
+- Native dialogs and real OS drag events may establish exact capabilities.
+- Workspace roots remain Main-owned capabilities.
+- Resolve symlinks before containment checks.
+- Do not weaken pathAuthorization.ts.
+- Opening standalone files must not accidentally authorize their entire parent directory.
+- Exact authorized files must remain editable and saveable.
+- File viewing and editing must continue to work in Restricted Mode.
+
+Verify the partially added:
+- dialogOpenFiles
+- dialogAuthorizeDroppedPath
+- preload webUtils.getPathForFile flow
+- OpenFileResult/OpenPathResult types
+- WorkspaceProvider openFiles/openDroppedEntry
+- Ctrl+O
+- EditorPane read-error handling
+
+Fix all type, runtime, or security problems in that implementation.
+
+# 10. Priority 0 — make every menu and command real
+
+Current custom titlebar menus are renderer-driven through the command registry.
+
+Audit:
+- TitleBar.tsx
+- commands/registry.tsx
+- commands/keybindings.tsx
+- commands/palette.tsx
+- PaletteHost.tsx
+- App.tsx command registration
+- activeEditorBus.ts
+- editor action registration
+- terminal and debug command buses
+
+Required menus:
+- File
+- Edit
+- Selection
+- View
+- Go
+- Run
+- Terminal
+- Help
+
+Add Window only if it contains real, platform-appropriate actions.
+
+Expected real actions include:
+- New File
+- Open File
+- Open Folder
+- Save/Save As/Save All
+- Close/reopen editors
+- Undo/Redo
+- Cut/Copy/Paste
+- Select All
+- Multi-cursor/selection actions
+- Command Palette
+- Quick Open
+- Go to line/symbol/problem
+- Toggle sidebar/panel/status bar/activity bar/AI dock
+- Split and focus editor groups
+- Run and Debug view
+- Task view/actions
+- New/split/kill terminal
+- Settings
+- Keyboard shortcuts
+- Theme
+- Updates
+- About
+
+Requirements:
+- Menu clicks invoke live handlers.
+- Keyboard shortcuts invoke the same command IDs.
+- Command Palette invokes the same command IDs.
+- Async command errors are visible.
+- Missing commands are not silent.
+- Menu keyboard navigation works with arrows, Home, End, Enter, and Escape.
+- Focus is restored correctly.
+- Long menus remain inside the viewport.
+- Inapplicable actions should be disabled or explain what is required.
+- Do not show “Run Task” if it only opens a view while claiming execution; name actions honestly.
+
+The installed application previously showed menu labels that did not match current source, indicating stale renderer output. Ensure every preview/package command performs a fresh build and document that the old installed build must be replaced.
+
+# 11. Priority 0 — workspace trust and process lifecycle must not regress
+
+Read:
+C:\Users\SIDHU\SK IDE\semantic-review\2026-07-18-014554-pr-0.md
+
+It is an old review. Re-check current source because fixes may already have been attempted.
+
+Confirm all three historical findings are actually resolved:
+
+1. Explicit revocation cleanup
+- `setWorkspaceTrust(root, false)` must attempt all workspace cleanup even if persistence fails.
+- A parent-directory fsync failure after rename must not leave processes running.
+- Attempt terminal, LSP, debug, extension, MCP, and agent cleanup independently.
+- Preserve the primary persistence error.
+
+2. Agent revocation
+- Active agents are bound to canonical roots.
+- Revocation cancels only agents for that root.
+- `run_command` receives AbortSignal and terminates Windows process trees.
+- New side-effecting tools cannot begin after revocation.
+- Run-ID cancellation remains available while restricted.
+
+3. MCP isolation
+- Connections retain canonical roots.
+- List/status are root scoped.
+- Manual disconnect verifies root or sender ownership.
+- One workspace/window cannot display or disconnect another workspace’s MCP servers.
+- Disconnect remains available while restricted.
+
+Do not weaken:
+- Workspace trust
+- Path authorization
+- Profile durability
+- Settings durability
+- Exact-file capabilities
+- Electron sandboxing
+- Context isolation
+- CSP
+- Secret handling
+
+# 12. Priority 1 — professional IDE capabilities
+
+After all Priority 0 flows pass, audit existing capabilities and complete high-impact gaps using current architecture.
+
+Add or complete only real implementations, not placeholders:
+
+1. Workbench
+- Persisted panel/sidebar/AI widths
+- Persisted collapsed states
+- Reliable compact layout
+- Zen mode
+- Fullscreen support
+- Window zoom
+- New/reload window actions if safely implemented
+- Recent files as well as recent folders
+- Unsaved-work confirmation before destructive close/window operations
+
+2. Editor
+- Diff editor and change review
+- Git gutter decorations
+- Diagnostics navigation
+- Code actions
+- Rename symbol
+- Definition/references
+- Hover/completion/signature help
+- Multi-root support only if the architecture genuinely supports it
+- File encoding detection/selection if practical
+- Binary-file detection with a clear non-text viewer message
+
+3. AI
+- Conversation sessions and persistence
+- Rename/delete/export conversation
+- Retry/regenerate response
+- Copy response/code blocks
+- Apply code blocks through safe edits
+- Review proposed agent changes before apply
+- Context chips showing attached files
+- Clear context/token budget visibility
+- Provider health and offline state
+- A safe “Copy diagnostics” action
+- Honest mode separation: Chat, Agent, Composer
+
+4. Developer workflow
+- Integrated terminal
+- Tasks
+- Debug configurations
+- Git status/stage/unstage/commit/branch/diff/log
+- MCP server management
+- Extensions/extension-host state
+- Problems/Output/Debug Console
+- Status indicators tied to real state
+
+5. Reliability
+- Crash recovery
+- Autosave recovery
+- Corrupt-settings fail-safe behavior
+- Provider/network timeouts
+- Cancellation
+- Offline-friendly editor behavior
+- Stale-response protection
+- No unhandled promise rejections
+
+Do not build all of these as empty UI. If a feature cannot be completed, keep it out of the visible product and report it.
+
+# 13. Global release quality
+
+“Global” means distributable and professional, not artificially large.
+
+Required:
+- Correct product name/version/company metadata
+- Real application and installer icons
+- Windows installer
+- Unpacked package
+- Clean first-run onboarding
+- Provider setup guidance
+- Update UI
+- Legal/About surface
+- Accessibility
+- Keyboard-first operation
+- Clear network/offline behavior
+- No local absolute developer paths embedded in production
+- No test keys or endpoints
+- No secrets in bundles
+- No debug-only UI in production
+- No stale source maps containing secrets
+- No dead controls
+- Reasonable startup and memory behavior
+
+Installer size:
+- Do not add dummy files, duplicate assets, unused dependencies, bundled archives, or artificial padding to reach 800–900 MB.
+- Installer size is not a quality metric.
+- Size may increase only because of legitimate product functionality, native binaries, language tooling, or required assets.
+- Report the final installer and unpacked sizes honestly.
+- Prefer optional downloads for very large language runtimes or local models when appropriate.
+
+# 14. Dependency and test policy
+
+- Prefer existing dependencies.
+- Add a dependency only when genuinely required.
+- Use an exact pinned version.
+- Explain why it is needed.
+- Check unusual package names carefully.
+- Do not add a large UI framework merely to restyle existing React components.
+- Do not add a new test framework just for this task.
+- If an existing test harness is discovered, run relevant existing tests.
+- Otherwise rely on TypeScript, build, packaging, targeted pure-module checks, and a manual smoke-test checklist.
+- Never transmit source code, secrets, or user data to third-party services without explicit user intent.
+
+# 15. Required execution order
+
+1. Create a task list.
+2. Use the context-gatherer once to map the current implementation and working tree.
+3. Inspect git status and current diff.
+4. Read the old semantic review.
+5. Read every relevant current file before editing.
+6. Run an initial typecheck to identify damage from the cancelled session.
+7. Fix compile errors before expanding scope.
+8. Trace and repair AI Chat and Agent.
+9. Trace and repair manual editor/file workflows.
+10. Audit menu/command execution.
+11. Re-audit workspace trust and process teardown.
+12. Apply the Royal Graphite visual correction.
+13. Perform a visible-feature inventory:
+    - working
+    - disabled with explanation
+    - hidden because incomplete
+14. Complete the highest-value missing capabilities.
+15. Format only modified files.
+16. Run all validation.
+17. Review the final diff behaviorally.
+18. Produce an honest deployment verdict.
+
+Do not repeatedly run the same failing PowerShell command. If PowerShell blocks `npx.ps1`, use local Node entry points or `.cmd` shims without changing system execution policy.
+
+# 16. Windows validation commands
+
+Run from:
+C:\Users\SIDHU\SK IDE
+
+Prefer direct local executables to avoid PowerShell execution-policy failures.
+
+Formatting, modified files only:
+node node_modules/prettier/bin/prettier.cjs --write <modified-files>
+node node_modules/prettier/bin/prettier.cjs --check <modified-files>
+
+Node/Main TypeScript:
+node node_modules/typescript/bin/tsc --noEmit -p apps/desktop/tsconfig.node.json --pretty false
+
+Renderer TypeScript:
+node node_modules/typescript/bin/tsc --noEmit -p apps/desktop/tsconfig.web.json --pretty false
+
+Production build:
+npm.cmd run build --workspace apps/desktop
+
+Unpacked Windows package:
+npm.cmd run package:dir --workspace apps/desktop
+
+Windows installer:
+npm.cmd run package --workspace apps/desktop
+
+Do not run:
+- npm run dev
+- electron-vite dev
+- electron-vite preview
+- watchers
+- interactive long-running processes
+
+If the command wrapper reports an unreliable outer exit code, capture and report the child process exit code using `$LASTEXITCODE`. Do not call a passing command failed merely because the IDE shell wrapper is noisy, but do not call it passing without a clear tool result or child exit marker.
+
+# 17. Required smoke-test matrix
+
+Where automated launch testing is unavailable, provide this exact manual matrix and state that it requires user confirmation.
+
+AI:
+- Built-in provider with valid key
+- Custom endpoint with key
+- Keyless local custom endpoint
+- Streaming response
+- Non-stream JSON response
+- Structured content response
+- Cancellation
+- Invalid key
+- Invalid model
+- Offline endpoint
+- Agent read-only task
+- Agent edit with approval
+- Agent command with approval
+- Agent cancellation during command
+
+Editor:
+- New file
+- Open one file
+- Open multiple files
+- Open folder
+- Drop file
+- Drop folder
+- Edit and save
+- Save As
+- Close dirty file
+- Split editor
+- Search and replace
+- Reopen app/session recovery
+
+Menus:
+- Every top-level menu
+- Representative action from every category
+- Keyboard navigation
+- Command Palette
+- Keybindings
+- Async error notification
+
+Trust:
+- Restricted Mode file editing
+- Blocked process starts
+- Trust workspace
+- Start terminal/LSP/debug/MCP/agent
+- Revoke trust
+- Verify all workspace processes stop
+- Verify another workspace remains unaffected
+
+Package:
+- Install
+- Launch
+- First-run onboarding
+- Open File
+- Open Folder
+- AI setup
+- Uninstall
+- No stale old renderer UI
+
+# 18. Concrete acceptance criteria
+
+The task is not complete unless:
+
+- Chat produces visible assistant text or a visible actionable error.
+- Token usage alone can never be mistaken for a successful answer.
+- Agent runs show real progress and a terminal outcome.
+- Approved agent edits reach disk.
+- Custom API keys/endpoints are resolved and called through Main.
+- No secrets enter renderer state or logs.
+- Open File, Open Folder, drag/drop, edit, and save work.
+- The editor works without AI.
+- Every visible menu item has real behavior or is clearly disabled.
+- The layout matches the attached professional IDE reference in structure.
+- The default theme is Royal Graphite, not flat black-and-white.
+- The Axiom logo is not blacked out.
+- The UI is compact, consistent, responsive, and accessible.
+- Workspace trust remains Main-authoritative.
+- TypeScript passes for node and renderer.
+- Production build passes.
+- Unpacked packaging passes.
+- Installer packaging passes, or an exact environmental blocker is reported.
+- No unrelated work is overwritten.
+- No Git staging/commit/push/reset/clean/stash occurs.
+- No artificial installer bloat is added.
+
+# 19. Final response format
+
+Return:
+
+1. Verdict:
+   - READY FOR DEPLOYMENT
+   - NOT READY FOR DEPLOYMENT
+
+2. What was fixed:
+   - AI Chat
+   - Agent tools/lifecycle
+   - Manual editor/files
+   - Menus/commands
+   - Workspace trust
+   - UI/brand
+   - Packaging
+
+3. Exact modified-file list.
+
+4. Exact validation commands and child exit results.
+
+5. Built artifact paths and sizes.
+
+6. Features verified automatically.
+
+7. Features requiring manual credential/runtime confirmation.
+
+8. Remaining issues, with severity and exact file references.
+
+Do not claim “every feature works” merely because compilation succeeds. Compilation, build, package, and behavioral validation are separate gates.
+```Context restored. The standalone Axiom implementation prompt has been prepared, including the unfinished validation, AI/editor/menu/trust fixes, Royal Graphite design, logo preservation, packaging gates, and deployment criteria.
+
+Paste it into a fresh **Kiro Vibe session in Autopilot mode** and attach the same reference image. I’m ready to reproduce or revise the full prompt if needed.Invalid additionalModelRequestFields: property 'reasoning' is not defined in the schema and the schema does not allow additional properties (Request ID: 8bbb7c30-8079-4bd7-9d2b-ba8920d42537)

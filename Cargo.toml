@@ -1,0 +1,13 @@
+# Axiom Rust workspace (PRD Part II §15.1 — "Cargo workspaces for Rust crates").
+# Rooting the workspace here lets `cargo` commands run from the repository root
+# and pick up the pinned toolchain (see ./rust-toolchain.toml) regardless of the
+# current working directory. Additional crates (indexer, symbols, search,
+# embeddings, watcher — PRD §15.2) are added as members under crates/*.
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+# Profiles must live at the workspace root; profiles declared in member crates
+# are ignored by Cargo. (Moved here from crates/axiom-core/Cargo.toml.)
+[profile.release]
+opt-level = 3

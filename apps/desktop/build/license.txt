@@ -1,0 +1,38 @@
+AXIOM — END USER LICENSE AGREEMENT
+Think. Build. Ship.
+
+By installing or using AXIOM, you agree to the following terms. The complete Terms of
+Service and Privacy Policy are available inside the application (Help - About AXIOM & Legal)
+and in the project's docs/legal folder.
+
+1. AXIOM IS FREE.
+   AXIOM is provided free of charge. There are no subscriptions, license fees, per-seat
+   charges, ads, or paid tiers, and no feature is locked behind payment.
+
+2. BRING YOUR OWN KEY (BYOK).
+   AXIOM connects to AI providers using API keys that YOU supply. Any AI usage costs are
+   billed directly to you by that provider (e.g. OpenAI, Anthropic, Google). Those charges
+   are between you and the provider. AXIOM neither collects nor marks them up, and shows
+   only estimated costs locally for convenience.
+
+3. LOCAL-FIRST & PRIVACY.
+   AXIOM is local-first. Your code and prompts go directly from your machine to the AI
+   provider you choose; they are never routed through AXIOM's servers. Optional cloud
+   features (Google sign-in, preference sync, opt-in telemetry) are minimal, are off by
+   default where applicable, and are scoped to your own account.
+
+4. LICENSE TO USE.
+   You are granted a personal, worldwide, royalty-free, non-exclusive license to install
+   and use AXIOM for your own software development, personal or commercial. You may not
+   resell AXIOM as a standalone product or remove its notices. All other rights reserved.
+
+5. AUTOMATIC UPDATES.
+   AXIOM keeps itself up to date. New versions are detected automatically, downloaded in
+   the background, and verified (SHA-256) before installation. Some updates may be marked
+   mandatory for security or compatibility; in that case AXIOM must be updated before use.
+
+6. NO WARRANTY.
+   AXIOM is provided "AS IS", without warranty of any kind. To the maximum extent permitted
+   by law, the authors are not liable for any damages arising from its use.
+
+Copyright (c) 2026 Siddharth — the AXIOM project. All rights reserved.

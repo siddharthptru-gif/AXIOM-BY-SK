@@ -1,0 +1,43 @@
+STAMP 2026-07-26T11-19-28-260Z
+CHECKS 5  FAILED 0
+tsc-node: status=0 (5.3s)
+tsc-web: status=0 (9.4s)
+agentic-chat: status=0 (0.6s)
+github-scm: status=0 (0.6s)
+security-hardening: status=0 (3.7s)
+
+{
+  "stamp": "2026-07-26T11-19-28-260Z",
+  "results": [
+    {
+      "name": "tsc-node",
+      "status": 0,
+      "seconds": 5.3,
+      "output": ""
+    },
+    {
+      "name": "tsc-web",
+      "status": 0,
+      "seconds": 9.4,
+      "output": ""
+    },
+    {
+      "name": "agentic-chat",
+      "status": 0,
+      "seconds": 0.6,
+      "output": "PASS agentic chat contracts\nPASS grounded prompt, progress/summary, bounded activity, model/follow-tail commands\nPASS guided/autopilot/high-risk policy\nPASS source-bound delete and replay protection\nPASS approval/root/trust/dirty-workspace guards\nPASS titlebar palette and Main validation contracts\nPASS official logo E6137563C6F63E2B0C0E4AA2A1F1B3FD1416008136F10F363440BFEDDE11D7E2"
+    },
+    {
+      "name": "github-scm",
+      "status": 0,
+      "seconds": 0.6,
+      "output": "GitHub SCM validation passed (behavioral races, transport safety, trust, recovery, and accessibility)."
+    },
+    {
+      "name": "security-hardening",
+      "status": 0,
+      "seconds": 3.7,
+      "output": "[release-hardening] Removed 2 stale generic update metadata file(s).\n[release-hardening] Windows ElectronAsar resource and Electron fuses applied and verified before signing.\nPASS security hardening: bundles, package policy, fuses, and artifact hashes\nPASS security hardening: runtime, CSP, navigation, DevTools, and diagnostics\nPASS security hardening: logging, updater networking, docs, OAuth, versions, and logo"
+    }
+  ]
+}

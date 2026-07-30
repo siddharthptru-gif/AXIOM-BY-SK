@@ -1,0 +1,12 @@
+status=0
+PASS  write_file after <think> rehearsal -> kind=tool tool=write_file
+      payload braces preserved: yes
+      transcript leaks protocol: no (visible 0 chars, reasoning 188 chars)
+PASS  list_dir after <think> rehearsal -> kind=tool tool=list_dir
+      transcript leaks protocol: no (visible 0 chars, reasoning 90 chars)
+PASS  action after an unrelated bash fence -> kind=tool tool=read_file
+      transcript leaks protocol: no (visible 74 chars, reasoning 0 chars)
+PASS  prose with no action stays none -> kind=none tool=-
+      transcript leaks protocol: no (visible 76 chars, reasoning 0 chars)
+
+ALL PASS

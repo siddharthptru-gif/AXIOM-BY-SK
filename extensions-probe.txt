@@ -1,0 +1,281 @@
+--- semver ranges ---
+PASS  every semver range case resolves as specified  21 cases
+PASS  an unparseable range reports unknown rather than satisfied
+PASS  a lower bound can be reported for the UI
+PASS  a wildcard range has no lower bound to report
+
+--- manifest reader ---
+PASS  a well-formed manifest parses
+PASS  the identifier is publisher.name lowercased  axiom.probe
+PASS  every modelled contribution point is read
+PASS  contribution paths are stored without the ./ prefix  themes/night.json
+PASS  unmodelled contribution points are recorded, not silently dropped  debuggers, menus
+PASS  an extension with a main entry is reported as needing the host
+PASS  its declarative contributions are still reported as supported
+PASS  its commands are reported as inert rather than working
+PASS  compatibility is evaluated against the declared engine
+PASS  a missing publisher is fatal  The manifest does not declare a valid `publisher`.
+PASS  a missing name is fatal  The manifest does not declare a valid `name`.
+PASS  a non-semver version is fatal  The manifest does not declare a valid semver `version`.
+PASS  a publisher with a path separator is fatal  The manifest does not declare a valid `publisher`.
+PASS  a traversal path in a contribution is dropped
+PASS  a manifest with no declared engine reports unknown compatibility
+
+--- VSIX reader: hostile archives ---
+PASS  a minimal well-formed VSIX is accepted
+PASS  the package digest is reported
+PASS  the payload size counts only extension/ files  112
+PASS  a traversal entry name is refused  invalid relative path: extension/../../evil.txt
+PASS  an absolute entry name is refused  absolute path: /etc/passwd
+PASS  a symlink entry is refused  The package contains an entry AXIOM refuses to read: symbolic links are not allowed in a package.
+PASS  a decompression bomb is refused  The package contains an entry AXIOM refuses to read: entry compression ratio exceeds the 200:1 limit.
+PASS  an archive without a manifest is refused  The package does not contain extension/package.json.
+PASS  a manifest that is not JSON is refused  extension/package.json is not valid JSON: Expected property name or '}' in JSON at position 2 (line 1 column 3)
+PASS  a manifest without an identity is refused  The manifest does not declare a valid `publisher`. The manifest does not declare a valid semver `version`.
+PASS  an empty buffer is refused  The package is empty.
+PASS  a non-zip buffer is refused  The package is not a readable VSIX archive: End of central directory record signature not found. Either not a zip file, or file is truncated
+PASS  extraction writes the payload files  2 files
+PASS  the extension/ prefix is stripped
+PASS  packaging metadata is not extracted
+PASS  nested directories are created
+
+--- registry URL policy ---
+PASS  an API url on the registry host is accepted
+PASS  the content CDN may serve files but not the API
+PASS  every disallowed url shape is refused  6 shapes
+PASS  search paging is clamped rather than rejected  1000/0
+PASS  an unknown sort key is dropped instead of forwarded
+PASS  extension identifiers are parsed strictly
+PASS  a published digest is parsed only when it is exactly a sha256
+PASS  Retry-After is honoured and clamped
+PASS  an unverifiable signature is never described as verified
+
+--- registry client against the live registry ---
+PASS  the registry is reachable
+PASS  search returns a normalized page  5 of 2097
+PASS  every search entry carries a usable identity  devsense.profiler-php-vscode, pkief.material-icon-theme, ms-ceintl.vscode-language-pack-zh-hans
+PASS  search results are cached in-session
+PASS  details resolve with publisher and files  dracula-theme.theme-dracula@2.25.1 by open-vsx
+PASS  details expose the engine range  ^1.13.0
+PASS  details expose categories  Themes
+PASS  version history is paginated  5 of 13: 2.25.1, 2.25.0, 2.24.2, 2.24.1, 2.24.0
+PASS  reviews resolve  3 reviews
+PASS  publisher details resolve with their extensions  dracula-theme: 1 extensions
+PASS  a missing extension reports a 404 rather than hanging  404
+PASS  a package downloads and its published digest is verified  f4d8c28fc64874b1b959cc90dbd39c84d5d35c9cf203e32b7a758dc9abf5b1cb
+PASS  the signature manifest independently confirms the same bytes
+PASS  the signature itself is reported as present but unverified
+       integrity summary: Verified against the published checksum and signature manifest. A publisher signature is present; AXIOM does not verify its envelope.
+PASS  the downloaded bytes are the extension the details described
+PASS  bytes that disagree with the published digest are refused  The downloaded package does not match the checksum the registry published for it.
+PASS  latest versions resolve for a batch  dracula-theme.theme-dracula=2.25.1, redhat.vscode-yaml=1.25.2026072408
+PASS  a repeat update check is served from the on-disk catalog
+PASS  the catalog cache is written where it can be discarded safely
+PASS  one failing lookup does not sink the batch  That extension is not in the registry.
+
+--- install policy (pure) ---
+PASS  a corrupt state file degrades instead of throwing
+PASS  a state entry with a traversal directory name is dropped
+PASS  an installed extension is enabled by default
+PASS  a workspace disable is narrower than the global setting
+PASS  only a strictly newer version counts as an update
+PASS  dependencies are ordered before what requires them  dep.deep -> dep.one -> dep.two -> root.pack
+PASS  a dependency cycle is named rather than hung on  a.a -> b.b -> a.a
+
+--- install pipeline against the live registry ---
+PASS  an extension installs from the registry  dracula-theme.theme-dracula@2.25.1
+       integrity: Verified against the published checksum and signature manifest. A publisher signature is present; AXIOM does not verify its envelope.
+PASS  it lands in a versioned directory with its manifest at the root
+PASS  the install is recorded in state
+PASS  the record keeps what was verified about the bytes  {"sha256":"f4d8c28fc64874b1b959cc90dbd39c84d5d35c9cf203e32b7a758dc9abf5b1cb","digestVerified":true,"signatureManifestVerified":true,"signature":"present-unverified"}
+PASS  the installed list reports it
+PASS  it is enabled on arrival
+PASS  its working contributions are reported  themes=2
+PASS  the detail view exposes the manifest and its location
+PASS  a global disable takes effect
+PASS  a workspace disable applies only to that workspace
+PASS  a workspace change without an open folder is refused
+PASS  auto-update can be turned off per extension
+PASS  an up-to-date install reports no updates
+PASS  a specific version can be installed
+PASS  the superseded directory is pruned
+PASS  an outdated install is detected  dracula-theme.theme-dracula 2.24.0->2.25.1
+PASS  Update All installs the newer version  {"updated":["dracula-theme.theme-dracula"],"failed":[],"skipped":[]}
+PASS  the update is reflected on disk  2.25.1
+PASS  a disable survives reinstalling a different version
+PASS  a local .vsix installs  localtest.sample
+PASS  a local install is not presented as checksum-verified
+PASS  a non-vsix file is refused
+PASS  an extension needing a newer editor API is refused  Needs a newer editor API than AXIOM provides (99.0.0 or later).
+PASS  an interrupted install leaves nothing behind after cleanup
+PASS  staging directories are never treated as installed extensions
+PASS  uninstall removes the extension and its directory
+PASS  no extension directories are left on disk  .marketplace-state.json
+PASS  uninstalling something absent is refused clearly
+
+--- theme conversion (pure) ---
+PASS  a theme defining only two colours still yields a complete token set  28 tokens
+PASS  derived surfaces stay distinct rather than collapsing to one colour  #0a0a15 #0e0e1b #101020 #212130
+PASS  the declared uiTheme decides light or dark even when the file omits type
+PASS  with no uiTheme and no type, background luminance decides
+PASS  translucent workbench colours keep their alpha  rgba(255, 255, 255, 0.125)
+PASS  comma and array scopes each become their own rule  comment,comment.line,keyword,storage.type,,alpha
+PASS  a scopeless rule becomes the default rule
+PASS  a rule with no colour and no style is dropped
+PASS  token colours are emitted without alpha, which Monaco rejects
+PASS  a file with neither colours nor token rules is not a theme
+PASS  an included base merges with the child winning
+
+--- contribution engine against real installs ---
+PASS  the catalog lists themes contributed by installed extensions  Dracula Theme(dark), Dracula Theme Soft(dark)
+PASS  the catalog lists contributed icon themes  VSCode Icons
+PASS  contributed commands report invocability from whether the extension ships an entry point  13 commands, 13 invocable
+PASS  contributed settings are listed with their defaults  22 settings
+PASS  contribution points that will not act are reported as inert  vscode-icons: commands
+PASS  a contributed theme loads and converts from disk  Dracula: 28 tokens, 236 rules
+PASS  the loaded theme is complete
+PASS  the loaded theme carries an accent and an editor surface for Monaco  #44475a / #282a36
+PASS  text on the accent is chosen for legibility, not by theme kind  #f8f8f2
+PASS  an unknown theme key resolves to nothing
+PASS  an icon theme loads with its icons inlined  1396 definitions, 1396 inlined
+PASS  inlined icons are only ever image data URLs
+PASS  every filename mapping resolves to a definition that exists  1396 definitions
+PASS  the icon theme exposes its file and folder mappings  591 extensions, 1595 names
+PASS  a disabled extension contributes nothing
+PASS  a theme contribution with a traversal path is never offered  Commented
+PASS  a JSONC theme with comments and trailing commas loads  #0a0a14
+PASS  its token rules survive the trailing comma
+PASS  JSONC snippets load with array bodies joined  2 snippets
+PASS  snippet languages are counted in the catalog
+PASS  a language configuration loads its comment markers and brackets  ["<!--","-->"]
+PASS  auto-closing pairs accept both object and tuple forms
+PASS  a grammar path that escapes the extension is never listed  source.sample, source.sample.embedded
+PASS  a grammar with no language is still catalogued for embedding
+PASS  a JSON grammar loads with its format reported  json
+PASS  a plist grammar loads and is reported as plist, not JSON  plist
+PASS  an unknown scope name loads nothing
+PASS  a grammar behind an escaping path cannot be loaded by scope name either
+PASS  the shipped TextMate parser accepts the plist exactly as delivered  source.sample.embedded
+
+--- AI capability awareness ---
+PASS  nothing detected produces no block at all  ""
+PASS  running language servers are stated
+PASS  an available formatter is stated with an instruction not to rebuild it  Formatting already available through these servers (use them; do not write a formatter): Prettier
+PASS  toolchains are listed with versions when known
+PASS  contributing extensions are listed with what works
+PASS  commands backed by a running host are stated as usable  Extension commands running now and safe to plan around: nice.applyTheme
+PASS  commands with no running host are listed separately and marked unusable  Commands declared by extensions whose host is not running (do not plan a step that invokes one): someLinter.fixAll, someLinter.showOutput
+PASS  extensions whose code is not running are called out explicitly
+PASS  the block is bounded so it cannot crowd out the code being discussed  874 chars
+PASS  over-long lists are truncated with a count rather than silently cut
+PASS  the chat context builder attaches the capability block
+PASS  the agent receives capabilities as untrusted data, not as system policy
+PASS  the agent is told to prefer what already exists
+PASS  the agent is told which extension commands it may plan around
+PASS  formatter availability is read from live negotiation, not guessed from the catalog
+
+--- VSIX reader: real packages from Open VSX ---
+PASS  dracula-theme.theme-dracula is read from the real registry package  dracula-theme.theme-dracula@2.25.1, 13 entries
+PASS  dracula-theme.theme-dracula digest matches what the registry published
+PASS  dracula-theme.theme-dracula contributes themes  supported: themes=2
+       activation=declarative inert=none engine=true
+PASS  dracula-theme.theme-dracula extracts with its manifest at the root
+PASS  dracula-theme.theme-dracula ships every file its contributions reference  2 files present
+PASS  vscode-icons-team.vscode-icons is read from the real registry package  vscode-icons-team.vscode-icons@12.19.0, 1584 entries
+PASS  vscode-icons-team.vscode-icons digest matches what the registry published
+PASS  vscode-icons-team.vscode-icons contributes iconThemes  supported: iconThemes=1, configuration=1
+       activation=requires-host inert=commands engine=true
+PASS  vscode-icons-team.vscode-icons extracts with its manifest at the root
+PASS  vscode-icons-team.vscode-icons ships every file its contributions reference  1 files present
+PASS  redhat.vscode-yaml is read from the real registry package  redhat.vscode-yaml@1.25.2026072408, 42 entries
+PASS  redhat.vscode-yaml digest matches what the registry published
+PASS  redhat.vscode-yaml contributes grammars  supported: languages=1, grammars=1, configuration=1, configurationDefaults=1
+       activation=requires-host inert=none engine=true
+PASS  redhat.vscode-yaml extracts with its manifest at the root
+PASS  redhat.vscode-yaml ships every file its contributions reference  2 files present
+
+--- renderer wiring ---
+PASS  the theme controller loads the selected extension colour theme
+PASS  it applies a contributed theme to both the workbench and Monaco
+PASS  it repaints the native title bar for a contributed theme too
+PASS  a theme whose extension disappeared falls back instead of leaving the workbench unpainted
+PASS  it reloads the selection when the installed set changes
+PASS  the selected icon theme is published to the icon store
+PASS  a contributed theme is overlaid on a complete built-in theme of the same kind
+PASS  both extension appearance choices are real settings, so they persist per profile
+PASS  the Extensions view offers the contributed themes and a way back to built-in
+PASS  the picker is mounted in the Extensions view
+PASS  icon resolution follows filename, then compound extension, then language
+PASS  file and folder icons consult the active icon theme
+PASS  a themed icon is only ever an image source, never injected markup
+PASS  an icon the theme does not cover falls back to the built-in glyph
+PASS  contributed languages, snippets and grammars are all applied
+PASS  the grammar engine follows the active theme
+PASS  the controller is mounted once for the window
+PASS  contributed languages register with their file associations and configuration
+PASS  snippets become real completion items, inserted as snippets
+PASS  snippet bodies are fetched on first use rather than all at once
+PASS  previous registrations are disposed before new ones are made
+PASS  the grammar engine is the same pair VS Code uses, both loaded on demand
+PASS  the WebAssembly matcher is loaded from the bundled asset, not the network
+PASS  grammars are requested by scope name, never by path
+PASS  an unknown scope is refused before it reaches Main
+PASS  the plist and JSON formats are both parsed, chosen by what Main reported
+PASS  grammars are compiled lazily, per language, on first use
+PASS  tokenization is encoded, so grammar colours come from the theme colour map
+PASS  the colour map reaches Monaco through the theme, not the editor-wide override
+PASS  semantic token colours for a contributed theme are derived from that theme
+
+--- extension host policy (pure) ---
+PASS  every activation event resolves as specified  12 cases
+PASS  an unknown activation event never makes an extension eager
+PASS  the languages an extension waits for are extracted and deduplicated
+PASS  a first crash restarts after a short backoff  {"restart":true,"delayMs":500,"offerDisable":false,"recentCrashes":1}
+PASS  a second crash backs off further and still restarts  {"restart":true,"delayMs":2000,"offerDisable":false,"recentCrashes":2}
+PASS  a third crash inside the window stops restarting and offers to disable  {"restart":false,"delayMs":0,"offerDisable":true,"recentCrashes":3}
+PASS  crashes age out, so an old failure cannot disable a healthy extension  {"restart":true,"delayMs":500,"offerDisable":false,"recentCrashes":1}
+PASS  pruning drops only the records outside the window
+PASS  the request set is closed
+PASS  a malformed request is refused with a reason rather than handled  8 shapes
+PASS  an oversized write is refused before any I/O
+PASS  paging and limits are clamped rather than trusted  2000
+PASS  a well-formed worker message parses
+PASS  a malformed worker message is dropped rather than acted on
+PASS  worker log output is clamped and its level normalized  info/2000
+PASS  diagnostics are clamped, ordered, and dropped when unusable  ["a.ts:0-0","c.ts:9-9"]
+PASS  the diagnostics per publish are bounded
+
+--- extension host wiring ---
+PASS  the host is a utility process, and the only launcher
+PASS  consent is read before a process starts and a refusal is remembered
+PASS  the consent prompt states the privilege in plain terms
+PASS  every request is validated before a handler sees it
+PASS  file access goes through the same authorization as the renderer
+PASS  diagnostic paths are authorized before they reach the UI
+PASS  writes and deletions are audited
+PASS  a crash loop stops and reaches the user
+PASS  only the crashed extension is restarted
+PASS  activation is lazy: startup, language and command paths are separate
+PASS  an entry point outside its own package is refused
+PASS  an extension reads only its own settings plus a shared editor set
+PASS  the worker cannot reach Electron, a window, or the renderer
+PASS  the shim is installed by intercepting exactly one module specifier
+PASS  unimplemented API members throw with their own name instead of returning undefined
+PASS  secrets and settings writes are refused rather than emulated
+PASS  the API surface covers the contribution points extensions actually use
+PASS  the window reports the active editor so language activation can happen
+PASS  extension prompts are answered by the user, one at a time
+PASS  a dismissed prompt answers null rather than inventing a choice
+PASS  invocable extension commands are registered in the palette
+PASS  a crash loop is reported to the user with what to do next
+PASS  the bridge is mounted once for the window
+PASS  the user can allow, refuse, stop, restart and inspect every extension that runs code
+PASS  every host state is named for the user rather than collapsed to on/off
+PASS  the panel repeats the privilege warning where the user acts on it
+PASS  the packaged extension host is a mandatory, inspected graph root
+PASS  the extension host is built as its own bundle
+PASS  the extension host threat model is written down
+PASS  the production CSP grants WebAssembly compilation and nothing else new
+PASS  the WebAssembly grant is documented in the security architecture
+
+ALL PASS

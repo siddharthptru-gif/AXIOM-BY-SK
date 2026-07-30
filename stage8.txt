@@ -1,0 +1,48 @@
+STAMP 2026-07-26T11-57-40-004Z
+CHECKS 3  FAILED 1
+tsc-node: status=0 (7.1s)
+tsc-web: status=0 (12.9s)
+agentic-chat: status=1 (0.6s)
+
+===== agentic-chat =====
+C:\Users\SIDHU\SK IDE\apps\desktop\scripts\validate-agentic-chat.cjs:12
+  if (!condition) throw new Error(message);
+                  ^
+
+Error: Agent approval audit digest binding: missing "`Agent action approved: ${descriptor.sha256}`"
+    at assert (C:\Users\SIDHU\SK IDE\apps\desktop\scripts\validate-agentic-chat.cjs:12:25)
+    at contains (C:\Users\SIDHU\SK IDE\apps\desktop\scripts\validate-agentic-chat.cjs:47:3)
+    at Object.<anonymous> (C:\Users\SIDHU\SK IDE\apps\desktop\scripts\validate-agentic-chat.cjs:455:1)
+    at Module._compile (node:internal/modules/cjs/loader:1854:14)
+    at Object..js (node:internal/modules/cjs/loader:1985:10)
+    at Module.load (node:internal/modules/cjs/loader:1577:32)
+    at Module._load (node:internal/modules/cjs/loader:1379:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47
+
+Node.js v24.16.0
+
+{
+  "stamp": "2026-07-26T11-57-40-004Z",
+  "results": [
+    {
+      "name": "tsc-node",
+      "status": 0,
+      "seconds": 7.1,
+      "output": ""
+    },
+    {
+      "name": "tsc-web",
+      "status": 0,
+      "seconds": 12.9,
+      "output": ""
+    },
+    {
+      "name": "agentic-chat",
+      "status": 1,
+      "seconds": 0.6,
+      "output": "C:\\Users\\SIDHU\\SK IDE\\apps\\desktop\\scripts\\validate-agentic-chat.cjs:12\r\n  if (!condition) throw new Error(message);\r\n                  ^\r\n\r\nError: Agent approval audit digest binding: missing \"`Agent action approved: ${descriptor.sha256}`\"\r\n    at assert (C:\\Users\\SIDHU\\SK IDE\\apps\\desktop\\scripts\\validate-agentic-chat.cjs:12:25)\r\n    at contains (C:\\Users\\SIDHU\\SK IDE\\apps\\desktop\\scripts\\validate-agentic-chat.cjs:47:3)\r\n    at Object.<anonymous> (C:\\Users\\SIDHU\\SK IDE\\apps\\desktop\\scripts\\validate-agentic-chat.cjs:455:1)\r\n    at Module._compile (node:internal/modules/cjs/loader:1854:14)\r\n    at Object..js (node:internal/modules/cjs/loader:1985:10)\r\n    at Module.load (node:internal/modules/cjs/loader:1577:32)\r\n    at Module._load (node:internal/modules/cjs/loader:1379:12)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47\r\n\r\nNode.js v24.16.0"
+    }
+  ]
+}

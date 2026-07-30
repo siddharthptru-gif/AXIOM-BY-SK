@@ -1,0 +1,110 @@
+# electron-builder configuration (PRD Epoch J — packaging & release).
+# Produces a Windows 10/11 NSIS *wizard* installer for Axiom.
+#
+# Packaging is deliberately unsigned. Public releases must build with
+# `--config.win.sign=null`, then use `AXIOM EXE/sign-release-artifacts.ps1` as the
+# only credential-bearing boundary. Never expose signing material to npm,
+# electron-builder, dependency lifecycle scripts, or packaging hooks.
+#
+# App icon: drop a 256×256 `build/icon.ico` (the Axiom logo). electron-builder
+# picks it up automatically; without it, the default Electron icon is used.
+
+appId: com.axiom.ide
+productName: AXIOM
+copyright: Copyright © 2026 Siddharth — the AXIOM project
+# Pinned so electron-builder resolves the version without probing hoisted
+# node_modules (npm-workspaces monorepo). Keep in sync with the exact electron devDep.
+electronVersion: 33.2.0
+asar:
+  # Default smartUnpack expands native dependencies to whole module trees. Keep
+  # it disabled so the explicit runtime-only node-pty patterns below are exact.
+  smartUnpack: false
+compression: maximum
+afterPack: scripts/after-pack-fuses.cjs
+afterAllArtifactBuild: scripts/after-all-artifact-build.cjs
+
+directories:
+  output: '../../AXIOM EXE/dist'
+  buildResources: build
+
+# Publishing is deliberately not configured here. Release automation must select
+# an approved authenticated destination explicitly after signing and verification.
+
+# Ship only compiled application output, its manifest, and electron-builder's
+# resolved production dependencies. Negated rules also prune dependency baggage.
+files:
+  - out/**/*
+  - package.json
+  - '!**/*.map'
+  - '!**/*.d.ts'
+  - '!**/*.{ts,tsx,pdb,gyp,cc,cpp,c,h,hpp}'
+  - '!**/*.{test,spec}.{js,cjs,mjs,ts,tsx}'
+  - '!**/{test,tests,__tests__,spec,specs,coverage}/**/*'
+  - '!**/{script,scripts}/**/*'
+  - '!**/{README,CHANGELOG,CHANGES,HISTORY}*'
+  - '!**/*.{debug,log}'
+  - '!**/tsconfig*.json'
+  # node-pty is rebuilt below. Keep only its runtime JS/manifest plus the rebuilt
+  # Windows x64 Release binaries; omit sources, scripts, prebuilds for other
+  # platforms, build intermediates, symbols, and duplicate native payloads.
+  - '!**/node_modules/node-pty/{bin,src,typings,scripts,deps,node-addon-api,third_party,prebuilds}/**/*'
+  - '!**/node_modules/node-pty/binding.gyp'
+  - '!**/node_modules/node-pty/build/deps/**/*'
+  - '!**/node_modules/node-pty/build/*.{sln,gypi,vcxproj,filters}'
+  - '!**/node_modules/node-pty/build/Release/obj/**/*'
+  - '!**/node_modules/node-pty/build/Release/*.{exp,lib,iobj,ipdb}'
+  # node-addon-api is needed only while rebuilding node-pty; the compiled addon
+  # has no runtime dependency on its headers, gyp files, or tooling scripts.
+  - '!**/node_modules/node-addon-api/**/*'
+
+# The native core is built by the release workflow and placed outside the ASAR
+# so Main can supervise it as a normal child process.
+extraResources:
+  - from: ../../target/release/axiom-core.exe
+    to: bin/axiom-core.exe
+
+# Only node-pty's rebuilt runtime binaries must be outside ASAR. Its JavaScript
+# and package metadata remain packed; symbols, scripts, sources, and other
+# platform/architecture payloads are excluded above.
+asarUnpack:
+  - 'node_modules/node-pty/build/Release/*.{node,dll,exe}'
+  - 'node_modules/node-pty/build/Release/conpty/*.{dll,exe}'
+
+# Rebuild native modules (node-pty) against the bundled Electron's ABI.
+npmRebuild: true
+
+win:
+  icon: build/icon.ico
+  artifactName: ${productName}-Setup-${version}-${arch}.${ext}
+  requestedExecutionLevel: requireAdministrator
+  target:
+    - target: nsis
+      arch:
+        - x64
+  # ARM64 dropped per user request — x64 only. (Re-add `- arm64` to build ARM64.)
+  # Signing remains outside electron-builder in the dedicated release boundary.
+
+# A proper multi-step wizard (not the one-click installer): the user can choose
+# the install location and whether to create shortcuts.
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  menuCategory: false
+  shortcutName: AXIOM
+  runAfterFinish: true
+  deleteAppDataOnUninstall: false
+  warningsAsErrors: false
+  # Branded multi-step wizard: license page + prerequisite/environment checks
+  # (Windows 10/11 guard, 64-bit guard, Visual C++ runtime provisioning).
+  include: build/installer.nsh
+  license: build/license.txt
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  # Optional branded wizard art — drop BMPs in build/ and uncomment:
+  # installerSidebar: build/installerSidebar.bmp
+  # uninstallerSidebar: build/installerSidebar.bmp

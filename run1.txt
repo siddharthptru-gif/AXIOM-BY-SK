@@ -1,0 +1,22 @@
+STAMP 2026-07-26T12-15-44-080Z
+CHECKS 2  FAILED 0
+tsc-node: status=0 (5.6s)
+tsc-web: status=0 (9.6s)
+
+{
+  "stamp": "2026-07-26T12-15-44-080Z",
+  "results": [
+    {
+      "name": "tsc-node",
+      "status": 0,
+      "seconds": 5.6,
+      "output": ""
+    },
+    {
+      "name": "tsc-web",
+      "status": 0,
+      "seconds": 9.6,
+      "output": ""
+    }
+  ]
+}

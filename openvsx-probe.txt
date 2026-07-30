@@ -1,0 +1,73 @@
+PASS  the registry answers /api/version  {"version":"v1.0.2-aws"}
+       rate limit remaining: not reported
+PASS  search returns results
+PASS  search reports paging totals  offset=0 totalSize=2097
+PASS  a search entry carries the fields the list needs
+       entry keys: averageRating, deprecated, description, displayName, downloadCount, files, name, namespace, reviewCount, timestamp, url, verified, version
+       file keys: download, icon, publicKey, sha256, signature
+PASS  a search entry has a namespace-qualified identity
+PASS  a search entry has a download count
+PASS  a search entry has an icon url or is explicitly without one
+PASS  search filters by category
+PASS  extension metadata resolves
+       metadata file keys: changelog, download, icon, license, manifest, publicKey, readme, sha256, signature, vsixmanifest
+PASS  metadata exposes a download url
+PASS  metadata exposes a published sha256 url
+PASS  metadata exposes the manifest url
+PASS  metadata exposes readme and changelog urls
+PASS  metadata reports engines  {"vscode":"^1.82.0","node":">=18.15.0"}
+PASS  metadata reports categories
+PASS  metadata reports publisher identity
+PASS  metadata reports ratings
+PASS  metadata reports dependencies and bundled extensions as arrays
+PASS  metadata says whether the publisher is verified
+PASS  metadata says whether the extension is deprecated
+PASS  the download stays on the registry host  open-vsx.org
+PASS  version history is paginated  totalSize=43 returned=5
+PASS  version references carry per-version engines  {"vscode":"^1.82.0","node":">=18.15.0"}
+PASS  reviews resolve
+       review keys: comment, rating, timestamp, user
+PASS  publisher (namespace) details resolve
+PASS  the published digest downloads  hops: open-vsx.org -> openvsx.eclipsecontent.org
+       digest content type: application/octet-stream
+       digest literal: "6891095459234809b9c5161850f2dabc91a80b3eca2daf599d050a88b455e960"
+PASS  a 64-hex digest can be parsed from it  6891095459234809b9c5161850f2dabc91a80b3eca2daf599d050a88b455e960
+PASS  the package downloads through the allowlist  hops: open-vsx.org -> openvsx.eclipsecontent.org
+       package content type: application/octet-stream
+PASS  the declared length matches the transferred bytes  2416034 vs 2416034
+PASS  the package matches the published digest  6891095459234809b9c5161850f2dabc91a80b3eca2daf599d050a88b455e960
+PASS  a redirect off the allowlist would be refused
+PASS  the publisher key is served by the registry, not the CDN  open-vsx.org
+       public key first line: "-----BEGIN PUBLIC KEY-----"
+       public key type: ed25519
+       signature archive bytes: 72599
+       signature archive entries: .signature.sig, .signature.manifest, .signature.p7s
+       signature manifest bytes: 218263, sig bytes: 64
+       signature manifest head: "{\"package\":{\"size\":2416034,\"digests\":{\"sha256\":\"aJEJVFkjSAm5xRYYUPLavJGoCz7KLa9ZnQUKiLRV6WA=\"}},\"entries\":{\"ZXh0ZW5zaW9uLnZzaXhtYW5pZmVzdA==\":{\"size\":3102,\"digests\":{\"sha256\":\"VJrjFh7WZ4m+xWR19ixR1vLXll5raIQzhxz0NXeWZJk=\"}},\"W0NvbnRlbnRfVHlwZXNdLnhtbA==\":{\"siz"
+       signature manifest keys: entries, package
+       manifest entry sample: [["ZXh0ZW5zaW9uLnZzaXhtYW5pZmVzdA==",{"size":3102,"digests":{"sha256":"VJrjFh7WZ4m+xWR19ixR1vLXll5raIQzhxz0NXeWZJk="}}],["W0NvbnRlbnRfVHlwZXNdLnhtbA==",{"size":517,"digests":{"sha256":"2kEzyMx5E4xT10rjJ4EAxnUqvLMIiV91YVDx5tbn7U0="}}]]
+       manifest entry count: 1584
+PASS  the signature manifest states the same package digest  6891095459234809b9c5161850f2dabc91a80b3eca2daf599d050a88b455e960 vs 6891095459234809b9c5161850f2dabc91a80b3eca2daf599d050a88b455e960
+PASS  the signature manifest states the same package size  2416034 vs 2416034
+PASS  a per-entry digest from the signature manifest matches the packaged file  size 11848 vs 11848
+       ed25519 envelope: none of the 7 candidate payloads verified — envelope format is not public, so AXIOM will report the signature as present-but-unverified rather than claim a check it did not perform
+PASS  the VSIX is a readable zip  1584 entries
+PASS  the manifest lives at extension/package.json  extension.vsixmanifest, [Content_Types].xml, extension/AGENTS.md, extension/CHANGELOG.md, extension/CLAUDE.md, extension/dist/src/uninstall.bundle.js
+PASS  the VSIX carries its OPC manifest
+PASS  no entry escapes the archive root
+PASS  entries use store or deflate only  methods 8
+PASS  the packaged manifest parses
+PASS  the packaged manifest identifies publisher + name + version  vscode-icons-team.vscode-icons@12.19.0
+PASS  the packaged manifest declares contributes
+       contribution points: commands, configuration, iconThemes
+       activation events: ["onStartupFinished"]
+       main entry: dist/src/vscode-icons.bundle.js
+PASS  this sample really does contribute icon themes  1 themes
+PASS  a colour-theme extension resolves
+PASS  it contributes colour themes  {"label":"Dracula Theme","uiTheme":"vs-dark","path":"./theme/dracula.json"}
+PASS  the referenced theme file is inside the package  extension/theme/dracula.json
+PASS  the theme file exposes colors and tokenColors  195 colors, 85 token rules
+       theme type: undefined
+       sample colors: terminal.background, terminal.foreground, terminal.ansiBrightBlack, terminal.ansiBrightRed, terminal.ansiBrightGreen, terminal.ansiBrightYellow
+
+ALL PASS

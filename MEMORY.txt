@@ -1,0 +1,525 @@
+================================================================================
+AXIOM IDE — SESSION MEMORY / HANDOFF
+(attach this next session, say "remember your memory", then "keep going")
+Last updated: 2026-07-10 (session 77 COMPLETE — UX overhaul from user feedback: (1) colors → universal
+B&W (theme-aware mono accent; no blue/purple chrome; kept diagnostics + syntax), (2) removed Extensions,
+(3) functional top menu (command dropdowns), (4) model switcher lists ALL custom-endpoint models,
+(5) FIXED blank chat replies (non-SSE JSON fallback in ai.ts), (6) chat moved to a resizable RIGHT dock
+(Cursor/VS Code layout: explorer left · editor center · chat right), (7) chat UI + spacing polish.
+Verified typecheck 0 / build 3 bundles / prettier). Repo GREEN.
+Authoritative tracker = docs/PROGRESS.md — SESSION 77 (counts unchanged: 164 done / 97 partial / 29
+missing = 212.5 / 290 ≈ 73% weighted; UI/UX + runtime work tracked separately, no phase inflation).
+
+>>> RESUME HERE (SESSION 78 — repo GREEN, nothing half-finished) >>>
+    [s77 UX overhaul DONE + VERIFIED] From user feedback:
+      (1) COLORS→monochrome: themes.ts added theme-aware `mono` accent (MONO_DARK #E1E4EA / MONO_LIGHT
+          #2B303A) + default 'mono'; applyAppearance resolves per theme.kind. tokens.css --accent/hover/
+          press/soft→white, --focus #e1e4ea, --ai #a8adb8 (grey, no purple), --fg-on-accent #0b0c0e.
+          monacoEnv.ts + TerminalView.tsx cursor/selection blue/violet→mono. global.css login-aurora +
+          2 brand gradients + drop-target neutralized. treeIcons purple→grey. schema.ts + OnboardingWizard
+          accent default→'mono' (+ 'Monochrome' option). KEPT signal colors + syntax palette (functional).
+      (2) EXTENSIONS removed: ActivityBar item+import, PrimarySidebar case/import/title/ReactNode, App.tsx
+          workbench.view.extensions command; DELETED ExtensionsView.tsx.
+      (3) TOP MENU functional: TitleBar.tsx rewritten — data-driven dropdowns via useCommandRegistry
+          (getCommands/runCommand); menus→categories: File→File, Edit→Editor, View→View+Search+Explorer+
+          Preferences, Go→Go, Terminal→Terminal, Help→Help+Application+Account. Outside-click/Esc close;
+          CSS .menu-root/.menu-popover/.menu-cmd/.menu-sep/.menu-empty/.is-open in global.css.
+      (4) MODEL SWITCHER: schema.ts +CustomProviderConfig.models + parseCustomModels() (JSON array OR
+          comma/newline list); getCustomProvider returns models from ai.custom.models. CustomProviderForm
+          inits from stored + persists fetched list (on Fetch AND Save). AiView passes custom models as
+          modelOptions → ChatPanel switcher (L760) already merges current + renders <select> → ALL models
+          switchable. window.axiom.ai.fetchModels already existed (main-proxied).
+    ENV GOTCHA: node_modules/electron gets PRUNED by a prior .exe build → typecheck shows "Cannot find
+      module 'electron'" in main/*. NOT a code bug — fix with `npm.cmd install` (restores ~130 pkgs).
+    [s77 cont. — DONE + VERIFIED] task9 BLANK-REPLY, task6 RIGHT-DOCK CHAT, task7 chat polish, task4 spacing:
+      • BLANK REPLY (task9): main/services/ai.ts streamOpenAiCompatible — after res.ok, if content-type
+        includes 'json' (server ignored stream:true → returned a plain JSON completion), parse via new
+        extractNonStreamCompletion(json) (choices[0].message.content OR delta.content + usage) and emit as
+        one delta. Smoke 6/6. (If STILL blank: server may 400 on stream_options:{include_usage} — that
+        shows an error, not blank; or a non-standard chunk shape → inspect the raw response.)
+      • RIGHT-DOCK (task6): layout.tsx TRANSIENT aiPanelVisible(true)+aiPanelWidth(420, clamp 320-760 via
+        MIN/MAX_AI_WIDTH)+toggleAiPanel+showAiPanel+setAiPanelWidth; restore skips activeView==='ai'.
+        SidebarResizer got side?:'left'|'right'(+label?), 'right' inverts drag delta. App.tsx renders a
+        right <aside.ai-dock style=width><AiView/></aside> + <SidebarResizer side='right'> after
+        editor-panel-col; ActivityBar AI button toggles the dock (removed BOTTOM_ITEMS); PrimarySidebar
+        lost the 'ai' case+import+title. global.css .ai-dock. Layout: activitybar|explorer|editor|chat-dock.
+      • CHAT POLISH (task7)+SPACING (task4): global.css .chat-thread gap18/pad18-22, .chat-msg gap6,
+        .chat-content line-height1.62, .chat-msg-user bubble (radius-md+border-subtle), .chat-composer
+        pad12/gap10, .chat-input bigger (min-h40, pad10-12, 13px, radius-md, focus ring), .chat-code
+        margin10. Further Cursor-perfect polish can iterate on user feedback.
+      Open-folder→explorer flow (workspace.tsx openFolder→switchToFolder→rootPath→FileTree) reads CORRECT
+      in code; if user still says "explorer not running", get specifics (tree empty? Open Folder no-op?
+      error?) or inspect FileTree + window.axiom.fs.
+    [REMAINING / NEXT — post-s77 (what's left on the app)]
+      • USER (infra, NOT code): (a) rebuild the x64 .exe (see "THE .EXE BINARY" below) to SEE s77's B&W
+        colors + right-docked chat + working top menu, then TEST a real chat send against the custom
+        endpoint; (b) finish the Google auth dashboard config — add the Supabase callback to the NEW
+        OAuth client's Authorized redirect URIs + put the client id/secret in Supabase→Auth→Providers→
+        Google + add http://localhost:8770 to Supabase Redirect URLs. The .exe CANNOT be built in this
+        sandbox (no MSVC / headless / monorepo prune) — user's Win machine or GitHub Actions CI only.
+      • CODE (verifiable, if building autonomously): (a) if chat STILL blank after rebuild, capture the
+        raw HTTP response + add the matching fallback (stream_options-400 retry, or non-standard chunk
+        shape); (b) iterate chat UI polish to taste (Cursor-perfect is subjective/iterative); (c) wire the
+        AI-provenance gutter ribbon into EditorPane (common/aiProvenance.ts is built + smoke-tested s75,
+        wiring deferred); (d) deepen infra-gated partials — see SECTION 9 (E live-confirm, F 170 safety,
+        H 210 resume, I a11y/i18n, J release).
+      • ~27% of PRD phases remain (212.5/290); the pure-completable pool is nearly exhausted — the rest is
+        infra/runtime/hardware-gated. Do NOT fake done.
+    [AUTH — s77] Sign-in now REACHES Google but showed Error 400 redirect_uri_mismatch = a Google Cloud
+      Console setting: add https://bmdprpuehhalabhtndmf.supabase.co/auth/v1/callback to the OAuth client's
+      "Authorized redirect URIs", set Supabase→Auth→Providers→Google to the client id+secret, and add
+      http://localhost:8770 to Supabase→Auth→Redirect URLs. User ROTATED the OAuth client → updated the
+      Client ID in docs/SUPABASE_AUTH_SETUP.md (…hv1ci0h4ac4rgcedr9jla2f0h54qphj2…). SECRET NEVER in the
+      repo/app (Supabase dashboard only — the app uses only the anon key). NO .exe rebuild needed for the
+      auth/credential change (creds live server-side in Supabase, not embedded in the app).
+
+    [s76 FIX — sign-in works now] Google sign-in threw "Node.js detected but native WebSocket not
+    found" — Electron 33 main = Node 20 (no global WebSocket), and @supabase/realtime-js needs one.
+    FIX: main/services/supabase.ts polyfills globalThis.WebSocket = require('ws') (guarded) before
+    createClient. Added ws (dep) + @types/ws (dev); installed. USER must rebuild the .exe (build
+    scripts run npm install → fetch ws). If sign-in then shows a DIFFERENT error (redirect mismatch),
+    add http://localhost:8770 to Supabase Auth Redirect URLs + Google OAuth console (docs/
+    SUPABASE_AUTH_SETUP.md). Pattern: Electron main is Node — native/global browser APIs (WebSocket,
+    etc.) may be absent; polyfill or guard them.
+    [s74 CRITICAL FIX — the app now OPENS] The Win10 "app doesn't open" bug = an eager
+    `import { spawn } from 'node-pty'` at the TOP of main/services/terminal.ts, pulled in by
+    main/ipc.ts at module load during registerIpcHandlers() BEFORE createMainWindow() → if the
+    packaged node-pty native binary is missing/wrong-ABI it THREW and the app died with no window.
+    FIXED: node-pty is now `import type` only + a lazy try/caught `require('node-pty')` (loadPty())
+    in terminal.ts, invoked only when the first terminal is created; createTerminal throws a clean
+    error (ipcMain.handle → renderer) if unavailable but the APP STILL OPENS (listShells never
+    touches node-pty). main/index.ts wraps registerIpcHandlers/initCrashJournal/startBackendSync/
+    validateServiceGraph in try/catch (nothing can block createMainWindow) + logs
+    uncaughtException/unhandledRejection. Builds are now x64-ONLY (electron-builder.yml arch:[x64],
+    build-axiom-exe.cmd --x64, CI matrix x64, GEMINI_BUILD_PROMPT.md). If a future build still won't
+    open, check for OTHER eager native/throwing top-level imports in the ipc.ts → services import
+    graph (make them lazy), and read the main-process log for the uncaughtException stack.
+
+    NEW GOVERNING GOAL (multi-session, user's TOP priority): bring the app's UI/layout to the
+    74-page "AXIOM — UI/UX Product Requirements Document" (PDF) BEFORE shipping the .exe. The
+    PDF is EXTRACTED to axiom_pdf.txt at repo root (74 pages, 18 Parts). Read via Select-String
+    (line map) + targeted `read` (re-extract if needed: `python -m pip install pypdf`; then
+    PdfReader(path).pages -> extract_text). Design Constitution (axiom_pdf.txt ~L30, 10 laws):
+    monochrome (color = signal ONLY), density-first, editor-as-protagonist, NO
+    gradients/glow/glass/shadow-glow, 4px baseline grid, MAX 2 UI type sizes per panel,
+    keyboard-first, reversible-over-confirm, legible-AI.
+    DONE on the UI-UX program:
+      s70 Part 2 Design Token System → settings/themes.ts (RUNTIME source of truth, overrides
+        tokens.css) + styles/tokens.css (fallback) aligned to Graphite Dark ramp + SINGLE blue
+        accent (#3B82F6 / hover #5A97F8 / press #2E6FD6). VIOLET #8B7FF0 = AI-provenance ONLY
+        (--ai). Added signals (error/warn/success/info/added/removed), elevation 1/2/3 + 2-layer
+        --shadow-focus, radii md6/lg8/none/full, spacing +2px/6px/48px, Inter/AXIOM-Mono type
+        scale (--type-ui-* / --type-code*). NON-BREAKING: all legacy token names kept (re-valued
+        or aliased) so ~60 components adopt the look with no edits. Default accent flipped
+        violet→blue (coerceAccentId + applyAppearance set --accent-press + focus=accent base).
+      s71 Parts 3-11 (9 parts) ALIGNED via tokens + global.css + layout.tsx (all gates green):
+        chrome-sizing tokens → spec frame (titlebar28 / activitybar48+item40 / sidebar280(220-560)
+        / statusbar24 / panel280(120) / +ai-sidebar380(300-720) / header32 / tabstrip36 /
+        tree-row24 / menu28 / breadcrumb28 / editor-floor360); layout.tsx sidebar default 280 min
+        220. Activity bar recedes to bg-canvas + 2px inner (right) accent indicator + muted/strong
+        icons + 40ms. STATUS BAR fixed (was accent-blue → bg-canvas + fg-muted + hairline top; a
+        Constitution violation). Editor active tab → bg-editor + fg-strong + accent top edge; dirty
+        dot 6px. Tree rows fg-default / radius-sm / bg-overlay hover / active accent-left-edge +
+        fg-strong; icons monochrome; git decorations → signal tokens (were hardcoded hexes).
+        Breadcrumb 28px + monochrome icon. Terminal hardcoded #0e0e11 → bg-surface (token fix);
+        dock tabbar 32px. Palette → bg-raised / radius-md / elevation-2 / scrim 0.24. SCM + AI
+        panel hairline separators (already token-aligned). No phase counts changed.
+      s72 Parts 12-18 ALIGNED → the FULL 18-part alignment PASS is COMPLETE. Part 14 MOTION tokens
+        added to tokens.css (--ease-standard/entrance/exit/inout/linear + --motion-instant/fast/
+        quick/base/slow/deliberate = 0/100/140/160/220/320ms; buttons wired; reduced-motion already
+        at global.css ~L5332). Part 13 COMPONENTS: .btn 28px / radius-sm / weight500 / :active
+        accent-press / :focus-visible shadow-focus / motion-fast; modal bg-raised + elevation-3 +
+        480px + scrim 0.4; modal-input radius-sm + border + bg-overlay + font-ui + focus ring;
+        toast bg-raised + elevation-2 + 4px signal edge + 360px; state dots 6px radius-full signal
+        (toast + problems). Parts 15/16 CONFIRMED (focus ring + contrast linter + non-color-reliance
+        + reduced-motion + keybindings/keycaps). Part 18 governance: removed AI-tells (blue status
+        bar, #0e0e11, off-grid), monochrome + token-only. Parts 12/17 token-aligned. No count change.
+      s73 UI POLISH: Monaco syntax palette + spec editor ramp DONE (monacoEnv.ts — 8-color Part 6.3
+        palette, blue caret/selection, bg.editor canvas, faint gutter numbers). Motion wiring DONE
+        (global.css ad-hoc 0.12/0.14/0.25s ease → --motion-fast/quick/slow + --ease-standard). Also
+        ATTEMPTED the REAL installer build (see LEVER — blocked by no-MSVC + workspace prune + headless).
+    NEXT (SESSION 74) — small UI-polish tail + the .exe is the big remaining item:
+      1. AI-provenance gutter ribbon (--ai) as a Monaco line-decoration keyed to AI-authored ranges
+         (renderer/editor/EditorPane + monacoEnv + the AI-edit flow) — NOT yet done (real feature).
+      2. Visual check of status-bar sub-items that assumed the old blue bar (fg-on-accent → fg-muted).
+      3. Per-pixel + latency budgets (need runtime). THEN the .exe — kit READY, but MUST run on a
+         real Windows dev machine (blockers proven in the LEVER below).
+    THEN the .exe (kit is READY — see below). Tracked SEPARATELY from the 290 PRD phases (do
+    NOT inflate PROGRESS phase counts for pure styling work).
+
+    >>> THE .EXE BINARY (needs the USER's Windows machine — the sandbox CANNOT build it):
+        AXIOM EXE KIT IS READY (s70). On Win10/11: `cd "AXIOM EXE"; ./build-axiom-exe.ps1`
+        (needs Node 20+, VS Build Tools "Desktop development with C++", Python 3 for the node-pty
+        native rebuild). Produces branded NSIS installers x64 + ARM64 in AXIOM EXE/dist. To SIGN:
+        set $env:CSC_LINK + $env:CSC_KEY_PASSWORD first (a CA cert — a self-made cert does NOT
+        clear Windows SmartScreen). Config = apps/desktop/electron-builder.yml (productName AXIOM,
+        x64+arm64, NSIS wizard, license page build/license.txt, include build/installer.nsh =
+        Win10/11 + 64-bit guards + VC++ runtime provisioning). Release + auto-update publish flow
+        in AXIOM EXE/BUILD.md. NOTE apps/desktop/build/ is .gitignored — branding + installer.nsh +
+        license.txt live on disk for the build; force-add if version-controlling.
+        [s73 PROVEN — build gate-chain diagnosed by real runs on BOTH sandbox + user's PC]
+        The user ran build-axiom-exe.cmd on their Win10 machine → SAME 7zip error, so it's a real
+        repo/monorepo bug, not sandbox-only. Diagnosed the full chain: (1) 7zip-bin ENOENT —
+        electron-builder's native-rebuild step prunes the hoisted node_modules + deletes 7zip-bin;
+        FIX confirmed = `npm install 7zip-bin --no-save` + run electron-builder with
+        `--config.npmRebuild=false` (rebuild node-pty separately first). Got PAST 7zip with that.
+        (2) winCodeSign extraction → "A required privilege is not held" (mac dylib symlinks) — needs
+        Windows Developer Mode ON or an Admin shell. (3) node-pty native compile — needs VS Build
+        Tools "Desktop development with C++" + Python (user's PC also lacks cl.exe). For ARM64,
+        node-pty must be built on an arm64 host. RESOLUTIONS SHIPPED s73:
+          - .github/workflows/build-installers.yml — CLOUD build (matrix x64=windows-latest,
+            arm64=windows-11-arm): npm install → @electron/rebuild node-pty → electron-vite build →
+            electron-builder --config.npmRebuild=false → upload both .exe artifacts. Solves all 3
+            gates (runners have compiler + symlink privilege + clean install). RECOMMENDED PATH.
+          - AXIOM EXE/build-axiom-exe.cmd updated with the 7zip fix + node-pty rebuild + DevMode/
+            admin guidance. Local build now needs: Developer Mode ON + VS Build Tools + Python.
+        A working binary is still NOT sandbox-producible (headless + no compiler), but the paths
+        for the user are now clear + scripted.
+        [DONE s68/s69] E BACKEND LIVE — user deployed 0001/0002 + Edge fns; s69 wired the client
+        (sync/telemetry/flags). Live signed-in round-trip is the user's to confirm in-app.
+
+    >>> ENV (CRITICAL): plain `npm run <x>` FAILS here ("running scripts is disabled" —
+        PowerShell execution policy). Use `npm.cmd run <x>` for EVERY gate. This shell is
+        PowerShell: chain with `;` (not `&`); delete temp with
+        `Remove-Item tmp_x.mjs -ErrorAction SilentlyContinue`; `Select-String` +
+        `Select-Object -Last N` work (trim build output to the "✓ built in" tail).
+================================================================================
+
+--------------------------------------------------------------------------------
+0. HOW TO RESUME
+--------------------------------------------------------------------------------
+1. Read THIS file, then skim docs/PROGRESS.md (authoritative live tracker: the overall
+   status block + per-epoch table + "Biggest MISSING blocks" + the newest changelog entry).
+2. Repo is GREEN (typecheck 0, prettier clean, build 3 bundles, no temp files). Nothing is
+   half-finished. Build the next items (SECTION 9), then ONE PROGRESS.md update at the END.
+3. Cadence the user likes: "keep going and build #1/#2/#3" → do the builds in order,
+   autonomously (user is often AFK), each fully verified to the quality bar (SECTION 3),
+   then ONE docs/PROGRESS.md update + an end-of-session summary (counts, % remaining, a
+   fresh 3-item recommendation). Terse / ALL-CAPS / Hinglish input = just proceed.
+   "update/remember memory" → refresh THIS file (targeted chunks; a full one-shot rewrite
+   has timed out before).
+
+--------------------------------------------------------------------------------
+1. WHAT AXIOM IS
+--------------------------------------------------------------------------------
+Axiom — a production-grade, AI-native, LOCAL-FIRST desktop coding IDE (Electron + React +
+Monaco + a Rust core sidecar). Brand: "AXIOM", tagline "Think. Build. Ship." The UI is UNIVERSAL
+BLACK & WHITE as of s77 (monochrome accent — no blue/purple chrome; diagnostics + syntax colors kept).
+**The app is FULLY FREE** — no charges, subscriptions, ads, or paid
+tiers (say so honestly; it's in the About view + docs/legal).
+Positioning: BYOK (bring-your-own-key) — the user connects their own AI providers; keys live
+in the OS-encrypted vault and prompts/code go DIRECTLY to the chosen provider, never through
+Axiom. Cloud (Supabase) is OPTIONAL + minimal: Google sign-in + opt-in preference/prompt sync
++ opt-in telemetry/crash, all RLS-scoped per user.
+Built by implementing the 290 phases in PRD.md (~623KB at repo root; Part XIV is the phase
+plan across Epochs A–K; headers look like "### Phase 214 — Planning Mode *(Complexity: L)*").
+
+QUALITY OVER QUANTITY (non-negotiable): every session ships fully-VERIFIED features. Be
+HONEST about done vs partial — mark partial when the full PRD scope can't be met in this
+sandbox (live backends, CI-on-hardware, signed installers, real axe/screen-reader audits,
+persisted Rust-core graph, etc.). NEVER inflate the tracker. The pure-friendly *missing* pool
+is nearly exhausted, so recent honest sessions moved the counter little (that's expected —
+don't force fake progress).
+
+--------------------------------------------------------------------------------
+2. USER + WORKING STYLE
+--------------------------------------------------------------------------------
+- Working dir: C:\Users\SIDHU\SK IDE (Windows, PowerShell shell).
+- "keep going / build X Y Z" = build in order, fully verified, autonomously; don't wait.
+- Every session: ONE docs/PROGRESS.md update at the END + an end-of-session summary.
+- The user reads the memory next day with a FRESH agent — THIS file must bootstrap them.
+
+--------------------------------------------------------------------------------
+3. QUALITY BAR / VERIFICATION (every build) — run gates from repo root with npm.cmd
+--------------------------------------------------------------------------------
+  - Typecheck: `npm.cmd run typecheck 2>&1`  → 0 "error TS" lines.
+  - Prettier:  `npm.cmd run format 2>&1` then `npm.cmd run format:check 2>&1`
+               → "All matched files use Prettier code style!".
+  - Build:     `npm.cmd run build 2>&1`  → 3 bundles "✓ built in …" (main, preload, renderer).
+  - Smoke:     a Node ESM test (tmp_<name>_test.mjs) that RE-IMPLEMENTS the pure module's
+               logic verbatim + asserts "N passed, 0 failed"; run `node tmp_x.mjs`, then
+               DELETE it (`Remove-Item tmp_*.mjs -ErrorAction SilentlyContinue`) — never leave
+               temp files (confirm `dir tmp_*.mjs` empty).
+  TIP: smoke asserts often catch MY OWN wrong expected values — check the TEST first.
+  Don't assert locale-formatted strings; assert numeric fields + summary substrings.
+
+--------------------------------------------------------------------------------
+4. BUILD / TOOLCHAIN + ENV QUIRKS
+--------------------------------------------------------------------------------
+- `npm run <x>` FAILS (execution policy) → use `npm.cmd run <x>` for EVERY gate.
+- PowerShell: chain `;` (not `&`); `Remove-Item x -ErrorAction SilentlyContinue`;
+  `Select-String` / `Select-Object -Last N` work.
+- tsconfig.base.json: strict, noUncheckedIndexedAccess, exactOptionalPropertyTypes,
+  noUnusedLocals/Parameters. (Exported-but-uncalled fns NOT flagged — fine for pure modules.)
+- typecheck runs per-workspace (apps/*, packages/*); the repo-root `supabase/` dir is NOT
+  typechecked (Deno Edge fns are safe). `format`/`format:check` glob is repo-wide
+  **/*.{ts,tsx,css,json,md} — so supabase Edge .ts + .md ARE prettier-checked; .sql is NOT.
+- Rust core (Cargo at root): $env:PATH="C:\msys64\mingw64\bin;"+$env:PATH; `cargo check`.
+  MSVC not installed (MSYS2 MinGW only). git branch main; NO commits made; do not commit.
+- ImageMagick is NOT available (system32 convert.exe is the DISK utility — never run it).
+- After any electron-builder packaging attempt: `npm install` (packaging prunes devDeps).
+
+
+--------------------------------------------------------------------------------
+5. STACK / ARCHITECTURE + THE REPEATABLE RECIPE
+--------------------------------------------------------------------------------
+- npm-workspaces monorepo: apps/desktop (Electron 33 + React 18 + Monaco via electron-vite)
+  + packages/shared (@axiom/shared) + crates/axiom-core (Rust sidecar).
+- apps/desktop/src: common/ (PURE, shared main+renderer) · main/ (+ main/services/*) ·
+  preload/index.ts · renderer/src/ (workbench/*, editor/*, settings/*, state/*, a11y/*,
+  notifications/*, commands/*, locales/*, App.tsx, env.d.ts, styles/global.css).
+- ALSO NOW: repo-root supabase/ (migrations + functions + tests + README) — the E backend;
+  docs/legal/ (PRIVACY.md, TERMS.md); apps/desktop/build/ (icon.ico, logo.png);
+  apps/desktop/electron-builder.yml.
+
+FEATURE RECIPE (copy EVERY build):
+  1. PURE module common/<feature>.ts — all real logic, no I/O. Smoke-testable. THE core.
+  2. MAIN service main/services/<feature>.ts — I/O, calls the pure module.
+  3. IPC 4 steps (only if needed): (a) channel in common/ipc.ts; (b) ipcMain.handle in
+     main/ipc.ts (validate args); (c) contextBridge in preload/index.ts; (d) MANUAL
+     window.axiom type in renderer/src/env.d.ts (the classic miss). Many builds need NO IPC.
+  4. RENDERER UI — a panel/view/command; import the pure common module directly. Register a
+     command in App.tsx useCommands([{id,title,category,run}]). Modals via the Modal
+     component + an owner/subscribe *bus (e.g. renderer/src/workbench/aboutBus.ts). Reuse
+     existing CSS (perf-*, oe-*, dep-*, sec-*, ai-*, spend-*, btn) — NO new CSS in .tsx.
+  5. SMOKE + all gates + (session end) ONE docs/PROGRESS.md update.
+IMPORT PATHS: common/ from main/services/='../../common/'; main/='../common/';
+  preload/='../common/'; renderer/src/env.d.ts='../../common/'; renderer workbench|editor|
+  settings/*='../../../common/'.
+GOTCHAS: exactOptionalPropertyTypes → spread-omit `...(x!==undefined?{x}:{})`, never
+  `x:undefined`. noUncheckedIndexedAccess → `arr[i]!` when provably in-bounds. Mixed `??`+`||`
+  must be parenthesized. Build object then `{...base, summary}` typed Omit<T,'summary'>.
+
+--------------------------------------------------------------------------------
+6. CURRENT PROGRESS (docs/PROGRESS.md is authoritative) — SESSION 77
+--------------------------------------------------------------------------------
+  164 done / 97 partial / 29 missing = 212.5 / 290 ≈ 73% weighted.
+Per-epoch (Done / Partial / Missing / weighted / %):
+  A Foundation & Tooling ............ 7 / 10 / 3 .. 12.0 .. 60%
+  B Core Workbench & Editor ......... 23 / 4 / 1 .. 25.0 .. 89%
+  C Rust Core & Indexing ............ 12 / 10 / 2 . 17.0 .. 71%
+  D Dev Tooling (Term/Git/LSP/Debug)  18 / 11 / 3 . 23.5 .. 73%
+  E Identity & Backend (Supabase) ... 19 / 3 / 6 .. 20.5 .. 73%  (s69: 120/126/129 → done)
+  F AI Engine ....................... 17 / 16 / 5 . 25.0 .. 66%
+  G Core AI Features ................ 29 / 1 / 0 .. 29.5 .. 98%  (near-complete)
+  H Agentic & Advanced AI ........... 34 / 1 / 3 .. 34.5 .. 91%
+  I Extensions/Themes/i18n/A11y ..... 5 / 21 / 0 .. 15.5 .. 60%
+  J Hardening/Perf/Security/Release . 0 / 17 / 5 .. 8.5 ... 39%  (lowest)
+  K Post-1.0 & Cross-Platform ....... 0 / 3 / 1 ... 1.5 ... 38%
+  (weighted sum = 212.5 — MUST stay exact. Phase counts: A20 B28 C24 D32 E28 F38 G30 H38
+   I26 J22 K4 = 290. epoch weighted = done + 0.5*partial. Date monotonic ≥ 2026-07-10.)
+
+--------------------------------------------------------------------------------
+7. WHAT'S BUILT — recent (s54–s66); full inventory in docs/PROGRESS.md §7 + changelog
+--------------------------------------------------------------------------------
+KNOWLEDGE GRAPH (Phase 65, C — strengthened, still partial): common/knowledgeGraph.ts
+  (nodes/edges + neighbors/callers/roots/orphans/detectCycles/applyUpdate + reachableFrom/
+  transitiveImpact/shortestPath) + common/importGraph.ts (file-level import extraction) +
+  common/symbolGraph.ts (symbol decls + cross-file reference analysis). Main:
+  main/services/graphEdges.ts buildWorkspaceGraph → core.graph.edges IPC (full-repo). Wired
+  into DependenciesView (neighborhood + whole-repo transitive impact/reach + 🧩 symbol summary;
+  graph fetched once-per-root + memoized — perf fix s64).
+E SUPABASE BACKEND (LIVE + client wired): supabase/migrations/0001_core_schema.sql +
+  0002_rls_policies.sql + 0003_app_releases.sql + functions/{telemetry-ingest,delete-account,
+  feature-flags} (Deno) + tests/rls_policies_test.sql (pgTAP) + README. DEPLOYED by the user
+  (s68 → 115/116/118 DONE; tables user_settings/telemetry_events/feature_flags exist + RLS).
+  s69 wired the client loops — sync (120), telemetry upload (126), Realtime flags (129) all
+  DONE — via main/services/backendSync.ts + {sync,telemetry,featureFlags}.ts.
+CHAT/EDITOR: ChatPanel A/B compare VERDICT (common/providerCompare 258) + per-thread model PIN
+  (common/convSwitch 166); lightbulb + hover-explain AI actions (editor/aiCodeActions.ts,
+  Phase 189 DONE). SECURITY panel GA gate (common/gaGate 274). CustomProviderForm "Validate
+  descriptor" (common/sdkDescriptor 246). ExtensionsView VS Code compat (common/vscodeCompat
+  244). Performance improvementEngine 290 + feedbackLoop 287. A11y uxStates 264. RepoTourView
+  (common/repoTour 263). common/providerContract (146, pure).
+BRANDING/LEGAL/ABOUT (s65–66): build/{logo.png,icon.ico} (AXIOM); docs/legal/{PRIVACY,TERMS}.md
+  (free/BYOK/local-first); AboutView (command "About Axiom & Legal").
+(s1–s53 subsystems — editor/Monaco, Rust core+LSP/DAP, Google auth, AI engine, agents,
+ extensions, i18n/a11y, perf/security cores — all remain; see docs/PROGRESS.md §7.)
+
+--------------------------------------------------------------------------------
+8. AUTH + SUPABASE (Google OAuth ONLY; config already points at the user's project)
+--------------------------------------------------------------------------------
+Google OAuth only (no email/pw/magic-link/OTP). Tokens in OS keychain, never reach renderer.
+main/config.ts: SUPABASE_URL=https://bmdprpuehhalabhtndmf.supabase.co ;
+  SUPABASE_ANON_KEY=sb_publishable_Dp1MR6pahT8-HY1IPulZTg_WAw4fLGC (publishable, RLS-safe) ;
+  OAUTH loopback http://localhost:8770 (add to Supabase Auth redirect allow-list).
+docs/SUPABASE_AUTH_SETUP.md = dashboard auth steps. BACKEND IS LIVE (s68): the user deployed
+  0001_core_schema + 0002_rls_policies + Edge fns (telemetry-ingest / feature-flags /
+  delete-account) to project bmdprpuehhalabhtndmf (supabase/.temp/linked-project.json confirms
+  the CLI link). Tables user_settings + telemetry_events + feature_flags exist, all RLS-scoped.
+  s69 WIRED the client: main/services/{sync,telemetry,featureFlags,backendSync}.ts use
+  functions.invoke + Realtime channels under the signed-in user. The live signed-in round-trip
+  is the USER's to confirm in-app (the sandbox cannot exercise a live backend); all client cores
+  are Node-smoke-verified + fail-safe offline (queue persists / cache → compiled defaults).
+
+
+--------------------------------------------------------------------------------
+9. MAJOR PHASES LEFT + RESUME PLAN
+--------------------------------------------------------------------------------
+The ~28% remaining is dominated by work that needs a live environment or is
+runtime-heavy (not pure-in-sandbox). MAJOR BLOCKS:
+  - EPOCH E (backend LIVE + client wired): 115/116/118 deployed by the user (s68); 120 sync
+    engine / 126 telemetry ingest / 129 Realtime flags wired to the live backend + DONE (s69).
+    Remaining E: 119 Storage, 121/125 settings/artifact-sync depth, 122/123 profile + device
+    UIs, 130 abuse controls, and 127 full analytics-instrumentation coverage (partial).
+  - EPOCH J release (lowest, 39%): 279 code-signing + 280 installers (config+assets READY,
+    needs cert+toolchain — SECTION 0 lever 2); 265 CI perf gates on reference hardware; real
+    pen-test/chaos/soak on hardware. Mostly infra-gated.
+  - EPOCH D ceiling: 95 semantic tokens / call-hierarchy provider, 101 remote/multi-target
+    debugging, bundled per-language LSP/DAP adapters (Monaco-standalone + adapter limits).
+  - EPOCH I (weak, many partials): novel-AI systems 256–264 depth, marketplace federation
+    243/244/246 (remote registry), RTL/CJK 251 + locales 252 depth, full axe + screen-reader
+    audits 253/254 (need a real a11y harness).
+  - EPOCH C: 65 persisted Rust-core graph (mine is on-demand TS heuristic) + 67 NL graph Q&A
+    (needs AI) + graph viz; 60/64 HNSW/hybrid retrieval depth (Rust).
+  - EPOCH A: 2 CI/CD pipeline, 8 DI container migration. EPOCH K (287–290): cross-platform +
+    enterprise groundwork (mostly missing, post-1.0).
+  - EPOCH H: 209/210 agent-run resume EXECUTION (event-log replay), full autonomy driving
+    successive passes; EPOCH F: 170 AI safety active redaction/blocking policy, native
+    per-provider streaming depth.
+
+RESUME PLAN (SESSION 67): the honest high-value move is the USER LEVERS (SECTION 0). If
+building autonomously, DEEPEN verifiable partials (pure-core + smoke + wire), e.g.:
+  #1 F 170 AI safety layer — add the active redaction/blocking POLICY setting + wire the
+     existing common/aiSafety.ts into the egress path (currently non-mutating).
+  #2 H 210 agent-run resume — deepen event-log replay in common/runResume.ts + wire so a
+     resumed run skips completed side-effecting steps (verifiable via smoke).
+  #3 I 253/254 a11y depth OR C 67 query surface over the knowledge graph (NL-lite).
+  Recompute PROGRESS honestly; the pure *missing* pool is nearly exhausted, so expect small
+  counter moves — do NOT inflate. Alternatively wait for the user to run the two levers.
+
+STANDING / ASK-FIRST: further E backend beyond what's written (needs live Supabase); the
+signed installer .exe (needs cert + toolchain — user/CI); anything requiring real hardware/CI.
+
+--------------------------------------------------------------------------------
+10. GOTCHAS / LESSONS
+--------------------------------------------------------------------------------
+- SMALL STEPS beat big investigation/writes (timed out from over-reading + from full-file
+  MEMORY rewrites). Write pure module + smoke FIRST; edit big docs in TARGETED chunks.
+- ENV: `npm.cmd run <x>` (not npm); PowerShell `;`; Remove-Item for temp; Select-String works.
+- Smoke asserts often catch MY wrong expected values — check the TEST first.
+- NO per-phase status table in PROGRESS.md (only epoch COUNTS) — so before claiming a specific
+  phase, VERIFY its real state in code (s63 nearly re-built the already-done Cost dashboard).
+- exactOptionalPropertyTypes / noUncheckedIndexedAccess / mixed ??|| — see SECTION 5.
+- NEVER put CSS in .tsx; reuse existing classes. IPC 4-step: env.d.ts is the classic miss.
+- Perf: don't refetch a whole-repo scan on every active-file change — key the fetch on rootPath
+  + memoize the query (s64 DependenciesView fix).
+- HONESTY: mark partial when full PRD scope isn't met in-sandbox; never inflate the tracker;
+  decline to fake a partial→done (declined 197/249 in s63, no forced conversions since).
+
+--------------------------------------------------------------------------------
+11. SESSION HISTORY (short; full changelog in docs/PROGRESS.md)
+--------------------------------------------------------------------------------
+s1–s53: full editor/Monaco, Rust core + LSP/DAP, Google auth, AI engine (streaming/routing/
+  memory/budgets/caching/context), agents (ReAct/tools/approval/library/sub-agents/eval),
+  extensions/i18n/a11y cores, perf/security cores. 197.0 at s53. (See old changelog.)
+s54–s59: wired context-source feeds (154), deferred-init/startup plan (268), a11y rule pack
+  (253), + a batch of pure cores (CI plan, service registry, egress/rls/health, cost-autopilot,
+  local-first, debate, convention-learner, time-travel) — mostly missing→partial.
+s60–s62: WIRED the pending pure cores into real UI (SecurityView/PerformanceView/A11yAuditView/
+  ExtensionsView/ChatPanel + new RepoTourView); ChatPanel A/B verdict (258) + model Pin (166);
+  new builds knowledgeGraph 65, providerContract 146, vscodeCompat 244, sdkDescriptor 246,
+  gaGate 274. → ~205.5.
+s63: Phase 189 (Quick Actions/Hover-Explain/Lightbulb) partial→DONE (editor/aiCodeActions.ts),
+  G→29.5; deepened knowledgeGraph (reachability/impact/shortest-path) + providerContract
+  (observeFromEvents). 206.0.
+s64: WROTE Epoch E Supabase backend (supabase/ schema+RLS+Edge+pgTAP+README, 115/116/118
+  missing→partial) + full-repo file-level graph (common/importGraph + main graphEdges +
+  core.graph.edges IPC, wired to DependenciesView) + QA (fixed a graph-refetch perf bug). 207.5.
+s65: AXIOM branding assets (build/logo.png + generated icon.ico) + docs/legal/PRIVACY+TERMS;
+  confirmed Supabase config already targets the user's project. No count change.
+s66: symbol-level knowledge graph (common/symbolGraph, wired) + in-app About & Legal view;
+  installer CONFIG finalized (no .exe). No count change. 207.5/290 (~72%).
+s67: applied keymap presets app-wide + multi-chord conflict detection (Phase 249 progress).
+  → ~208.5.
+s68: SHIPPED the production AUTO-UPDATE system (Phase 17 DONE — common/update{Config,State},
+  main release/updateService via an electron-updater dynamic-import adapter + direct-download
+  fallback, UpdateView + non-dismissible mandatory guard, 0003_app_releases.sql; task spec in
+  UPDATEFEATURE.txt) + USER DEPLOYED Supabase LIVE (115/116/118 DONE) + keymap profiles
+  (249 DONE). 208.5→211.0.
+s69: ACTIVATED Epoch E on the live backend — 120 sync Realtime lifecycle + startup flush,
+  126 telemetry POST→telemetry-ingest (+deterministic sampling + remote kill switch + backoff),
+  129 Realtime feature-flag fetch/subscribe/disk-cache — all partial→DONE; 127 analytics
+  event-schema registry + no-PII validator (still partial); NEW main/services/backendSync.ts
+  orchestrator (starts 3 loops + re-kicks on sign-in). 211.0→212.5/290 (~73%).
+s70: UI/UX design-spec ALIGNMENT kickoff (new governing goal) + AXIOM EXE installer kit.
+  Extracted the 74-page UI/UX PDF → axiom_pdf.txt. Implemented Part 2 Design Token System to
+  spec (themes.ts + tokens.css: Graphite Dark ramp, single BLUE accent #3B82F6, violet #8B7FF0
+  = AI-only, signals, elevation, focus ring, radii md6/lg8, Inter/AXIOM-Mono type scale;
+  non-breaking). AXIOM EXE kit: electron-builder.yml → x64+arm64 branded NSIS wizard (license
+  page + build/installer.nsh Win10/11+64-bit+VC++ checks), output AXIOM EXE/dist, BUILD.md +
+  build-axiom-exe.ps1. No phase counts changed (still 212.5/290) — design-system + packaging
+  foundation; UI Parts 3-18 remain (multi-session); .exe binary = user's machine.
+s71: UI/UX alignment — Parts 3-11 (9 parts) aligned to the workbench via tokens + global.css +
+  layout.tsx. Chrome sizing → spec frame; activity bar recedes + inner accent indicator; STATUS
+  BAR fixed (accent-blue → bg-canvas + fg-muted, Constitution); editor active tab → bg-editor +
+  accent top; tree rows accent-left-edge + monochrome icons + signal git; breadcrumb 28px;
+  terminal #0e0e11 → bg-surface; palette → bg-raised/radius-md/elevation-2; SCM+AI hairlines.
+  No phase counts changed (212.5/290). Remaining UI: Parts 12-18 + deep polish of 3-11.
+s72: UI/UX alignment — Parts 12-18 aligned → the FULL 18-part design-spec alignment PASS is
+  COMPLETE. Part 14 motion tokens (easing + duration) added; Part 13 primitives (buttons/modal/
+  input/toast/state-dots) aligned to spec; Parts 15/16 (a11y/keyboard) confirmed; Part 18
+  governance anti-patterns removed; Parts 12/17 token-aligned. No phase counts changed
+  (212.5/290). Remaining: deep polish (motion wiring, --ai gutter ribbon, syntax palette) + EXE.
+s73: UI polish (Monaco 8-color syntax palette + spec editor ramp in monacoEnv.ts; ad-hoc CSS
+  transitions → --motion-* tokens in global.css) + REAL installer build ATTEMPTED. Build blocked
+  in-sandbox (proven, twice): electron-builder prunes hoisted node_modules → 7zip-bin ENOENT; no
+  MSVC → node-pty can't compile (no pty.node); headless → can't launch-verify. .exe MUST be built
+  on a real Windows dev machine (kit ready). Repo restored to GREEN. No phase counts changed.
+s74: CRITICAL FIX — app didn't open on Win10. Cause: eager `import {spawn} from 'node-pty'` in
+  main/services/terminal.ts loaded at startup (via ipc.ts, before window creation) → threw on a
+  missing/wrong-ABI native binary → app died with no window. FIX: node-pty type-only import + lazy
+  guarded require (loadPty) in terminal.ts; hardened main/index.ts (try/catch around IPC reg +
+  startBackendSync + validateServiceGraph; log uncaughtException/unhandledRejection). App now opens
+  even if node-pty fails (terminal degrades gracefully). Builds set to x64-ONLY (yml/.cmd/CI/Gemini
+  prompt) per user. No phase counts changed (212.5/290). User also wants full UI + all phases before
+  build (UI Parts 2-18 already aligned s70-73; remaining phases are the ~27% infra-gated tail).
+s75: AI-provenance gutter ribbon FOUNDATION (Part 6.2): pure common/aiProvenance.ts (mergeRanges /
+  addRange / shiftRangesOnEdit / toGutterDecorations / aiLineCount, smoke 12/0) + .ai-provenance-gutter
+  CSS (2px --ai lane). Wiring into EditorPane + AI-edit flow + clear-on-commit = remaining (deferred
+  so as not to destabilize the just-fixed editor). Wrote an HONEST remaining-phase roadmap: ~79
+  weighted pts left, the pure-completable pool is nearly exhausted; the rest is infra-gated (J cert +
+  hardware, E live-backend confirm, K mac/linux, F/I/C runtime tails). No phase counts changed.
+s76: FIXED Google sign-in — it threw "Node.js detected but native WebSocket not found" (Electron 33
+  main = Node 20, no global WebSocket; @supabase/realtime-js needs one). main/services/supabase.ts
+  now polyfills globalThis.WebSocket = require('ws') (guarded) before createClient. Added ws (dep) +
+  @types/ws (dev), installed. Gates green (typecheck 0 / build 3 / prettier). USER must rebuild the
+  .exe. No phase counts changed (212.5/290).
+s77: UX OVERHAUL from user feedback (UI/UX + 1 runtime bugfix; no phase-count change, still 212.5/290).
+  (1) COLORS → UNIVERSAL BLACK & WHITE: theme-aware `mono` accent (themes.ts MONO_DARK #E1E4EA /
+  MONO_LIGHT #2B303A, now the DEFAULT; applyAppearance resolves per theme.kind); tokens.css --accent/
+  --focus → white, --ai #a8adb8 (grey, no purple), --fg-on-accent #0b0c0e; monacoEnv + TerminalView
+  cursor/selection de-blued; global.css login-aurora + 2 brand gradients + drop-target neutralized;
+  treeIcons purple→grey; schema + OnboardingWizard default 'mono' (+ "Monochrome" option). KEPT the
+  diagnostics signal colors + the code syntax palette (functional, Cursor-like). (2) REMOVED the
+  Extensions section (ActivityBar item + PrimarySidebar case + App command; DELETED ExtensionsView.tsx).
+  (3) TOP MENU now FUNCTIONAL — TitleBar.tsx rewritten as data-driven command dropdowns by category
+  (File/Edit/View/Go/Terminal/Help via useCommandRegistry); before, the buttons had NO handler. (4)
+  MODEL SWITCHER now lists ALL models fetched from a custom endpoint (schema parseCustomModels +
+  ai.custom.models persisted by CustomProviderForm on Fetch+Save; AiView feeds them to the ChatPanel
+  switcher) — before, only the 1 saved default reached it. (5) BLANK CHAT REPLY fixed (main/services/
+  ai.ts streamOpenAiCompatible: when a server ignores stream:true and returns application/json, parse
+  the whole completion via new extractNonStreamCompletion → reply renders; smoke 6/6). (6) RIGHT-DOCKED
+  CHAT — Cursor/VS Code layout: activitybar | explorer(left) | editor(center) | AI chat(right, resizable,
+  toggled by the AI activity-bar button). New TRANSIENT layout state (aiPanelVisible/Width + toggle/show/
+  setWidth) + a side='right' SidebarResizer variant; AI removed from the left sidebar (no dup instance).
+  (7) CHAT UI + SPACING polish (roomier thread/composer/message bubbles + bigger input). AUTH: sign-in
+  now reaches Google; Error 400 redirect_uri_mismatch is a Google-Console setting (add the Supabase
+  callback to the OAuth client); user rotated the OAuth client → new Client ID in docs/
+  SUPABASE_AUTH_SETUP.md (secret dashboard-only, never in repo). All gates green throughout (typecheck 0
+  / build 3 bundles / prettier). App NOT launched here (headless) → user rebuilds the .exe to visually
+  confirm + test a live chat send. Files: themes.ts, tokens.css, monacoEnv.ts, TerminalView.tsx,
+  global.css, treeIcons.tsx, schema.ts, OnboardingWizard.tsx, ActivityBar.tsx, PrimarySidebar.tsx,
+  TitleBar.tsx, App.tsx, AiView.tsx, CustomProviderForm.tsx, SidebarResizer.tsx, layout.tsx,
+  main/services/ai.ts, docs/SUPABASE_AUTH_SETUP.md.
+================================================================================
+END OF MEMORY  (docs/PROGRESS.md = authoritative live tracker; PRD.md = the plan)
+Repo GREEN end-of-s77: typecheck 0, prettier clean, build 3 bundles, no temp files.
+Next (s78): USER ACTIONS FIRST — (a) rebuild the x64 .exe (build-axiom-exe.cmd / Gemini prompt / CI —
+runs npm install) to SEE s77's B&W colors + right-docked chat + working menu, then TEST a real chat send
+against the custom endpoint; (b) finish the Google auth dashboard config (Supabase callback in the NEW
+OAuth client + client id/secret in Supabase + http://localhost:8770 in Redirect URLs). CODE NEXT: if chat
+STILL blank, capture the raw HTTP response (likely stream_options-400 or a non-standard chunk shape) + add
+that fallback; else iterate chat polish on feedback, wire the AI-provenance ribbon into EditorPane, or
+deepen an infra-gated partial. Don't fake done. Gates: `npm.cmd run <x>` (NOT npm).
+================================================================================

@@ -1,0 +1,256 @@
+Implement a production-grade application hardening and anti-tampering security architecture for this Electron desktop application.
+
+The objective is to significantly increase resistance to reverse engineering, tampering, debugging, code extraction, and unauthorized modification while maintaining application stability and performance.
+
+=========================
+General Security
+=========================
+
+Implement a defense-in-depth architecture.
+
+Every security feature should fail safely.
+
+No secrets should ever be hardcoded into frontend code.
+
+All sensitive operations must execute only in trusted backend components.
+
+=========================
+Electron Security
+=========================
+
+Apply Electron security best practices.
+
+Enable:
+
+- contextIsolation
+- sandbox
+- nodeIntegration disabled
+- enableRemoteModule disabled
+- secure preload bridge
+- strict IPC validation
+- contextBridge APIs only
+- CSP (Content Security Policy)
+
+Prevent renderer from accessing Node.js directly.
+
+=========================
+Application Packaging
+=========================
+
+Package application using ASAR where appropriate.
+
+Protect sensitive resources.
+
+Separate sensitive native modules from renderer assets.
+
+Minimize exposed source files.
+
+=========================
+Code Protection
+=========================
+
+Configure the build process to:
+
+- Minify production JavaScript
+- Remove debug information
+- Strip source maps from production builds
+- Eliminate dead code
+- Optimize bundles
+- Mangle symbols where compatible
+
+Do not ship development artifacts.
+
+=========================
+Native Layer
+=========================
+
+Move highly sensitive logic into native modules or backend services where practical instead of keeping it in renderer JavaScript.
+
+Examples include:
+
+- licensing
+- token handling
+- cryptographic operations
+
+=========================
+Secret Management
+=========================
+
+Never embed:
+
+- API Keys
+- OAuth Secrets
+- License Keys
+- Encryption Keys
+
+Use:
+
+- OS secure credential storage
+- environment variables during build/deployment
+- secure server-side validation where appropriate
+
+=========================
+Runtime Integrity
+=========================
+
+Implement runtime integrity checks.
+
+Detect unexpected modification of application resources.
+
+Log integrity failures.
+
+Fail gracefully if tampering is detected.
+
+=========================
+IPC Security
+=========================
+
+Validate every IPC request.
+
+Reject unknown channels.
+
+Validate argument types.
+
+Never expose unrestricted filesystem or shell access.
+
+Follow least-privilege principles.
+
+=========================
+Authentication Security
+=========================
+
+Use secure OAuth flows.
+
+Store tokens using the operating system's secure credential storage.
+
+Refresh tokens securely.
+
+Clear credentials on logout.
+
+=========================
+Dependency Security
+=========================
+
+Enable automated dependency auditing.
+
+Remove unused dependencies.
+
+Pin dependency versions.
+
+Use lockfiles.
+
+Regularly update security patches.
+
+=========================
+Logging
+=========================
+
+Never log:
+
+- passwords
+- tokens
+- secrets
+- OAuth responses
+- authorization headers
+
+Provide separate production and development logging.
+
+=========================
+Network Security
+=========================
+
+Use HTTPS only.
+
+Validate TLS certificates.
+
+Avoid insecure transport.
+
+Use secure API authentication.
+
+Implement request timeouts and retry logic where appropriate.
+
+=========================
+Production Build
+=========================
+
+Disable:
+
+- DevTools in production by default
+- development menus
+- verbose debug output
+
+Remove all testing endpoints.
+
+=========================
+Licensing
+=========================
+
+Design the licensing system so that important license verification occurs on a trusted server where feasible.
+
+Treat all client-side checks as potentially bypassable.
+
+=========================
+Error Handling
+=========================
+
+Show user-friendly error messages.
+
+Avoid exposing:
+
+- stack traces
+- internal paths
+- implementation details
+- sensitive configuration
+
+=========================
+Code Architecture
+=========================
+
+Separate:
+
+- UI
+- Business Logic
+- Security Layer
+- Networking
+- Storage
+- Licensing
+
+Use dependency injection where appropriate.
+
+=========================
+Build Pipeline
+=========================
+
+Create separate:
+
+Development Build
+
+Staging Build
+
+Production Build
+
+Production must automatically:
+
+- remove debug code
+- remove source maps
+- enable optimizations
+- enable hardening configuration
+
+=========================
+Documentation
+=========================
+
+Document every implemented security control.
+
+Explain:
+
+- purpose
+- threat addressed
+- limitations
+- maintenance considerations
+
+=========================
+Goal
+=========================
+
+The result should be a production-ready Electron application that follows modern desktop application security best practices, significantly raises the difficulty of reverse engineering and tampering, protects secrets appropriately, and maintains a clean, maintainable architecture. The design should acknowledge that no client application is impossible to reverse engineer, and sensitive trust decisions should remain on trusted infrastructure whenever possible.

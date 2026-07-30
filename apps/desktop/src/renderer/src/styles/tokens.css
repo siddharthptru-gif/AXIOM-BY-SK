@@ -1,0 +1,149 @@
+/*
+ * AXIOM Precision Graphite design tokens.
+ *
+ * This file is the only source of raw visual values for renderer chrome. Runtime
+ * themes may remap the semantic color tokens, while every component consumes the
+ * stable vocabulary below. Premium means precise hierarchy, not decoration:
+ * neutral surfaces, one restrained accent, semantic color only for meaning, a
+ * strict 4px rhythm, compact radii, and bounded motion.
+ */
+:root {
+  color-scheme: dark;
+
+  /* Royal Indigo surfaces — must mirror THEMES['axiom-royal'] so there is no
+     first-paint flash before the runtime theme is applied. */
+  --bg-void: #100c24;
+  --bg-canvas: #171233;
+  --bg-editor: #1b1539;
+  --bg-surface: #211a45;
+  --bg-raised: #281f52;
+  --bg-overlay: #302562;
+  --bg-overlay-strong: #3a2d74;
+  --bg-hover: rgba(226, 214, 255, 0.07);
+  --bg-active: rgba(217, 180, 90, 0.16);
+  --bg-scrim: rgba(8, 6, 20, 0.78);
+
+  /* Foreground hierarchy */
+  --fg-faint: #9088b8;
+  --fg-subtle: #9b93c2;
+  --fg-muted: #bdb5dc;
+  --fg-default: #e4def7;
+  --fg-strong: #f4f0ff;
+  --fg-max: #fcfaff;
+  --fg-on-accent: #1a1330;
+  --fg-on-danger: #24101a;
+  --fg-on-warning: #171233;
+  --fg-on-subtle: #171233;
+
+  /* Royal gold product accent */
+  --accent: #d9b45a;
+  --accent-hover: #e7c978;
+  --accent-press: #be9a44;
+  --accent-soft: rgba(217, 180, 90, 0.18);
+  --accent-softer: rgba(217, 180, 90, 0.09);
+
+  /* Semantic signal colors — never decorative */
+  --signal-error: #f2797c;
+  --signal-warn: #d6a84b;
+  --signal-success: #57c78d;
+  --signal-info: #6ea8fe;
+  --signal-added: rgba(87, 199, 141, 0.16);
+  --signal-removed: rgba(242, 121, 124, 0.16);
+  --ai: #a7adb7;
+  --info: var(--signal-info);
+  --success: var(--signal-success);
+  --warning: var(--signal-warn);
+  --warning-soft: rgba(221, 182, 103, 0.16);
+  --danger: var(--signal-error);
+
+  /* Lines and focus */
+  --border-subtle: #2a2153;
+  --border: #372c68;
+  --border-strong: #4e3f8c;
+  --focus: #d9b45a;
+
+  /* Radius */
+  --radius-none: 0;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-full: 999px;
+
+  /* 4px spacing rhythm. Micro values exist only for icon optics. */
+  --space-0: 0;
+  --space-xs: 2px;
+  --space-1: 4px;
+  --space-1half: 6px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* Typography */
+  --font-ui:
+    'Inter', 'Inter Variable', 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono:
+    'AXIOM Mono', 'JetBrains Mono', 'Cascadia Code', 'Consolas', 'SF Mono', ui-monospace, monospace;
+  --tracking-ui: -0.006em;
+  --type-ui-micro: 500 11px/16px var(--font-ui);
+  --type-ui-small: 500 12px/18px var(--font-ui);
+  --type-ui-body: 400 13px/20px var(--font-ui);
+  --type-ui-strong: 600 13px/20px var(--font-ui);
+  --type-ui-title: 600 15px/22px var(--font-ui);
+  --type-ui-display: 600 20px/28px var(--font-ui);
+  --type-code: 400 13px/20px var(--font-mono);
+  --type-code-terminal: 400 12.5px/19px var(--font-mono);
+
+  /* Elevation */
+  --elevation-1: 0 4px 12px rgba(0, 0, 0, 0.28);
+  --elevation-2: 0 8px 24px rgba(0, 0, 0, 0.32);
+  --elevation-3: 0 16px 48px rgba(0, 0, 0, 0.42);
+  --shadow-focus: 0 0 0 2px var(--focus);
+
+  /* Closed motion set */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-entrance: cubic-bezier(0, 0, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-linear: linear;
+  --motion-instant: 0ms;
+  --motion-fast: 100ms;
+  --motion-quick: 140ms;
+  --motion-base: 160ms;
+  --motion-slow: 220ms;
+  --motion-deliberate: 320ms;
+
+  /* Chrome geometry */
+  --titlebar-h: 40px;
+  --activitybar-w: 48px;
+  --activitybar-item: 40px;
+  --sidebar-w: 280px;
+  --sidebar-min-w: 220px;
+  --sidebar-max-w: 560px;
+  --sidebar-header-h: 36px;
+  --ai-sidebar-w: 420px;
+  --ai-sidebar-min-w: 320px;
+  --ai-sidebar-max-w: 760px;
+  --statusbar-h: 24px;
+  --panel-h: 280px;
+  --panel-min-h: 160px;
+  --tabstrip-h: 36px;
+  --toolbar-h: 36px;
+  --tree-row-h: 24px;
+  --menu-item-h: 28px;
+  --breadcrumb-h: 28px;
+  --editor-floor-w: 520px;
+  --control-compact-h: 24px;
+  --control-default-h: 28px;
+  --control-primary-h: 32px;
+
+  /* Compatibility aliases for legacy renderer selectors. New code uses the names above. */
+  --bg-default: var(--bg-canvas);
+  --bg-panel: var(--bg-surface);
+  --bg-elevated: var(--bg-raised);
+  --bg-input: var(--bg-overlay);
+  --border-default: var(--border);
+  --accent-fg: var(--fg-on-accent);
+}

@@ -1,0 +1,1192 @@
+I hit the output limit mid-document. Chapters 1–25 are delivered above. Here is the continuation, which I'll deliver in segments.
+
+---
+
+## 25. Keybindings (continued)
+
+| ID | Requirement |
+|---|---|
+| KB-10 | Extensions MUST NOT bind reserved OS shortcuts (Cmd+Q, Alt+F4, Cmd+Tab, Ctrl+Alt+Del); attempts are dropped with a logged warning. |
+| KB-11 | `editor.action.*` and `workbench.action.*` defaults MUST be overridable by extensions, but the Keyboard Shortcuts editor MUST attribute the override to the extension. |
+| KB-12 | Keybinding resolution MUST complete in ≤ 1 ms for a 2,000-entry table; the resolver uses a hash keyed on the first chord part. |
+| KB-13 | **Developer: Toggle Keyboard Shortcuts Troubleshooting** MUST log every keypress with the resolved binding, the matched `when`, and any shadowed candidates. |
+
+---
+
+# 26. Language Server Integration
+
+## 26.1 Position in the Architecture
+
+LSP is not a platform API — it is a *library pattern*. Extensions bundle `vscode-languageclient`, which calls only public `vscode` APIs (`languages.register*Provider`, `workspace.onDidChangeTextDocument`, `workspace.createFileSystemWatcher`, `window.createOutputChannel`, `commands.registerCommand`, `workspace.getConfiguration`). Therefore **LSP works if and only if the `languages` and `workspace` namespaces are correct.** Axiom implements no LSP-specific code in the platform; it implements the API surface that `vscode-languageclient` consumes.
+
+```
+┌───────────────── EXTENSION HOST ─────────────────┐      ┌──────────────────┐
+│  Extension                                       │      │  Language Server │
+│    new LanguageClient(id, name, serverOptions,   │      │  (child process) │
+│                       clientOptions)             │      │                  │
+│    ┌───────────────────────────────────────┐     │      │                  │
+│    │ vscode-languageclient                 │     │      │                  │
+│    │  • spawns server (stdio/ipc/socket)   ├─────┼─JSON─┤ initialize        │
+│    │  • capability negotiation             │     │ RPC  │ textDocument/*    │
+│    │  • VSCode↔LSP type converters         │     │      │ workspace/*       │
+│    │  • registers providers via `vscode`   │     │      │ $/progress        │
+│    └───────────┬───────────────────────────┘     │      └──────────────────┘
+│                │ languages.registerXProvider     │
+└────────────────┼─────────────────────────────────┘
+                 │ RPC $register(selector, id, metadata)
+┌────────────────▼─────────────────────────────────┐
+│ RENDERER — LanguageFeaturesRegistry              │
+│  provider lookup by DocumentSelector score       │
+│  → Monaco/editor requests results via RPC        │
+└──────────────────────────────────────────────────┘
+```
+
+## 26.2 Required Platform Capabilities (LSP 3.17 coverage)
+
+| LSP feature | Backing `vscode` API | Tier | Notes |
+|---|---|---|---|
+| `textDocument/didOpen|didChange|didClose|didSave|willSave|willSaveWaitUntil` | `workspace.onDid*TextDocument`, `onWillSaveTextDocument` | T1 | Incremental sync mandatory; full sync must also work |
+| `textDocument/publishDiagnostics` | `languages.createDiagnosticCollection` | T1 | Related information, tags (Unnecessary/Deprecated), code descriptions, data round-trip |
+| `textDocument/diagnostic` (pull) | Diagnostic provider registration | T1 | 3.17 pull model; workspace diagnostics with partial results |
+| `textDocument/completion` + `completionItem/resolve` | `registerCompletionItemProvider` | T1 | `insertTextFormat: Snippet`, `textEdit`/`insertReplaceEdit`, `additionalTextEdits`, `commitCharacters`, `itemDefaults`, label details |
+| `textDocument/hover` | `registerHoverProvider` | T1 | Markdown content |
+| `textDocument/signatureHelp` | `registerSignatureHelpProvider` | T1 | Active parameter, retrigger characters |
+| `textDocument/definition|declaration|typeDefinition|implementation` | corresponding providers | T1 | `LocationLink` support required |
+| `textDocument/references` | `registerReferenceProvider` | T1 | |
+| `textDocument/documentHighlight` | `registerDocumentHighlightProvider` | T1 | |
+| `textDocument/documentSymbol` | `registerDocumentSymbolProvider` | T1 | Hierarchical `DocumentSymbol` |
+| `workspace/symbol` + `workspaceSymbol/resolve` | `registerWorkspaceSymbolProvider` | T1 | |
+| `textDocument/codeAction` + `codeAction/resolve` | `registerCodeActionsProvider` | T1 | Kinds, `isPreferred`, `disabled`, lazy `edit` resolution |
+| `textDocument/codeLens` + `codeLens/resolve` | `registerCodeLensProvider` | T1 | |
+| `textDocument/documentLink` + resolve | `registerDocumentLinkProvider` | T1 | |
+| `textDocument/documentColor`, `colorPresentation` | `registerColorProvider` | T1 | |
+| `textDocument/formatting|rangeFormatting|onTypeFormatting` | corresponding providers | T1 | |
+| `textDocument/rename` + `prepareRename` | `registerRenameProvider` | T1 | |
+| `textDocument/foldingRange` | `registerFoldingRangeProvider` | T1 | |
+| `textDocument/selectionRange` | `registerSelectionRangeProvider` | T1 | |
+| `textDocument/semanticTokens/full|full/delta|range` | `registerDocumentSemanticTokensProvider`, `...RangeSemanticTokensProvider` | T1 | Legend from `contributes.semanticTokenTypes/Modifiers/Scopes` |
+| `textDocument/linkedEditingRange` | `registerLinkedEditingRangeProvider` | T1 | |
+| `textDocument/inlayHint` + resolve | `registerInlayHintsProvider` | T1 | |
+| `textDocument/inlineValue` | `registerInlineValuesProvider` | T1 | Debug-time |
+| `textDocument/moniker` | — | T3 | No consumer |
+| `callHierarchy/*`, `typeHierarchy/*` | `registerCallHierarchyProvider`, `registerTypeHierarchyProvider` | T1 | |
+| `workspace/didChangeConfiguration`, `workspace/configuration` | `getConfiguration`, `onDidChangeConfiguration` | T1 | Scoped (per-resource) configuration requests mandatory |
+| `workspace/didChangeWatchedFiles` | `createFileSystemWatcher` with `RelativePattern` | T1 | Glob semantics must match; server-registered watchers via dynamic registration |
+| `workspace/didChangeWorkspaceFolders` | `onDidChangeWorkspaceFolders` | T1 | |
+| `workspace/applyEdit` | `workspace.applyEdit` | T1 | Resource operations + `changeAnnotations` + version checks |
+| `workspace/executeCommand` | `commands.registerCommand` | T1 | |
+| `window/showMessage|showMessageRequest|logMessage` | notification + output channel APIs | T1 | |
+| `window/workDoneProgress/create` + `$/progress` | `window.withProgress` | T1 | Server-initiated progress must render |
+| `window/showDocument` | `window.showTextDocument` / `env.openExternal` | T1 | |
+| Partial result / streaming (`$/progress` on requests) | Provider APIs return final results | T2 | Client library handles accumulation |
+| `client/registerCapability`, `unregisterCapability` | Dynamic provider registration/disposal | T1 | Essential — most servers register dynamically |
+| Notebook document sync (3.17) | `notebooks` namespace | T2 | Milestone M5 |
+
+## 26.3 Requirements
+
+| ID | Requirement |
+|---|---|
+| LSP-1 | `vscode-languageclient` versions 7.x, 8.x, and 9.x MUST all function unmodified. These are pinned in the compatibility suite. |
+| LSP-2 | `DocumentSelector` scoring MUST match upstream: exact language+scheme+pattern > language+scheme > language > `*`, with `RelativePattern` support and a documented numeric score. Wrong scoring silently routes requests to the wrong provider. |
+| LSP-3 | Multiple providers for one feature MUST be merged per upstream rules: completions merge all results; hover merges into stacked sections; definitions concatenate; formatting uses the highest-scored provider only (with a picker on tie). |
+| LSP-4 | Provider calls MUST carry a `CancellationToken` cancelled when the triggering context is invalidated (cursor moved, document changed, widget closed). |
+| LSP-5 | A provider that throws or rejects MUST be logged and excluded from that request's results, never failing the whole request. |
+| LSP-6 | Server processes spawned by extensions MUST be tracked; on extension deactivation, uninstall, or host shutdown, orphan servers MUST be terminated (SIGTERM → SIGKILL after 3 s). Orphaned language servers are a top user complaint in forks. |
+| LSP-7 | Servers MUST inherit the resolved shell environment plus proxy configuration (§11.6). |
+| LSP-8 | Server stderr MUST be captured into the extension's output channel, never discarded. |
+| LSP-9 | The `$/progress` and `window/workDoneProgress` flows MUST render as real progress UI, since "Indexing…" feedback is the primary signal a server is alive. |
+| LSP-10 | Diagnostics MUST render in the editor (squiggles + gutter), the Problems panel (grouped by file, filterable), the Explorer (decoration), and the status bar counters — all four surfaces. |
+| LSP-11 | A **Developer: Set Log Level → Trace** on a language client MUST produce a full LSP message trace in its output channel. |
+| LSP-12 | Latency budget: platform overhead per provider round-trip (excluding server time) ≤ 15 ms p95 (NFR-P-8). |
+
+## 26.4 Validation Set (M3 exit gate)
+
+`vscode-eslint`, `Python` (Pylsp/Jedi variant), `rust-analyzer`, `gopls` (Go extension), `clangd`, `Java (Red Hat)`, `YAML (Red Hat)`, `Tailwind CSS IntelliSense`, `Svelte`, `Vue (Volar)`, `TypeScript` (built-in equivalent), `Terraform`. Each must deliver diagnostics, completion, hover, go-to-definition, rename, and formatting.
+
+---
+
+# 27. Debug Adapter Integration
+
+## 27.1 Architecture
+
+DAP standardises communication between the development tool and a concrete debugger, so that one debug UI serves many debuggers. Axiom implements the **client** side (the UI plus session management); extensions supply adapters.
+
+```
+┌──── RENDERER ───────────────────────────────────────────────┐
+│ Debug UI: toolbar, Variables, Watch, Call Stack, Breakpoints,│
+│           Loaded Scripts, Debug Console, inline values       │
+│ DebugService: session lifecycle, breakpoint model, state     │
+└──────────────────────┬───────────────────────────────────────┘
+                       │ RPC
+┌──────────────────────▼───────────────────────────────────────┐
+│ EXT HOST — ExtHostDebugService                               │
+│  DebugConfigurationProvider (provide/resolve/resolve2)       │
+│  DebugAdapterDescriptorFactory → Executable|Server|          │
+│                                   NamedPipe|InlineImplementation│
+│  DebugAdapterTrackerFactory (protocol observation)           │
+└──────────────────────┬───────────────────────────────────────┘
+                       │ stdio / socket / named pipe / in-process
+┌──────────────────────▼───────────────────────────────────────┐
+│ DEBUG ADAPTER  ──DAP──►  Debugger / Runtime                  │
+└──────────────────────────────────────────────────────────────┘
+```
+
+## 27.2 Contribution & Configuration
+
+`contributes.debuggers[]` supplies `type`, `label`, `program`, `runtime`, `configurationAttributes` (JSON schema for `launch.json`, no `$ref`/`definitions`), `initialConfigurations`, `configurationSnippets`, `variables` (substitution variables bound to commands), and `languages`. `contributes.breakpoints[]` lists languages for which breakpoints are enabled.
+
+Requirements:
+
+| ID | Requirement |
+|---|---|
+| DAP-1 | `launch.json` MUST get IntelliSense and validation from `configurationAttributes`, including per-request (`launch`/`attach`) schemas. |
+| DAP-2 | Variable substitution MUST support `${workspaceFolder}`, `${workspaceFolderBasename}`, `${file}`, `${fileBasename}`, `${fileBasenameNoExtension}`, `${fileDirname}`, `${fileExtname}`, `${relativeFile}`, `${relativeFileDirname}`, `${cwd}`, `${lineNumber}`, `${selectedText}`, `${execPath}`, `${pathSeparator}`, `${env:NAME}`, `${config:setting.id}`, `${command:commandId}`, `${input:inputId}` (with `promptString`, `pickString`, `command` input types), and extension-contributed `variables`. |
+| DAP-3 | Compound configurations, `preLaunchTask`/`postDebugTask`, `serverReadyAction`, and `presentation` ordering MUST be supported. |
+| DAP-4 | Dynamic configurations via `provideDebugConfigurations` with `DebugConfigurationProviderTriggerKind.Dynamic` MUST populate the "Select and Start Debugging" list, gated on the `onDebugDynamicConfigurations` activation event. |
+
+## 27.3 Session Lifecycle
+
+```
+startDebugging(folder, nameOrConfig, options)
+   │
+   ├─ activateByEvent('onDebug') / 'onDebugResolve:<type>' / 'onDebugInitialConfigurations'
+   ├─ resolveDebugConfiguration(...)         (all providers, in order)
+   ├─ substitute variables
+   ├─ resolveDebugConfigurationWithSubstitutedVariables(...)
+   ├─ preLaunchTask (await completion; abort on non-zero exit unless configured)
+   ├─ createDebugAdapterDescriptor(session, executable)
+   ├─ launch adapter (Executable | Server(port) | NamedPipe | InlineImplementation)
+   ├─ DAP: initialize → capabilities
+   ├─ DAP: set breakpoints (source, function, exception, data, instruction)
+   ├─ DAP: configurationDone
+   ├─ DAP: launch | attach
+   │
+   ├─ RUNNING ◄──► STOPPED (events: stopped/continued/thread/output/
+   │                        breakpoint/module/loadedSource/process/
+   │                        capabilities/progress*/invalidated/memory)
+   │
+   ├─ disconnect | terminate
+   ├─ postDebugTask
+   └─ onDidTerminateDebugSession
+```
+
+| ID | Requirement |
+|---|---|
+| DAP-5 | All four `DebugAdapterDescriptor` kinds MUST be supported, including `InlineImplementation` (adapter running inside the extension host — used by several modern adapters). |
+| DAP-6 | Capability-gated UI: every optional DAP capability (`supportsConditionalBreakpoints`, `supportsHitConditionalBreakpoints`, `supportsLogPoints`, `supportsFunctionBreakpoints`, `supportsDataBreakpoints`, `supportsInstructionBreakpoints`, `supportsExceptionFilterOptions`, `supportsSetVariable`, `supportsSetExpression`, `supportsRestartFrame`, `supportsStepBack`, `supportsGotoTargetsRequest`, `supportsCompletionsRequest`, `supportsEvaluateForHovers`, `supportsClipboardContext`, `supportsDisassembleRequest`, `supportsReadMemoryRequest`, `supportsWriteMemoryRequest`, `supportsSteppingGranularity`, `supportsDelayedStackTraceLoading`, `supportsValueFormattingOptions`, `supportTerminateDebuggee`, `supportSuspendDebuggee`, `supportsRestartRequest`, `supportsModulesRequest`, `supportsLoadedSourcesRequest`, `supportsTerminateThreadsRequest`, `supportsBreakpointLocationsRequest`, `supportsSingleThreadExecutionRequests`) MUST enable or disable the corresponding UI affordance. Showing UI for an unsupported capability is a defect. |
+| DAP-7 | Multi-session (parent/child) debugging MUST render as a session tree in the Call Stack view, with independent stepping. |
+| DAP-8 | `runInTerminal` reverse request MUST launch in Axiom's integrated terminal (or an external terminal per configuration) and return the process id. |
+| DAP-9 | `startDebugging` reverse request (child session creation) MUST be supported. |
+| DAP-10 | Source resolution MUST support `sourceReference` (adapter-provided content via the `source` request, rendered read-only with the `debug:` scheme) and path mapping. |
+| DAP-11 | Breakpoints MUST persist across sessions and window reloads, and MUST be re-sent on session start with verification feedback (unverified breakpoints render hollow). |
+| DAP-12 | The Debug Console MUST support `evaluate` with `context: 'repl'`, completions via `completions` request, `output` events with categories (`console`, `stdout`, `stderr`, `important`, `telemetry`), grouping (`group`/`groupStart`/`groupEnd`), and clickable source links. |
+| DAP-13 | `DebugAdapterTracker` MUST receive `onWillStartSession`, `onWillReceiveMessage`, `onDidSendMessage`, `onWillStopSession`, `onError`, `onExit` — required for adapter debugging and for AI extensions that observe debug state. |
+| DAP-14 | Adapter crash MUST terminate the session cleanly with a notification, never hang the debug UI. |
+| DAP-15 | Adapter processes MUST be tracked and killed on session end, extension deactivation, and app quit. |
+| DAP-16 | `session.customRequest(command, args)` and `onDidReceiveDebugSessionCustomEvent` MUST be supported (used heavily by JS and Python debuggers). |
+
+## 27.4 Validation Set (M5 exit gate)
+
+`js-debug` (Node/Chrome), `debugpy` (Python), `CodeLLDB` (Rust/C++), `Go (Delve)`, `Java Debugger`, `PHP Xdebug`. Each must: set/hit breakpoints (incl. conditional and logpoints), step (in/over/out), inspect and edit variables, evaluate in the console, and show inline values.
+
+---
+
+# 28. Theme System
+
+## 28.1 Contributions
+
+| Contribution | Purpose | Milestone |
+|---|---|---|
+| `themes[]` | Colour themes: `{label, uiTheme: vs|vs-dark|hc-black|hc-light, path}` | M3 |
+| `iconThemes[]` | File icon themes: `{id, label, path}` | M3 |
+| `productIconThemes[]` | Codicon replacement fonts: `{id, label, path}` | M3 |
+| `colors[]` | New themable colour ids with per-kind defaults | M3 |
+| `icons{}` | New `ThemeIcon` ids backed by a font glyph | M3 |
+| `semanticTokenTypes/Modifiers/Scopes` | Semantic highlighting vocabulary and TextMate fallbacks | M3 |
+
+## 28.2 Colour Theme Pipeline
+
+```
+theme.json (+ `include` chain, resolved depth-first, later overrides earlier)
+   │
+   ├─ "colors": { "editor.background": "#1e1e1e", ... }
+   │        └─► ColorRegistry resolution: id → value, falling back through
+   │            theme value → contributed default (per uiTheme kind) →
+   │            built-in default. Unknown ids logged, ignored.
+   │
+   ├─ "tokenColors": TextMate scope rules [{scope, settings:{foreground,fontStyle}}]
+   │        └─► TokenTheme for the TextMate tokenizer + Monaco token rules
+   │
+   ├─ "semanticHighlighting": true|false
+   └─ "semanticTokenColors": { "variable.readonly:java": {...} }
+            └─► Semantic token style resolution, overlaid on TextMate colours
+   │
+   ▼
+Applied as:
+  • CSS custom properties on the workbench root: --vscode-<id-dashed>
+  • Monaco theme registration (base + rules + colors)
+  • Webview theme variables (Ch. 14.6)
+  • Terminal ANSI palette (terminal.ansi* colours)
+  • Native title bar / traffic-light styling where applicable
+```
+
+| ID | Requirement |
+|---|---|
+| TH-1 | The complete VS Code theme colour registry (~1,000 ids across editor, workbench, terminal, notebook, debug, git, peek view, notifications, quick pick, lists, badges, buttons, inputs, charts) MUST be implemented, with correct defaults per `uiTheme` kind. Missing ids cause visibly broken themes. |
+| TH-2 | `include` chains MUST be resolved, including cross-file relative paths inside the extension. |
+| TH-3 | Theme switching MUST be live (< 100 ms, no reload, no flash), propagating to editors, workbench, all webviews, and all terminals. |
+| TH-4 | `workbench.colorCustomizations` and `editor.tokenColorCustomizations` (including per-theme scoped blocks `"[Theme Name]": {...}`) MUST override theme values. |
+| TH-5 | `ThemeColor` and `ThemeIcon` referenced from extension APIs (decorations, tree items, status bar) MUST resolve against the active theme and update on theme change. |
+| TH-6 | High-contrast themes (`hc-black`, `hc-light`) MUST be supported, and `window.activeColorTheme.kind` MUST report correctly. |
+| TH-7 | Auto-detect OS colour scheme (`window.autoDetectColorScheme`) with separate light/dark preferred themes. |
+| TH-8 | Theme extensions MUST install and apply **without an extension host reload** (§10.7). |
+| TH-9 | Icon themes MUST support file/folder associations by extension, filename, language id, and expanded-folder variants, plus font-based and image-based icon definitions. |
+| TH-10 | Product icon themes MUST be able to replace any codicon; unmapped icons fall back to the default font. |
+| TH-11 | Invalid colour values MUST be ignored with a log entry, never crash theme application. |
+| TH-12 | Semantic highlighting MUST correctly layer over TextMate tokens per the documented precedence, honouring `semanticTokenScopes` fallbacks for themes without semantic rules. |
+
+## 28.3 TextMate Grammar Integration
+
+| ID | Requirement |
+|---|---|
+| GR-1 | `contributes.grammars` MUST register TextMate grammars (JSON `.tmLanguage.json` or XML plist) with `language`, `scopeName`, `path`, `embeddedLanguages`, `tokenTypes`, `injectTo`, and `balancedBracketScopes`/`unbalancedBracketScopes`. |
+| GR-2 | Tokenization MUST run via `vscode-textmate` + `vscode-oniguruma` (WASM), off the main thread where feasible, with the tokenizer state cached per line. |
+| GR-3 | Grammar injections (`injectTo`) MUST work — required for TODO highlighters, comment-language embedding, and framework grammars. |
+| GR-4 | Embedded languages MUST map scopes to language ids so that completion, comments, and bracket behaviour switch correctly inside embedded regions (e.g. CSS in HTML, YAML frontmatter in Markdown). |
+| GR-5 | A grammar failing to compile MUST fall back to plain text with a diagnostic, not break the editor. |
+| GR-6 | Tokenization of a 10,000-line file MUST not block the UI; use incremental/viewport-first tokenization with background completion. |
+| GR-7 | `contributes.languages[].configuration` (comments, brackets, autoClosingPairs, surroundingPairs, folding markers, wordPattern, indentationRules, onEnterRules, autoCloseBefore) MUST be honoured. |
+
+---
+
+# 29. Snippet System
+
+| ID | Requirement |
+|---|---|
+| SN-1 | `contributes.snippets[]` (`{language, path}`) MUST register snippet files at scan time; no activation required. |
+| SN-2 | Both `.json` and `.code-snippets` (multi-language, with a `scope` field) formats MUST parse, including JSONC comments. |
+| SN-3 | The TextMate snippet syntax MUST be fully supported: `$1`/`${1}` tabstops, `$0` final position, `${1:default}` placeholders, `${1\|a,b,c\|}` choices, `${name}`/`${1:${name}}` variables with defaults, `${1/regex/format/flags}` transforms (with `\u`,`\l`,`\U`,`\L`,`\E`, `${n:+if}`, `${n:-else}`, `${n:?if:else}`, `${n:/upcase}` etc.), and `\$`/`\}`/`\\` escapes. |
+| SN-4 | All snippet variables MUST resolve: `TM_SELECTED_TEXT`, `TM_CURRENT_LINE`, `TM_CURRENT_WORD`, `TM_LINE_INDEX`, `TM_LINE_NUMBER`, `TM_FILENAME`, `TM_FILENAME_BASE`, `TM_DIRECTORY`, `TM_FILEPATH`, `RELATIVE_FILEPATH`, `CLIPBOARD`, `WORKSPACE_NAME`, `WORKSPACE_FOLDER`, `CURSOR_INDEX`, `CURSOR_NUMBER`, `CURRENT_YEAR`…`CURRENT_SECOND`, `CURRENT_DAY_NAME`(_SHORT), `CURRENT_MONTH_NAME`(_SHORT), `CURRENT_TIMEZONE_OFFSET`, `CURRENT_SECONDS_UNIX`, `RANDOM`, `RANDOM_HEX`, `UUID`, `BLOCK_COMMENT_START/END`, `LINE_COMMENT`. |
+| SN-5 | Snippets MUST appear in IntelliSense with `CompletionItemKind.Snippet`, ordered per `editor.snippetSuggestions`. |
+| SN-6 | Multi-cursor snippet insertion MUST create linked tabstops at every cursor. |
+| SN-7 | Nested snippets (inserting a snippet while in snippet mode) MUST maintain a stack; Escape exits one level. |
+| SN-8 | `SnippetString` from the API (`insertSnippet`, completion `insertText`, code actions) MUST use the same engine. |
+| SN-9 | The `inSnippetMode` and `hasNextTabstop`/`hasPrevTabstop` context keys MUST drive Tab/Shift+Tab keybindings. |
+| SN-10 | Snippet parse errors MUST be logged per-snippet and MUST NOT invalidate the whole file. |
+| SN-11 | Snippet insertion MUST be a single undo unit. |
+| SN-12 | LSP `insertTextFormat: Snippet` completions MUST flow through the same engine. |
+
+---
+
+# 30. Notebook Support
+
+## 30.1 Scope Decision
+
+Notebooks are the largest single API surface in VS Code and the least used by Axiom's target audience relative to cost. **Decision: implement a bounded subset in M5** — sufficient for `.ipynb` viewing, editing, and execution with an extension-provided kernel — and defer advanced surfaces.
+
+| Capability | v1 | Deferred |
+|---|---|---|
+| `registerNotebookSerializer` (open/save `.ipynb` and custom formats) | ✅ | |
+| Cell editing: add/delete/move/change type/change language | ✅ | |
+| `createNotebookController`, execution, `NotebookCellExecution` (start/end/replaceOutput/appendOutput/clearOutput/executionOrder) | ✅ | |
+| Output rendering: text/plain, text/html (sandboxed), image/png\|jpeg\|gif\|svg, application/json, text/markdown, `application/vnd.code.notebook.error`, `.stdout`, `.stderr` | ✅ | |
+| Built-in renderer extensibility (`contributes.notebookRenderer`) | ✅ | |
+| Renderer messaging (`createRendererMessaging`) | ✅ | |
+| Cell status bar items provider | ✅ | |
+| Notebook cell metadata & document metadata round-trip | ✅ | |
+| Interactive Window | | v2 |
+| Notebook diff editor | | v2 |
+| Notebook find/replace across outputs | | v2 |
+| `notebook/*` menu contributions beyond toolbar and cell title | | v2 |
+| LSP notebook document sync (3.17) | | v2 |
+| Multi-select cell operations, cell drag-reorder | Partial (keyboard + buttons) | Full DnD in v2 |
+
+## 30.2 Architecture
+
+```
+┌─ RENDERER ────────────────────────────────────────────────┐
+│ NotebookEditor (virtualised cell list)                    │
+│  • each code cell hosts a Monaco editor bound to a         │
+│    cell-scoped model (vscode-notebook-cell: scheme)        │
+│  • each output hosts an isolated output webview            │
+│ NotebookKernelService: controller registry + affinity      │
+└────────────────────┬───────────────────────────────────────┘
+                     │ RPC
+┌────────────────────▼───────────────────────────────────────┐
+│ ExtHostNotebook                                            │
+│  serializers (bytes ⇄ NotebookData)                        │
+│  controllers (executeHandler, interruptHandler)            │
+│  NotebookDocument / NotebookCell mirrors                   │
+└────────────────────────────────────────────────────────────┘
+```
+
+| ID | Requirement |
+|---|---|
+| NB-1 | Cell documents MUST be real `TextDocument`s with the `vscode-notebook-cell` scheme, so language features work per-cell. |
+| NB-2 | Output webviews MUST follow Ch. 14's CSP and isolation rules; untrusted HTML output is the primary notebook attack surface. |
+| NB-3 | Execution MUST be interruptible (`interruptHandler` or `NotebookController.interruptHandler`) and cancellable via the execution token. |
+| NB-4 | Serialisation round-trip MUST be lossless for `.ipynb`, preserving unknown metadata keys. |
+| NB-5 | The editor MUST virtualise cells and remain responsive with 1,000 cells. |
+| NB-6 | Save MUST be atomic and MUST not lose outputs unless `notebook.output.saveOutputs` is disabled. |
+| NB-7 | Kernel selection UI MUST list all matching controllers with affinity ordering and remember the choice per notebook. |
+
+---
+
+# 31. Custom Editors
+
+## 31.1 Two Models
+
+| Model | Provider API | Document type | Use case |
+|---|---|---|---|
+| **Custom Text Editor** | `registerCustomEditorProvider` with `CustomTextEditorProvider` | Backed by `TextDocument` | Alternate UI over a text format (JSON config UI, `.svg` visual editor) |
+| **Custom Editor** (binary) | `CustomReadonlyEditorProvider` / `CustomEditorProvider` | Extension-owned `CustomDocument` | Binary formats (images, CAD, `.pawDraw`) |
+
+## 31.2 Contribution
+
+`contributes.customEditors[]`: `viewType` (globally unique — must be namespaced by extension), `displayName`, `selector[].filenamePattern` (glob, may include directory patterns), `priority` (`default` — use for every matching file, with a picker on conflict; or `option` — available via **Reopen With** only).
+
+## 31.3 Lifecycle
+
+```
+User opens matching file
+   │
+   ├─ CustomEditorRegistry resolves viewType(s) by selector + priority
+   ├─ conflict? → "Reopen With" picker; remember choice in
+   │              workbench.editorAssociations
+   ├─ activationEvent onCustomEditor:<viewType> (implicit since 1.74)
+   │
+   ├─ TEXT model:   openTextDocument → resolveCustomTextEditor(document, panel, token)
+   └─ BINARY model: openCustomDocument(uri, openContext, token) → CustomDocument
+                    resolveCustomEditor(document, panel, token)
+   │
+   ├─ Webview panel provided to the extension (Ch. 14 rules apply)
+   │
+   ├─ Editing (binary model):
+   │     extension fires onDidChangeCustomDocument with
+   │       CustomDocumentEditEvent {document, label, undo(), redo()}
+   │     → workbench marks dirty, integrates with the editor undo stack
+   │
+   ├─ Save: saveCustomDocument / saveCustomDocumentAs / revertCustomDocument
+   ├─ Hot exit: backupCustomDocument → CustomDocumentBackup with delete()
+   └─ Close: dispose CustomDocument when the last editor for it closes
+```
+
+| ID | Requirement |
+|---|---|
+| CE-1 | Both providers MUST be supported, including `supportsMultipleEditorsPerDocument`. |
+| CE-2 | Dirty state, save, Save As, revert, and the standard Ctrl+S/Ctrl+Z paths MUST integrate with the workbench editor model. |
+| CE-3 | Undo/redo for the binary model MUST route through the extension's `undo()`/`redo()` while the workbench owns the stack, including cross-editor undo grouping. |
+| CE-4 | Hot exit backups MUST be written to `<userData>/Backups/<workspaceHash>/` and restored on next launch before the extension activates. |
+| CE-5 | `workbench.editorAssociations` (glob → viewType, including `"default"`) MUST override selector resolution. |
+| CE-6 | Opening the same document in a split editor MUST reuse the same `CustomDocument` instance. |
+| CE-7 | Provider errors during `resolve*` MUST render an in-editor error state with **Reopen With Text Editor** rather than a blank pane. |
+| CE-8 | Custom editors MUST participate in tab APIs (`window.tabGroups`), diff-less as appropriate, and in "Keep Open"/preview-tab semantics. |
+| CE-9 | Large binary documents MUST stream through `VSBuffer` chunking rather than a single RPC payload. |
+
+---
+
+# 32. Workspace Trust
+
+## 32.1 Model
+
+Workspace Trust lets the user decide whether code in a project folder may be executed by the editor and extensions without explicit approval. Untrusted folders open in **Restricted Mode**.
+
+```
+Folder/workspace opened
+        │
+        ├─ trusted path in trust store?  ──yes──► TRUSTED
+        ├─ parent folder trusted & "trust parent" enabled? ──yes──► TRUSTED
+        ├─ empty window (no folder)? ──► TRUSTED (nothing to distrust)
+        └─ otherwise ──► RESTRICTED
+                            │
+                            ├─ trust banner + "Manage" affordance
+                            ├─ restricted-mode indicator in status bar
+                            └─ user grants trust → TRUSTED (persist path)
+                                     │
+                                     └─ extensions requiring trust activate now
+```
+
+## 32.2 Extension Declarations
+
+```jsonc
+"capabilities": {
+  "untrustedWorkspaces": {
+    "supported": true            // fully functional in restricted mode
+    // | false                   // disabled in restricted mode
+    // | "limited"               // partially functional
+    ,
+    "description": "Only syntax highlighting is available.",
+    "restrictedConfigurations": ["myExt.executablePath", "myExt.customCommand"]
+  },
+  "virtualWorkspaces": { "supported": "limited", "description": "..." }
+}
+```
+
+| ID | Requirement |
+|---|---|
+| WT-1 | The trust state MUST be resolved *before* any extension activates. |
+| WT-2 | `supported: false` extensions MUST NOT be activated in restricted mode; the Extensions view MUST show them as "Disabled in Restricted Mode" with the declared description. |
+| WT-3 | `supported: "limited"` extensions MUST activate, with `workspace.isTrusted === false` and `restrictedConfigurations` forced to their user/default values regardless of workspace settings. |
+| WT-4 | Extensions MUST be able to await trust: `workspace.isTrusted`, `workspace.onDidGrantWorkspaceTrust`, and `workspace.requestWorkspaceTrust()` (T2 — shows the trust dialog). |
+| WT-5 | Granting trust MUST NOT require a window reload: previously-blocked extensions activate in place and `onDidGrantWorkspaceTrust` fires. Revoking trust DOES require a reload (a warned, explicit action). |
+| WT-6 | In restricted mode the platform MUST disable: task execution, debug session start, `launch.json`/`tasks.json` command execution, workspace-scoped `settings.json` entries that specify executable paths, and automatic language server startup for servers resolved from workspace-relative paths. |
+| WT-7 | The trust store (`<userData>/trustedFolders.json`) MUST record absolute paths with an explicit `uri` and optional `hostPath`, MUST support "trust parent folder", and MUST be manageable via **Workspaces: Manage Workspace Trust**. |
+| WT-8 | `security.workspace.trust.enabled`, `.startupPrompt`, `.banner`, `.emptyWindow`, `.untrustedFiles` MUST be honoured. Enterprise policy MAY force trust off (never on). |
+| WT-9 | Opening a single untrusted *file* (not folder) MUST follow `security.workspace.trust.untrustedFiles` (`prompt` | `open` | `newWindow`). |
+| WT-10 | The trust decision MUST be reflected in the `isWorkspaceTrusted` context key for menu/keybinding conditions. |
+
+---
+
+# 33. Extension Permissions
+
+## 33.1 Rationale and Position
+
+VS Code has no runtime permission model; trust is binary (Workspace Trust) plus marketplace reputation. Axiom introduces a **transparency-first, enforcement-second** model: v1 *declares and surfaces* capabilities; selected capabilities are *enforced*; full enforcement lands in v2. Over-enforcing in v1 would break the ecosystem, which is the one thing this project must not do.
+
+## 33.2 Capability Taxonomy
+
+| Capability | Derived from | v1 treatment |
+|---|---|---|
+| `filesystem:workspace` | Implicit for all | Declared |
+| `filesystem:outside-workspace` | `fs` calls to paths outside workspace/extension dirs | **Monitored + logged**; user-visible in the permission panel |
+| `process:spawn` | `child_process` usage | **Monitored**; process tree shown in Running Extensions |
+| `network:outbound` | `http`/`https`/`fetch`/`net`, webview `connect-src` | **Monitored**; domains recorded (not blocked) |
+| `secrets:read/write` | `context.secrets` | Declared; per-extension keychain namespace **enforced** |
+| `auth:sessions` | `authentication.getSession` | **Enforced** via per-extension consent (Ch. 13.10) |
+| `terminal:create` / `terminal:write` | `window.createTerminal`, `sendText` | Declared; a "sending text to terminal" indicator is shown |
+| `debug:start` | `debug.startDebugging` | Declared; blocked in restricted mode |
+| `tasks:execute` | `tasks.executeTask` | Declared; blocked in restricted mode |
+| `env:mutate` | `environmentVariableCollection` | **Enforced**: user-visible diff and per-extension opt-out |
+| `webview:external-content` | webview loading remote resources | Declared; shown in the permission panel |
+| `lm:access` | `lm.selectChatModels` / `sendRequest` | **Enforced** via consent prompt |
+| `telemetry:send` | `createTelemetryLogger`, network to known telemetry hosts | **Enforced**: respects the global telemetry setting |
+
+## 33.3 Requirements
+
+| ID | Requirement |
+|---|---|
+| PERM-1 | An **Extension Permissions** panel (per-extension) MUST list declared and observed capabilities, with the observation timestamp and, where applicable, the specific resources (paths, domains, processes). |
+| PERM-2 | Capability observation MUST be implemented by instrumenting the RPC boundary and the host's Node module surface (a thin `require` interposer recording `child_process`, `net`, `http(s)`, `fs` usage per extension). Observation must add ≤ 2% overhead. |
+| PERM-3 | Enforced capabilities (auth, secrets, lm, env, telemetry) MUST fail closed with a catchable error when denied. |
+| PERM-4 | The gallery detail page MUST show a capability summary derived from the manifest *before* install (contributions, activation events, declared dependencies, `capabilities.untrustedWorkspaces`). |
+| PERM-5 | Enterprise policy MUST be able to deny capabilities globally or per-extension via a policy file, with the denial surfaced to the user. |
+| PERM-6 | A per-extension **network domain allowlist** MUST be available (opt-in, off by default) that blocks outbound requests from that extension's host module interposer and its webviews' `connect-src`. |
+| PERM-7 | All capability observations MUST be recorded in the security log (Ch. 37) with sufficient detail for an incident review, and MUST NOT include payload contents. |
+
+---
+
+# 34. Sandbox Architecture
+
+## 34.1 Layered Defence
+
+```
+Layer 0 — RENDERER HARDENING
+  contextIsolation: true · sandbox: true · nodeIntegration: false
+  · webSecurity: true · allowRunningInsecureContent: false
+  · Strict CSP on the workbench document (no inline script except nonce'd bootstrap)
+  · Preload exposes an enumerated contextBridge surface; every channel
+    validated by shape and sender in main
+  ⇒ Guarantee: extension code is never in this process.
+
+Layer 1 — PROCESS SEPARATION
+  Extension host = separate OS process, separate memory, separate crash domain.
+  ⇒ Guarantee: an extension cannot corrupt or hang the workbench.
+
+Layer 2 — WEBVIEW ISOLATION
+  Unique opaque origin per webview · nested outer/inner frames ·
+  iframe sandbox attributes · nonce CSP · localResourceRoots enforcement
+  ⇒ Guarantee: extension HTML cannot reach workbench JS or the filesystem.
+
+Layer 3 — CAPABILITY MEDIATION
+  Privileged operations (keychain, deep links, gallery network, protocol
+  handlers, native dialogs, OS shell) are main-process-only and reached
+  through validated IPC.
+  ⇒ Guarantee: the ext host cannot self-escalate to OS credentials.
+
+Layer 4 — TRUST GATING
+  Workspace Trust decides whether extension code runs at all for a folder.
+  ⇒ Guarantee: cloning a hostile repo does not execute its tooling.
+
+Layer 5 — OBSERVABILITY & KILL SWITCH
+  Per-extension resource accounting, capability logging, one-click disable,
+  automatic bisect, and a product-level blocklist delivered via update.
+  ⇒ Guarantee: bounded blast radius and rapid response.
+```
+
+## 34.2 Extension Host Sandboxing — Explicit Limitation
+
+Extensions are Node.js code with full Node capability. **Axiom does not claim to sandbox extension code from the OS in v1**, and must not imply otherwise in UI or marketing. VS Code makes the same choice for the same reason: extensions legitimately spawn compilers, language servers, and debuggers; an OS sandbox that permitted those would provide little real containment, and one that did not would break the ecosystem.
+
+What v1 *does* guarantee is: isolation from the workbench, isolation from user credentials, isolation between webviews, observability of capability use, trust gating, and a kill switch.
+
+## 34.3 OS-Level Hardening (best-effort, non-breaking)
+
+| Platform | Measure | Status |
+|---|---|---|
+| macOS | Hardened Runtime on the host binary; no `com.apple.security.cs.disable-library-validation` beyond what native modules require; TCC prompts attributed to Axiom | v1 |
+| Windows | Host process with a restricted token where feasible; Control Flow Guard; no elevation inheritance | v1 (evaluate breakage) |
+| Linux | `prctl(PR_SET_NO_NEW_PRIVS)`; seccomp profile **evaluated but not enabled by default** in v1 | v1 investigate |
+| All | Host never inherits the renderer's environment secrets; `PATH` resolved from the user shell, not from Axiom's | v1 |
+
+## 34.4 Isolation Groups (v2 design, v1 interface)
+
+The architecture must permit multiple extension hosts without API change:
+
+```
+ExtensionHostManager
+  ├─ Host A "default"    : all extensions (v1 behaviour)
+  ├─ Host B "untrusted"  : newly installed / low-reputation extensions   (v2)
+  └─ Host C "isolated"   : user-pinned extensions requiring hard isolation (v2)
+
+Routing: extensionId → hostId, decided by policy at activation time.
+MainThread* handlers are host-agnostic (every RPC carries a host id).
+```
+
+**v1 requirement:** every `MainThread*` implementation must be written to handle messages from *any* host id and must key its state by `(hostId, handle)` rather than `handle` alone. This costs almost nothing now and makes multi-host a configuration change later.
+
+## 34.5 Blocklist / Kill Switch
+
+| ID | Requirement |
+|---|---|
+| KS-1 | Axiom MUST fetch a signed extension blocklist (`{id, versionRange, reason, severity}`) on startup and every 6 h, cached and fail-open on network error but fail-closed on signature failure. |
+| KS-2 | A blocklisted extension MUST be disabled at next activation attempt with an explanatory notification; `severity: critical` MUST disable immediately and terminate its host processes. |
+| KS-3 | The user MUST be able to override a `severity: warning` block; `critical` blocks MUST NOT be overridable outside enterprise policy. |
+| KS-4 | Blocklist decisions MUST be logged and telemetered. |
+
+---
+
+# 35. Secret Storage
+
+## 35.1 API
+
+`ExtensionContext.secrets: SecretStorage` — `get(key)`, `store(key, value)`, `delete(key)`, `onDidChange`. Namespaced per extension: the effective keychain key is `axiom.secret.<extensionId>.<key>`. One extension cannot read another's secrets — **enforced**, not conventional.
+
+## 35.2 Implementation
+
+```
+Extension (ext host)
+   context.secrets.store('token', value)
+        │ RPC $setPassword(extensionId, key, value)
+        ▼
+Renderer SecretStorageService (thin pass-through; never retains plaintext)
+        │ validated IPC
+        ▼
+MAIN PROCESS SecretStorageService
+   ├─ safeStorage.isEncryptionAvailable()?
+   │    yes → ciphertext = safeStorage.encryptString(value)
+   │           persist ciphertext in <userData>/secrets.dat (an encrypted
+   │           key→blob store) OR directly in the OS credential store
+   │    no  → warn once, degrade per 35.4
+   └─ OS backing:
+        macOS   → Keychain (via safeStorage)
+        Windows → DPAPI (via safeStorage)
+        Linux   → libsecret / kwallet (via safeStorage); may be unavailable
+```
+
+Electron's `safeStorage` is the chosen primitive (as VS Code itself moved to, replacing keytar): it provides string encryption backed by the OS keychain without an extra native dependency.
+
+## 35.3 Requirements
+
+| ID | Requirement |
+|---|---|
+| SS-1 | Plaintext secrets MUST exist only transiently in the main process and the requesting extension's memory. Never in the renderer's persistent state, never in logs, never in telemetry, never in crash dumps (scrub the heap dump path or disable dumps for the main process). |
+| SS-2 | Per-extension namespacing MUST be enforced at the main-process boundary using the authenticated extension id from the RPC envelope — not an id supplied by the caller. |
+| SS-3 | `onDidChange` MUST fire across all windows of the same user profile. |
+| SS-4 | Value size limit 64 KB; larger values rejected with a clear error. |
+| SS-5 | Uninstalling an extension with "delete data" MUST purge all its secrets. |
+| SS-6 | A **Developer: Show Secret Storage Keys** command MUST list key *names* per extension (never values) for debugging. |
+| SS-7 | Migration/versioning: the store MUST carry a schema version to permit future re-encryption (e.g. key rotation) without data loss. |
+| SS-8 | Concurrent access across windows MUST be serialised via the main process; the store is single-writer. |
+
+## 35.4 Degradation Matrix
+
+| Condition | Behaviour |
+|---|---|
+| `safeStorage` available | Full encryption; assurance level **High** |
+| Linux with no secret service | `safeStorage` falls back to a machine-derived key; assurance level **Medium**; one-time warning; surfaced in the Accounts UI |
+| Encryption unavailable entirely | `store()` **fails** with `ERR_SECRETS_UNAVAILABLE`. Axiom MUST NOT silently write plaintext. Extensions handle the error (most fall back to prompting each session). |
+| Keychain locked / user denies access | Return `undefined` from `get`, reject `store`, surface an actionable notification |
+
+---
+
+# 36. Crash Recovery
+
+## 36.1 Failure Modes and Responses
+
+| Failure | Detection | Response | User impact |
+|---|---|---|---|
+| Ext host process exit (crash) | `exit`/`close` on the fork; non-zero code or signal | Sweep registries; auto-restart (backoff); reactivate prior set | Extension features pause ~1–2 s |
+| Ext host OOM | Exit code + `heap out of memory` in stderr; heap telemetry | Restart with a diagnostic naming the top memory consumer | As above + notification |
+| Ext host unresponsive | Heartbeat missed (3 × 2 s) **or** a user-initiated command unacknowledged for 10 s | Non-modal prompt: **Restart** / **Profile** / **Wait**; auto-restart after 60 s if the user does nothing and the host is still hung | Commands queue or fail |
+| Activation failure (single extension) | Thrown/rejected in `activate()` | Mark `ACTIVATION_FAILED`; log; badge the extension; continue others | One extension inert |
+| Repeated activation failure (3× / 10 min) | Counter in extension state | Auto-disable **or** rollback if a prior version is retained | Extension disabled with clear reason |
+| Repeated host crash (3× / 5 min) | Crash counter | Enter **Safe Mode**: all third-party extensions disabled; offer Bisect | Only built-ins active |
+| RPC protocol desync | Unknown rpcId/method, frame parse error | Terminate and restart the host; log a protocol dump | As crash |
+| Webview renderer crash | `render-process-gone` on the webview | Recreate the frame; restore via `getState`; notify the extension via `onDidChangeViewState` | Webview reloads |
+| LSP/DAP child crash | Child process exit | Client library handles restart (bounded); platform reaps orphans | Language features pause |
+| Main process crash | OS-level | Full app restart with hot-exit recovery of editors and backups | Session restored |
+
+## 36.2 Restart Sequence
+
+```
+ t=0    'exit' observed. Record {code, signal, uptime, lastActivated,
+        lastRpcMethod, topCpuExt, topMemExt} into the crash record.
+ t+0    Mark host DEAD. Status bar shows "Extension host restarting…".
+ t+0    For every registry: removeAllByOwner(host) for origin==='exthost'.
+        Static contributions REMAIN — activity bar icons, palette entries,
+        and view shells stay visible so the UI does not shift.
+ t+0    Reject all in-flight RPC promises with ERR_EXTHOST_TERMINATED
+        (catchable; never an unhandled rejection).
+ t+0    Preserve: memento state (already persisted), secrets (main process),
+        webview serialised state, terminal processes (pty host is separate),
+        LSP/DAP children → orphan reaper kills them.
+ t+50   Backoff wait: attempt 1 → 0 ms, 2 → 1 s, 3 → 5 s.
+ t+…    Fork new host; full bootstrap (§11.1).
+ t+…    Replay activation: reactivate exactly the set that was active,
+        in original activation order, with reason 'restart'.
+ t+…    Re-materialise dynamic contributions as extensions re-register.
+ t+…    Status bar clears. Notification: "Extension host restarted."
+        (suppressed if this is the first restart in 24 h and recovery
+         completed under 3 s — avoid alarming users over a blip.)
+```
+
+## 36.3 Safe Mode & Bisect
+
+**Safe Mode** — triggered automatically after 3 crashes in 5 minutes, or manually via `--disable-extensions`. All third-party extensions are disabled; a persistent banner explains why and offers **Start Bisect**, **Enable All**, and **Report Issue**.
+
+**Bisect** — binary search over the enabled extension set:
+
+```
+n extensions → disable half → reload → user answers "Is the problem gone?"
+  gone     → culprit is in the disabled half
+  present  → culprit is in the enabled half
+repeat ⌈log2(n)⌉ times (≤ 8 reloads for 200 extensions)
+→ name the culprit, offer Disable + Report Issue,
+  and restore the original enablement set on exit.
+```
+
+State persists across reloads in global state; Bisect must be abortable at any step with full restoration.
+
+## 36.4 Requirements
+
+| ID | Requirement |
+|---|---|
+| CR-1 | No user data loss on host crash: unsaved editor content, terminal sessions, and debug UI state persist. |
+| CR-2 | Recovery from crash to fully-reactivated ≤ 3 s p95 for 20 extensions. |
+| CR-3 | Crash records (last 20) MUST be inspectable via **Developer: Show Extension Host Crash Reports** and attachable to issue reports. |
+| CR-4 | Crash attribution: the crash record MUST name the extension whose code was on the stack (from the host's last-known active call) or, failing that, the most recently activated extension. |
+| CR-5 | Automatic restart MUST be disabled after 3 attempts in 5 minutes to avoid crash loops; the status bar then offers manual restart. |
+| CR-6 | All crash paths MUST be exercised by an automated chaos suite (Ch. 47). |
+
+---
+
+# 37. Logging
+
+## 37.1 Channels
+
+| Channel | Content | Location |
+|---|---|---|
+| **Extension Host** | Host bootstrap, activation timings, RPC errors, crashes | `<logs>/<session>/exthost/exthost.log` |
+| **Per-extension** | Each extension's `console.*` and `LogOutputChannel` output | `<logs>/<session>/exthost/<extensionId>/<name>.log` |
+| **Extension Management** | Install/update/uninstall/validation | `<logs>/<session>/extensionManagement.log` |
+| **Gallery** | Open VSX requests, rate limiting, cache | `<logs>/<session>/gallery.log` |
+| **Authentication** | Flow steps, refresh, failures — **never tokens** | `<logs>/<session>/auth.log` |
+| **Security** | Capability observations, CSP violations, blocked resource loads, signature results | `<logs>/<session>/security.log` |
+| **RPC trace** (opt-in) | Every message: direction, shape, method, size, duration | `<logs>/<session>/exthost/rpc-trace.log` |
+| **Main / Renderer / PTY / Watcher** | Platform channels | `<logs>/<session>/…` |
+
+## 37.2 Format & Requirements
+
+Structured JSON lines, one object per record:
+
+```
+{"ts":"2026-07-28T10:14:22.481Z","lvl":"error","ch":"exthost",
+ "ext":"dbaeumer.vscode-eslint","corr":"a3f9…","op":"activate",
+ "msg":"Failed to resolve ESLint library","err":{"name":"Error",
+ "message":"…","stack":"…"},"dur":812}
+```
+
+| ID | Requirement |
+|---|---|
+| LOG-1 | Levels: `trace`, `debug`, `info`, `warning`, `error`, `off`. Default `info`. Settable globally, per-channel, and per-extension at runtime with no reload. |
+| LOG-2 | `window.createOutputChannel(name, {log:true})` MUST return a `LogOutputChannel` with `trace/debug/info/warn/error`, `logLevel`, and `onDidChangeLogLevel`. |
+| LOG-3 | An extension's `console.log/warn/error` MUST be captured, prefixed with the extension id, routed to its channel and (in Developer mode) to the DevTools console. It MUST NOT be swallowed. |
+| LOG-4 | Every RPC-crossing operation MUST carry a correlation id, propagated across process boundaries, so a user action can be traced end to end. |
+| LOG-5 | **Secret redaction** MUST run on every record: patterns for bearer tokens, `gh[pousr]_`, `sk-`, JWTs, `Authorization:` headers, PEM blocks, and any value currently present in secret storage. Redaction failures are themselves a security bug. |
+| LOG-6 | Rotation: per-file 10 MB / 5 files; per-session directory retained for the last 10 sessions; total log budget 200 MB with LRU eviction. |
+| LOG-7 | Writes MUST be asynchronous and buffered; logging MUST NOT add more than 0.5 ms to any hot path, and MUST NOT block on disk. |
+| LOG-8 | **Developer: Open Extension Logs Folder** and **Developer: Export Diagnostics Bundle** (logs + versions + extension list + crash records, redacted, zipped) MUST exist. |
+| LOG-9 | Log paths MUST be exposed to extensions via `context.logUri` and `env.logLevel`. |
+
+---
+
+# 38. Telemetry
+
+## 38.1 Principles
+
+Opt-out, transparent, minimal, never content. `telemetry.telemetryLevel` (`all` | `error` | `crash` | `off`) is honoured by the platform **and** enforced on extension telemetry: `env.isTelemetryEnabled` and `env.onDidChangeTelemetryEnabled` reflect it, and `env.createTelemetryLogger` drops events when disabled.
+
+## 38.2 Event Catalogue
+
+| Event | Key properties | Level |
+|---|---|---|
+| `ext.gallery.search` | queryLength (bucketed), resultCount, durationMs, cacheHit, errorCode | all |
+| `ext.install` | extensionId, version, source (gallery/vsix/dependency/pack), durationMs, sizeBytes, success, errorCode | all |
+| `ext.uninstall` | extensionId, version, hadError, dataDeleted | all |
+| `ext.update` | extensionId, from, to, auto, success | all |
+| `ext.rollback` | extensionId, from, to, reason | all |
+| `ext.activate` | extensionId, version, activationEvent, requireMs, activateMs, success, errorType | all |
+| `ext.activationFailed` | extensionId, errorName, errorMessageHash, stackHash | error |
+| `exthost.start` | durationMs, extensionCount, coldStart | all |
+| `exthost.crash` | code, signal, uptimeMs, activeCount, suspectExtensionId, crashKind | crash |
+| `exthost.unresponsive` | durationMs, suspectExtensionId, userAction | error |
+| `ext.performance` | extensionId, cpuPercentP95, heapMBP95, rpcCallsPerMin, sampleWindowMin | all |
+| `ext.api.unsupported` | extensionId, apiName | all |
+| `ext.compat.engineBlocked` | extensionId, requiredRange, actual | all |
+| `auth.flow` | providerId, flowType, durationMs, success, errorCode, extensionIdHash | all |
+| `webview.created` | extensionId, viewType, retainContext | all |
+| `webview.crash` | extensionId, viewType, reason | crash |
+| `workspaceTrust.decision` | decision, promptSource, extensionsBlockedCount | all |
+| `security.blockedResource` | extensionId, reason (cspViolation/outsideRoots/signature) | all |
+
+## 38.3 Requirements
+
+| ID | Requirement |
+|---|---|
+| TEL-1 | No file paths, file contents, URLs, repository names, workspace names, user names, or extension setting *values* may be transmitted. Free-text is hashed or bucketed. |
+| TEL-2 | Extension ids are transmitted in clear (they are public identifiers) — this is required for compatibility triage. Local paths in stack traces MUST be scrubbed to `<path>`. |
+| TEL-3 | A **Telemetry** output channel MUST log every event that would be sent, so users can audit exactly what is collected. |
+| TEL-4 | Events are batched (30 s or 100 events), queued offline (cap 1,000 events / 24 h), and dropped oldest-first beyond the cap. |
+| TEL-5 | `env.createTelemetryLogger(sender, options)` MUST be implemented, including automatic common-property enrichment, error-stack cleaning, and honouring the global level. |
+| TEL-6 | Telemetry MUST NOT be a startup dependency and MUST fail silently. |
+| TEL-7 | Enterprise policy MUST be able to force telemetry off, and this MUST be visible in the Settings UI as policy-managed. |
+
+---
+
+# 39. Performance Optimisations
+
+## 39.1 Techniques (with owners and expected gain)
+
+| # | Optimisation | Mechanism | Expected gain |
+|---|---|---|---|
+| 1 | **Manifest scan cache** | Persist parsed manifests keyed by a fingerprint of (dir list + mtimes + sizes + Axiom version). Full parse only on mismatch. | 80–150 ms cold start with 100 extensions |
+| 2 | **Parallel host spawn** | Fork the host concurrently with renderer paint (§9.7) | 150–250 ms perceived |
+| 3 | **V8 code cache** | Cache compiled bytecode for extension entry modules (`vm.Script` `cachedData`), keyed by file hash + V8 version | 30–50% off `require` time |
+| 4 | **Snapshot the API module** | Build the `vscode` API object once and share immutable pieces across per-extension instances | 10–20 ms per extension |
+| 5 | **RPC batching** | Coalesce all messages in a microtask into one `postMessage` | 40–60% IPC syscall reduction |
+| 6 | **Delta document sync** | Send edit deltas, never full text (§11.7) | Order-of-magnitude on large files |
+| 7 | **Lazy proxies** | Instantiate `ExtHost*`/`MainThread*` objects on first use, not at boot | 20–40 ms host boot |
+| 8 | **Deferred `*` activation** | Run after first paint; `onStartupFinished` after those settle | Removes eager extensions from the critical path |
+| 9 | **Menu memoisation** | Cache resolution on (menuId, contextGeneration, resourceHash) | Right-click 8 ms → <2 ms |
+| 10 | **Virtualised lists** | Trees, quick picks, extension lists, problems | Constant-time rendering |
+| 11 | **Debounce + coalesce** | Tree refresh 16 ms, decorations 50 ms, file events 50 ms, setState 100 ms, config change 20 ms | Prevents event storms |
+| 12 | **Provider cancellation** | Cancel superseded language requests immediately | Reclaims CPU under fast typing |
+| 13 | **Off-main tokenization** | TextMate in a worker with viewport-first strategy | No jank on large files |
+| 14 | **Icon/asset sprite cache** | Decode extension icons once; memory LRU + disk cache | Smooth gallery scrolling |
+| 15 | **Backpressure** | In-flight byte budget with priority lanes (§9.4.2) | Prevents RPC saturation |
+| 16 | **Structured clone over JSON** | Avoid `JSON.stringify`/`parse` for large object graphs | 20–40% on big payloads |
+| 17 | **Zero-copy buffers** | `VSBuffer` with transferable `ArrayBuffer` where the transport allows | Large file/webview transfers |
+| 18 | **Idle-time work** | Index building, cache warming, update checks on `requestIdleCallback` | Keeps interaction latency flat |
+
+## 39.2 Anti-Patterns (prohibited)
+
+- Awaiting extension host readiness before enabling user input.
+- Synchronous filesystem calls on the renderer's main thread.
+- Full-tree re-render on any tree data change.
+- Unbounded event listener registration per document/editor.
+- `JSON.parse(JSON.stringify(x))` for RPC payloads.
+- Polling where an event exists.
+- Activating an extension to read its static contributions.
+
+---
+
+# 40. Caching Strategy
+
+| Cache | Key | Storage | TTL / Invalidation | Size cap |
+|---|---|---|---|---|
+| Manifest scan index | Fingerprint(dirs, mtimes, count, appVersion) | `<userData>/extensions/.index.json` | Fingerprint mismatch | 5 MB |
+| Gallery search results | Full query string | Memory LRU + disk | 15 min | 200 entries / 10 MB |
+| Gallery extension metadata | `id@version` | Disk | 24 h; invalidated on install | 50 MB |
+| Extension icons/assets | Asset URL + ETag | Disk | 7 days, ETag revalidation | 100 MB |
+| README/CHANGELOG HTML | `id@version` | Disk | 24 h | 20 MB |
+| VSIX downloads | SHA-256 | Disk | 7 days after install completes | 500 MB, LRU |
+| V8 code cache | File hash + V8 version | `<userData>/CachedData/<appVersion>/` | Hash or V8 mismatch; cleared on app update | 200 MB |
+| Tokenization state | Model id + line | Memory | Model dispose / edit invalidation | Per-model bounded |
+| Tree children | (viewId, handle) | Memory | `onDidChangeTreeData` | 10,000 nodes/view |
+| Menu resolution | (menuId, ctxGen, resourceHash) | Memory LRU | Context generation change | 200 entries |
+| Context key eval | (exprId, ctxGen) | Memory | Context generation change | 1,000 entries |
+| Webview resources | (webviewId, path, mtime) | Memory + HTTP ETag | mtime change | 50 MB |
+| Auth sessions | (provider, account, scopes) | Memory + keychain | Token expiry | — |
+| Compatibility decisions | `id@version` + appVersion | Disk | App version change | 1 MB |
+
+**Global rules:** every cache is versioned with a schema id and purged wholesale on Axiom major-version upgrade; every cache is bounded and LRU-evicted; every cache is inspectable and clearable via **Developer: Clear Extension Caches**; no cache may be load-bearing (a cold cache must only be slower, never incorrect).
+
+---
+
+# 41. Lazy Activation
+
+## 41.1 Activation Index
+
+At scan time, build an inverted index from activation trigger → extension ids:
+
+```
+byCommand:        Map<commandId,   Set<extId>>   (explicit + implicit from contributes.commands)
+byLanguage:       Map<languageId,  Set<extId>>   (explicit + implicit from contributes.languages)
+byView:           Map<viewId,      Set<extId>>
+byCustomEditor:   Map<viewType,    Set<extId>>
+byWebviewPanel:   Map<viewType,    Set<extId>>
+byAuthProvider:   Map<providerId,  Set<extId>>
+byDebugType:      Map<type,        Set<extId>>
+byTaskType:       Map<type,        Set<extId>>
+byNotebook:       Map<nbType,      Set<extId>>
+byRenderer:       Map<rendererId,  Set<extId>>
+byFileSystem:     Map<scheme,      Set<extId>>
+byTerminal / byTerminalProfile / byTerminalShellIntegration
+byWalkthrough / byChatParticipant / byLanguageModelTool / bySearch / byEditSession
+byUri:            Set<extId>
+byOpenExternalUri:Set<extId>
+byWorkspaceContains: Array<{extId, glob}>
+star:             Set<extId>
+startupFinished:  Set<extId>
+```
+
+Lookup is O(1) for all event types except `workspaceContains`, which is evaluated once per workspace open.
+
+## 41.2 Activation Algorithm
+
+```
+activateByEvent(event, reason):
+   ids = index.lookup(event)
+   for id in ids:
+       if state[id] is ACTIVE or ACTIVATING: join existing promise; continue
+       if not enabled(id) or blocked by trust/blocklist: skip (log)
+       promise = activateWithDependencies(id, reason)
+       state[id] = ACTIVATING with promise
+   return Promise.allSettled(promises)   // never rejects the caller
+
+activateWithDependencies(id, reason):
+   deps = topologicalOrder(extensionDependencies[id])   // Ch. 42
+   for d in deps: await activateWithDependencies(d, 'dependency of ' + id)
+   t0 = now()
+   module = require(mainPath)            // measured separately
+   t1 = now()
+   exports = await withTimeout(module.activate(context), ACTIVATION_TIMEOUT_MS)
+   t2 = now()
+   record(id, {requireMs: t1-t0, activateMs: t2-t1, event, reason})
+   state[id] = ACTIVE, exports stored for extensions.getExtension().exports
+```
+
+**Activation timeout:** there is no hard timeout that *aborts* activation (aborting mid-`activate` leaves the extension in an undefined state). Instead, at 10 s a warning is logged and the extension is flagged "slow to activate" in Running Extensions; at 60 s it is flagged "possibly hung" with a notification. The promise continues to be awaited.
+
+## 41.3 Requirements
+
+| ID | Requirement |
+|---|---|
+| LA-1 | `*` activation MUST be deferred until after first paint and MUST be reported per-extension in Running Extensions with a "affects startup" badge. |
+| LA-2 | `onStartupFinished` MUST fire only after all `*` activations settle (resolve or reject). |
+| LA-3 | Implicit activation events MUST be derived from contributions (commands, views, custom editors, authentication, task types, notebooks, terminal profiles, chat participants, language model tools) so extensions that omit `activationEvents` still work. |
+| LA-4 | `workspaceContains:` with simple patterns (`**/name`, `name`) MUST resolve from the workspace file index without a search; complex globs get a 7 s time-boxed search that does not block other activations. |
+| LA-5 | `onLanguage` MUST fire for every language of every already-open editor at startup, in the order the editors are restored. |
+| LA-6 | Static-asset-only extensions (themes, grammars, snippets, icon themes, declarative language configs, JSON validation) MUST never activate. |
+| LA-7 | The Extensions view MUST surface activation cost, and MUST recommend `onStartupFinished` over `*` in Developer mode. |
+| LA-8 | Activation MUST be observable: `extensions.onDidChange`, plus an internal `onDidActivateExtension` event carrying timings. |
+
+---
+
+# 42. Dependency Resolution
+
+## 42.1 Concepts
+
+| Field | Semantics |
+|---|---|
+| `extensionDependencies: string[]` | Hard runtime dependencies. Must be installed, enabled, and **activated before** the dependent. Transitive. |
+| `extensionPack: string[]` | A bundle: installing the pack installs the members. **Not** a runtime dependency; members are independent. Non-transitive by default. |
+| `enabledApiProposals` | Requires allowlisting (Ch. 12.4). |
+| `engines.vscode` | Compatibility gate (Ch. 43). |
+
+## 42.2 Install-Time Resolution
+
+```
+resolve(requested):
+  frontier = [requested]; plan = {}; visiting = set()
+  while frontier:
+     id = frontier.pop()
+     if id in plan: continue
+     meta = gallery.query(id)  or  local index
+     if not meta: FAIL E_DEP_NOT_FOUND(id, requestedBy)
+     ver = pickVersion(meta, engineRange, targetPlatform, prerelease)
+     if not ver: FAIL E_DEP_INCOMPATIBLE(id)
+     plan[id] = ver
+     frontier += meta.extensionDependencies
+     if id == requested: frontier += meta.extensionPack   // packs only expand once
+  detectCycles(plan)   // report, do not fail (see 42.4)
+  return topologicalOrder(plan)
+```
+
+## 42.3 Activation Ordering
+
+```
+Dependency graph (DAG after cycle handling):
+     A ──► B ──► D
+     │           ▲
+     └──► C ─────┘
+
+Activating A ⇒ order D, B, C, A  (post-order DFS; D once)
+```
+
+- If a dependency fails to activate, the dependent's activation **fails** with `ERR_DEPENDENCY_ACTIVATION_FAILED`, naming the dependency. It must not activate with a broken dependency, because `getExtension(dep).exports` would be undefined and produce confusing downstream errors.
+- Dependency activation is single-flight and shared (a diamond activates the shared node once).
+
+## 42.4 Edge Cases
+
+| Case | Handling |
+|---|---|
+| **Cycle** (A→B→A) | Detected via DFS colouring. Log an error naming the cycle; break at the back edge; activate in discovered order. Do not fail — some published extensions genuinely have cycles, and VS Code tolerates them. |
+| **Missing dependency at runtime** (uninstalled behind our back) | Dependent is marked "Missing dependency: X" with an **Install** action; not activated. |
+| **Disabled dependency** | Prompt: "X requires Y, which is disabled. Enable Y?" |
+| **Uninstalling a depended-upon extension** | Warn, listing dependents; offer **Uninstall All** or **Cancel**. |
+| **Version conflict** (two dependents need incompatible versions) | Only one version can be installed. Install the highest satisfying the intersection; if empty, report the conflict and let the user choose. |
+| **Pack member already installed** | Skipped; the pack is still marked installed. |
+| **Uninstalling a pack** | Offer to uninstall members not required by anything else. |
+| **Self-dependency** | Ignored with a warning. |
+| **Deep dependency chains** | Depth cap 32; exceeding it is treated as a cycle. |
+
+---
+
+# 43. Version Compatibility
+
+## 43.1 Engine Compatibility
+
+- Axiom declares `axiomVSCodeCompatVersion = 1.95.0`.
+- An extension is compatible iff `semver.satisfies('1.95.0', engines.vscode)`, with `*`, `^`, `~`, `>=`, and `x`-ranges all handled by the standard semver library. Pre-release identifiers on the compat version are ignored for matching.
+- Incompatible → blocked at install with the message "Requires editor version X or newer" and a **Show Compatible Versions** action that queries the registry with `includeAllVersions=true` and offers the newest satisfying build.
+
+## 43.2 Version Selection Policy
+
+```
+candidates = versions(extension)
+  filter: semver.satisfies(compatVersion, v.engines.vscode)
+  filter: v.targetPlatform ∈ {currentPlatform, 'universal', undefined}
+  filter: v.preRelease ⇒ user opted into pre-release for this extension
+  filter: v not in blocklist for this appVersion
+  sort:   semver desc
+  pick:   first
+```
+
+Pre-release opt-in is per-extension, persisted, and shown in the UI as a "Pre-Release" badge with a **Switch to Release Version** action.
+
+## 43.3 Axiom Version Upgrades
+
+| Change | Effect |
+|---|---|
+| Axiom patch | No compat change; nothing revalidated |
+| Axiom minor with compat bump (1.95 → 1.96) | Revalidate all installed extensions; previously-blocked extensions may become installable; check for updates that were withheld |
+| Axiom major | Full revalidate; purge V8 code cache, gallery caches, and compatibility-decision cache; run a migration pass (Ch. 44) |
+| Extension update raises `engines.vscode` beyond compat | Update withheld; extension stays on its current version; UI shows "Update available but requires a newer editor" |
+
+## 43.4 Compatibility Reporting
+
+A `COMPATIBILITY.md`, generated from the API conformance suite plus the top-500 test results, published with each release. It contains: the compat version, per-namespace tier table, the delta catalogue, the known-incompatibility classes, and the current top-500 pass rate.
+
+---
+
+# 44. Migration Strategy
+
+## 44.1 What Is Being Migrated
+
+Axiom already has: an installed-extension directory of unknown structure, a bespoke extension list UI, a hard-coded command palette, static activity/status bars, and `monaco.editor.createModel` usage throughout. Migration is therefore as much an internal refactor as a user-data migration.
+
+## 44.2 Internal Migration (engineering)
+
+| Phase | Work | Milestone | Risk |
+|---|---|---|---|
+| **I-1** | Introduce the DI container and service identifiers; convert existing Axiom services to registered singletons behind interfaces | M0 | Medium — wide but mechanical |
+| **I-2** | Replace `monaco.editor.createModel` with `createModelReference` everywhere; introduce the overlay filesystem | M0 | **High** — touches every editor code path; must land early |
+| **I-3** | Convert workbench Parts to registry-driven rendering (activity bar, status bar, palette, context menus, sidebar) | M1 | High — visible regressions possible; feature-flag each Part |
+| **I-4** | Introduce the context key service and convert all existing conditional UI to `when` clauses | M1 | Medium |
+| **I-5** | Route all Axiom built-in commands through `CommandsRegistry` | M1 | Low |
+| **I-6** | Adopt the configuration service as the single source for settings; migrate Axiom's own settings store into it | M1 | Medium — needs a settings-file migration |
+| **I-7** | Replace Monarch highlighting with TextMate grammars | M3 | Medium — visual diffs |
+| **I-8** | Back the existing terminal with the terminal service so `window.createTerminal` maps to it | M2 | Medium |
+| **I-9** | Integrate Axiom's AI chat panel with `lm`/`chat` namespaces | M4 | Medium |
+
+**Feature flags.** Every phase ships behind `axiom.experimental.<flag>`, defaulting off, enabled progressively: internal → dogfood → 5% → 25% → 100%. A flag that cannot be turned off safely was introduced incorrectly.
+
+## 44.3 User Data Migration
+
+Run once, at first launch of the new build, in the main process before the window opens:
+
+```
+1. Detect legacy layout at <userData>/extensions/
+2. For each legacy entry:
+     a. locate package.json; parse id/version
+     b. if dir name ≠ <publisher>.<name>-<version> → move to canonical name
+     c. compute sha256 of the directory tree; record in the new index
+     d. validate engine compatibility → mark compatible|incompatible
+3. Write the new extensions.json index atomically
+4. Migrate legacy enablement/disable flags into the new index
+5. Migrate legacy per-extension settings keys into settings.json (mapped)
+6. Backup the legacy index to extensions.legacy.json.bak (retain 30 days)
+7. On any failure: restore the backup, log, and start with an empty index
+   (extensions are re-discoverable by rescanning the directory)
+```
+
+Migration must be **idempotent** (a schema-version marker prevents re-running) and **reversible** for 30 days.
+
+## 44.4 User-Facing Rollout
+
+| Stage | Audience | Gate |
+|---|---|---|
+| Alpha | Internal, ~30 users | M2 complete; core surfaces functional |
+| Beta (opt-in channel) | Volunteers, ~1,000 | M4 complete; AI extensions working; crash rate < 1% |
+| Staged GA | 5% → 25% → 50% → 100% | Each stage: 72 h with crash rate < 0.3%, no P0 regressions |
+| Legacy removal | All | 2 releases after 100% |
+
+**Rollback plan:** the previous extension subsystem remains behind a kill switch (`axiom.extensions.useLegacyHost`) for two releases; the new index format is additive so the legacy build can still read the extensions directory.
+
+## 44.5 Communication
+
+Migration notes in release notes; a one-time welcome walkthrough ("Your extensions now work like VS Code"); a public compatibility page; a documented issue-report template that auto-attaches the diagnostics bundle.
+
+---
+
+# 45. Testing Strategy
+
+## 45.1 Test Pyramid
+
+```
+                    ╱╲          Manual exploratory & a11y audit (each milestone)
+                   ╱  ╲
+                  ╱ E2E╲        ~150 scenarios, real app, real extensions (nightly)
+                 ╱──────╲
+                ╱ Compat ╲      Top-500 automated matrix (nightly + pre-release)
+               ╱──────────╲
+              ╱ Integration╲    ~600 tests, real ext host, in-memory workbench (per PR)
+             ╱──────────────╲
+            ╱  Unit / Contract╲  ~3,500 tests, pure, fast (per commit)
+           ╱────────────────────╲
+```
+
+## 45.2 Coverage Gates
+
+| Layer | Coverage target | Gate |
+|---|---|---|
+| Unit | 85% line, 80% branch on platform packages | Blocking |
+| Integration | 100% of RPC shapes exercised; 100% of contribution points | Blocking |
+| API conformance | 100% shape coverage of the target `vscode.d.ts` | Blocking |
+| Compatibility | ≥95% of top-500 pass | Blocking for release, advisory per PR |
+| Performance | All NFR-P budgets within 10% | Blocking |
+| Security | Zero high/critical findings open | Blocking |
+
+## 45.3 Test Infrastructure
+
+- **Fixture extensions:** ~40 purpose-built extensions in `test/fixtures/extensions/`, each exercising one contribution point or API area, plus adversarial fixtures (crash-on-activate, infinite-loop, memory-bomb, zip-slip VSIX, CSP-violating webview, 100k-node tree).
+- **Ext host test harness:** boots a real extension host against an in-memory workbench with mock services, allowing integration tests without an Electron window.
+- **RPC recorder/replayer:** captures a protocol trace from a real session and replays it against a fresh host to reproduce bugs deterministically.
+- **Registry mirror:** a local Open VSX-compatible server serving pinned VSIX fixtures, so compatibility tests are hermetic and do not depend on `open-vsx.org`.
+- **Golden-image runner:** screenshot comparison for theme, activity bar, tree, and status bar rendering, with a perceptual-diff threshold.
+
+---
+
+# 46. Unit Tests
+
+Scope: pure logic, no processes, no I/O, < 5 ms per test.
+
+| Area | Representative cases |
+|---|---|
+| **Manifest parsing** | Valid/invalid manifests; every contribution point; unknown keys ignored; malformed JSON; BOM; huge manifests; missing required fields; non-string `version` |
+| **Semver / engine matching** | `^1.0.0`, `~1.2`, `1.x`, `*`, `>=1.60.0 <2.0.0`, pre-release identifiers, invalid ranges |
+| **Context key expressions** | Full grammar: precedence, `!`, `&&`, `\|\|`, all comparators, `=~` with invalid regex, `in`/`not in`, parentheses, `config.` resolution, `'false'` string quirk, whitespace, unicode identifiers |
+| **Menu resolution** | Group ordering, `navigation` first, `@order` ties, `when` filtering, submenu nesting, `alt` selection, separators |
+| **Keybinding resolution** | Chords, platform variants, precedence, negative bindings, layout mapping, conflict detection |
+| **Activation index** | Implicit event derivation, `workspaceContains` glob matching, `*` vs `onStartupFinished` ordering |
+| **Dependency graph** | Topological order, cycles, diamonds, missing nodes, depth cap, pack expansion |
+| **Snippet parser** | Every construct in SN-3, malformed snippets, nested transforms, escape handling |
+| **RPC codec** | Every type transformer round-trip (`Uri`, `Range`, `Position`, `Location`, `MarkdownString`, `ThemeIcon`, `Diagnostic`, `WorkspaceEdit`, `VSBuffer`), `undefined` preservation, circular reference detection, size limits |
+| **URI handling** | Windows drive letters, UNC paths, percent-encoding, fragments, custom schemes, `fsPath` round-trip |
+| **VSIX validation** | Each of the 12 validation checks, positive and negative |
+| **Version selection** | Platform filtering, pre-release, blocklist, empty candidate set |
+| **Redaction** | Every secret pattern; false-positive resistance |
+| **Config resolution** | Six-level precedence, language overrides, `inspect` output, `affectsConfiguration` accuracy |
+| **Tree handle stability** | Identity via `id`, `resourceUri`, positional fallback; stability across refresh |
+
+Target: ~3,500 tests, full suite < 90 s.
+
+---
+
+# 47. Integration Tests
+
+Scope: real extension host process, real RPC, real registries, mocked UI rendering. < 2 s per test.
+
+| Suite | Scenarios |
+|---|---|
+| **Host lifecycle** | Boot; handshake; graceful shutdown; `deactivate` awaited; deactivate timeout; restart preserves state; port disconnect |
+| **Activation** | Every activation event type triggers exactly the right extensions; implicit events; dependency ordering; single-flight under concurrent triggers; failure isolation; `onStartupFinished` ordering |
+| **Commands** | Register/execute/dispose; duplicate rejection; activation-on-invoke; argument round-trip for all transformer types; error propagation; recursion cap; `executeCommand` from one extension to another |
+| **Configuration** | Contribution → Settings UI model; read/write at each target; language overrides; change events with `affectsConfiguration`; defaults override |
+| **Tree views** | Provider registration; children/expand/collapse; refresh coalescing; `reveal` with `getParent`; selection events; checkbox state; drag-and-drop; 100k nodes; handle stability |
+| **Webviews** | Create/dispose; bidirectional messaging; CSP enforcement (assert a violating script does not run); `asWebviewUri` inside and outside roots; theme variables applied; `getState`/`setState`; serializer restore; `retainContextWhenHidden` both values |
+| **Quick input** | All options; multi-select; async items; validation; buttons; cancellation; supersession |
+| **Notifications** | All severities; actions; modal; progress with cancellation; rate limiting; per-extension mute |
+| **Status bar** | Priority ordering; alignment; overflow; codicon rendering; dispose |
+| **Language features** | Register each provider type; selector scoring; multi-provider merge; cancellation; provider throwing; `execute*Provider` commands |
+| **Diagnostics** | Collection CRUD; four surfaces updated; related information; tags |
+| **Filesystem** | `workspace.fs` all operations; custom `FileSystemProvider` end-to-end; error code mapping; watcher events; `findFiles` with excludes |
+| **Text documents** | Open/close/change/save events; delta sync correctness under rapid edits; `applyEdit` with resource operations; single undo unit; version gating |
+| **Terminal** | Create shell + pty terminals; `sendText`; `onDidWriteData`; exit codes; `environmentVariableCollection`; shell integration events |
+| **Authentication** | Mock IdP: full PKCE flow; state mismatch rejected; refresh; `invalid_grant` invalidation; silent mode; multiple accounts; consent grant/revoke; concurrent `getSession` single-flight |
+| **Secrets** | Store/get/delete; namespacing enforced (extension A cannot read B); `onDidChange`; size limit; degradation path |
+| **Workspace trust** | Restricted mode blocks `supported:false`; `limited` activates with `isTrusted:false`; `restrictedConfigurations` forced; grant without reload; context key |
+| **Debug** | Mock adapter: full session lifecycle; all four descriptor kinds; breakpoint verification; capability-gated UI; `runInTerminal`; tracker events; adapter crash |
+| **Notebooks** | Serializer round-trip; controller execution; output rendering; interrupt; cell language features |
+| **Custom editors** | Both provider models; dirty/save/revert; undo/redo; backup/restore; editor associations |
+| **Installation** | Install from mirror and VSIX; checksum failure; zip-slip fixture rejected; zip-bomb rejected; engine block; dependency plan; pack expansion; update; rollback; uninstall with/without data |
+| **Crash & chaos** | Kill -9 the host at 10 lifecycle points; OOM the host; hang the host; crash a webview; crash an LSP child; corrupt the index; fill the disk; revoke keychain access. Assert: no data loss, correct recovery, correct user messaging in every case |
+
+Target: ~600 tests, full suite < 12 min with 8-way parallelism.
+
+---
+
+# 48. Extension Compatibility Tests
+
+## 48.1 The Top-500 Matrix
+
+The definitive measure of platform completeness. Nightly, hermetic, against a pinned local registry mirror.
+
+**Selection:** the 500 most-downloaded Open VSX extensions, refreshed quarterly, plus a permanent set of 40 strategically important extensions (AI assistants, major languages, major debuggers) regardless of rank.
+
+**Per-extension test levels:**
+
+| Level | Check | Automated |
+|---|---|---|
+| **L0 Install** | Downloads, validates, extracts, indexes without error | ✅ |
+| **L1 Load** | Manifest parses; all contributions materialise; no unknown-point errors | ✅ |
+| **L2 Activate** | Activates on its declared event within 30 s with no thrown error and no unhandled rejection | ✅ |
+| **L3 Register** | Every declared command/view/provider is present in the corresponding registry after activation | ✅ |
+| **L4 Smoke** | Extension-specific scripted interaction (see 48.2) | Partially — scripted per extension for the top 100 + the strategic 40 |
+| **L5 Clean** | Deactivates and uninstalls with no orphan processes, no leaked handles, no residual registry entries | ✅ |
+
+**Pass criteria:** L0–L3 and L5 for ≥95% of the 500; L0–L5 for 100% of the strategic 40.
+
+## 48.2 Strategic Extension Scenarios (L4)
+
+| Extension | Scripted scenario |
+|---|---|
+| GitHub Copilot | Sign in via mock IdP → open a JS file → assert an inline completion is offered |
+| GitHub Copilot Chat | Open chat webview → send a prompt → assert a streamed response renders |
+| Continue | Open webview → configure a mock provider key via secrets → send a message → assert response |
+| Cline | Open webview → start a task → assert terminal creation and file write via `applyEdit` |
+| Claude Code | Complete auth flow → invoke its primary command → assert its UI surface renders |
+| ESLint | Open a file with a lint error → assert diagnostic appears → apply code action → assert fix |
+| Prettier | Format document → assert the buffer changes and is a single undo unit |
+| Python | Select interpreter → open `.py` → assert completions, hover, and go-to-definition |
+| Pylance/Jedi | As above, plus diagnostics |
+| Go | Assert `gopls` starts, diagnostics appear, definition works |
+| rust-analyzer | Assert server starts, inlay hints render, code actions available |
+| C/C++ (clangd) | Assert completions and diagnostics |
+| Java (Red Hat) | Assert project import progress and diagnostics |
+| GitLens | Assert blame decorations, hover, and its tree views populate |
+| Docker | Assert its activity bar container and tree views populate |
+| Vim | Assert modal keybindings intercept and cursor movement works |
+| Material Icon Theme | Assert file icons change in the Explorer |
+| One Dark Pro | Assert theme applies to editor, workbench, terminal, and a

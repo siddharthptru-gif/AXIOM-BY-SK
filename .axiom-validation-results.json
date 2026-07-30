@@ -1,0 +1,21 @@
+{
+  "generatedAt": "2026-07-20T20:20:54.975Z",
+  "results": [
+    {
+      "name": "typecheck-node",
+      "status": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "name": "typecheck-web",
+      "status": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}

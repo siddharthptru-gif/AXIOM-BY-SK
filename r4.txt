@@ -1,0 +1,13 @@
+.axiom-extensions-probe.cjs: ALL PASS (247 checks)
+.axiom-css-check.cjs: ALL PASS
+.axiom-account-probe.cjs: ALL PASS
+.axiom-approval-probe.cjs: ALL PASS
+.axiom-parse-probe.cjs: ALL PASS
+.axiom-typing-probe.cjs: ALL PASS
+.axiom-run-probe.cjs: ALL PASS
+.axiom-detect2-probe.cjs: ALL PASS
+.axiom-languages-probe.cjs: ALL PASS
+.axiom-path-refresh-probe.cjs: ALL PASS
+.axiom-openvsx-probe.cjs: ALL PASS
+
+PROBES ALL PASS

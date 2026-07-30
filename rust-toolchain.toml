@@ -1,0 +1,6 @@
+# Release builds use the exact Rust compiler validated for Axiom's bundled SQLite,
+# tree-sitter grammars, and Windows native core. Windows release machines provide
+# the MSVC host toolchain required by the documented build prerequisites.
+[toolchain]
+channel = "1.96.1"
+profile = "minimal"
