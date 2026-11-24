@@ -2143,7 +2143,7 @@ function validateProjectIntelligenceHonesty() {
 }
 
 async function main() {
-  const tempRoot = await fsp.mkdtemp(path.join(os.tmpdir(), 'axiom-god-mode-'));
+  const tempRoot = await fsp.mkdtemp(path.join(await fsp.realpath(os.tmpdir()), 'axiom-god-mode-'));
   try {
     await validatePureContracts();
     await validateContextService();
